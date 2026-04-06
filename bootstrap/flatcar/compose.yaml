@@ -1,0 +1,15 @@
+services:
+  matchbox:
+    image: quay.io/poseidon/matchbox:v0.11.0
+    ports:
+      - "8080:8080" # LocalStack Gateway
+      - "8081:8081" # external services port range
+    restart: always
+    command: -assets-path=''
+    volumes:
+      - ${PWD}/volumes/matchbox/var:/var/lib/matchbox
+      - ${PWD}/volumes/matchbox/etc:/etc/matchbox
+    environment:
+      - MATCHBOX_ADDRESS=0.0.0.0:8080
+      #- MATCHBOX_RPC_ADDRESS=0.0.0.0:8081
+      - MATCHBOX_LOG_LEVEL=debug

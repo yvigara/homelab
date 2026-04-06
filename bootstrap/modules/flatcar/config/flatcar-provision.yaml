@@ -1,0 +1,49 @@
+variant: flatcar
+version: 1.1.0
+systemd:
+  units:
+    - name: installer.service
+      enabled: true
+      contents: |
+        [Unit]
+        Requires=network-online.target
+        After=network-online.target
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        Restart=on-failure
+        RestartSec=10s
+        ExecStart=/opt/installer
+        [Install]
+        WantedBy=multi-user.target
+      # Avoid using the standard SSH port so terraform apply cannot SSH until
+      # post-install. But admins may SSH to debug disk install problems.
+      # After install, sshd will use port 22 and users/terraform can connect.
+    - name: sshd.socket
+      dropins:
+        - name: 10-sshd-port.conf
+          contents: |
+            [Socket]
+            ListenStream=
+            ListenStream=2222
+storage:
+  files:
+    - path: /opt/installer
+      # filesystem: root
+      mode: 0500
+      contents:
+        inline: |
+          #!/bin/bash -ex
+          # unmount any leftovers at the beginning before we modify the disk the mount uses
+          curl -L ${ignition_endpoint}?mac=${mac_address}\&cfg=true -o /opt/config.ign
+          flatcar-install \
+            -d ${install_disk} \
+            -C ${os_channel} \
+            -i /opt/config.ign \
+            -V ${os_version}
+          udevadm settle
+          systemctl reboot
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys: ${ssh_keys}

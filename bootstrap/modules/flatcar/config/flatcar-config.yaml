@@ -1,0 +1,80 @@
+variant: flatcar
+version: 1.1.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys: ${ssh_keys}
+#########################################################################
+storage:
+  files:
+    - path: /etc/hostname
+      mode: 0644
+      contents:
+        inline: ${hostname}
+    - path: /opt/bin/reprovision
+      mode: 0755
+      contents:
+        inline: |
+          #!/bin/bash
+          set -euo pipefail
+          touch /usr/share/oem/grub.cfg
+          sed -i "/linux_append systemd.machine_id=.*/d" /usr/share/oem/grub.cfg
+          echo "set linux_append=\"\$linux_append systemd.machine_id=$(cat /etc/machine-id)\"" >> /usr/share/oem/grub.cfg
+          touch /boot/flatcar/first_boot
+    - path: /opt/extensions/k3s/k3s-v1.35.3+k3s1-x86-64.raw
+      mode: 0644
+      contents:
+        source: https://extensions.flatcar.org/extensions/k3s-v1.35.3+k3s1-x86-64.raw
+    - path: /etc/sysupdate.k3s-v1.35.d/k3s-v1.35.conf
+      contents:
+        source: https://extensions.flatcar.org/extensions/k3s/k3s-v1.35.conf
+    - path: /etc/sysupdate.d/noop.conf
+      contents:
+        source: https://extensions.flatcar.org/extensions/noop.conf
+    - path: /etc/rancher/k3s/config.yaml
+      contents:
+        inline: |
+          token: "u9eqss.e9hxy7kbs26gkqzi"
+          # Disable Traefik during installation
+
+          disable:
+            - traefik
+  links:
+    - target: /opt/extensions/k3s/k3s-v1.35.3+k3s1-x86-64.raw
+      path: /etc/extensions/k3s.raw
+      hard: false
+    - path: /etc/systemd/system/multi-user.target.wants/k3s.service
+      target: /usr/local/lib/systemd/system/k3s.service
+      overwrite: true
+#########################################################################
+# networkd:
+#   units:
+#     - name: 00-eno3.network
+#       contents: |
+#         [Match]
+#         Name=eno3
+#
+#         [Network]
+#         DHCP=yes
+#
+#         [DHCPv4]
+#         UseDNS=no
+#
+#         [DHCPv6]
+#         UseDNS=no
+#########################################################################
+systemd:
+  units:
+    - name: systemd-sysupdate.timer
+      enabled: true
+    - name: systemd-sysupdate.service
+      dropins:
+        - name: k3s.conf
+          contents: |
+            [Service]
+            ExecStartPre=/usr/bin/sh -c "readlink --canonicalize /etc/extensions/k3s.raw > /tmp/k3s"
+            ExecStartPre=/usr/lib/systemd/systemd-sysupdate -C k3s-v1.35 update
+            ExecStartPost=/usr/bin/sh -c "readlink --canonicalize /etc/extensions/k3s.raw > /tmp/k3s-new"
+            ExecStartPost=/usr/bin/sh -c "if ! cmp --silent /tmp/k3s /tmp/k3s-new; then touch /run/reboot-required; fi"
+    - name: update-engine.service
+      enabled: true
