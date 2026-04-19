@@ -8,6 +8,9 @@ fnox = "1.20.0"
 
 [env]
 _.fnox-env = { tools = true }
+TF_VAR_cluster_env = "lab"
+TF_VAR_cluster_name = "sed-k8s-01"
+TF_VAR_cluster_region = "au"
 TF_VAR_node1_mac_addr = { value = "{{ env.NODE1_MAC_ADDR }}", tools = true }
 TF_VAR_node1_hostname = { value = "{{ env.NODE1_HOSTNAME }}", tools = true }
 TF_VAR_cluster_token = { value = "{{ env.CLUSTER_TOKEN }}", tools = true }

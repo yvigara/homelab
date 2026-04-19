@@ -1,0 +1,17 @@
+multitenancy:
+  enabled: false
+commonAnnotations:
+  cluster-region: ${CLUSTER_REGION}
+  cluster-env: ${CLUSTER_ENV}
+serviceMonitor:
+  create: true
+web:
+  config:
+    authentication:
+      type: Anonymous
+      anonymous:
+        username: flux
+        groups:
+          - flux-admin
+  networkPolicy:
+    create: false
