@@ -4,7 +4,7 @@ commonAnnotations:
   cluster-region: ${CLUSTER_REGION}
   cluster-env: ${CLUSTER_ENV}
 serviceMonitor:
-  create: true
+  create: false
 web:
   config:
     authentication:
