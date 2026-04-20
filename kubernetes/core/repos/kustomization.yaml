@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./cnpg.yaml
+  - ./external-dns.yaml
+  - ./external-secrets.yaml
+  - ./grafana.yaml
+  - ./node-feature-discovery-charts.yaml
+  - ./prometheus.yaml
+  - ./toolhive.yaml
+  - ./traefik.yaml
+  - ./weave.yaml
