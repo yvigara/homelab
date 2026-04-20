@@ -1,0 +1,19 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: core-crds
+  namespace: &namespace flux-system
+spec:
+  interval: 30m
+  dependsOn:
+    - name: core-repos
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: *namespace
+  path: ./kubernetes/core/crds
+  prune: true
+  retryInterval: 2m
+  # Flux repositories under this need flux-system hardcoded as namespace for Renovate lookups
+  targetNamespace: *namespace
+  wait: true
