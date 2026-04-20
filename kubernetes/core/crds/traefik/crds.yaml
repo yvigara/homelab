@@ -23,7 +23,7 @@ metadata:
 spec:
   sourceRef:
     kind: GitRepository
-    name: traefik-source
+    name: traefik-crd-source
   interval: 15m
   prune: false
   healthChecks:
