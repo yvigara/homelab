@@ -49,8 +49,7 @@ spec:
           enabled: true
     service:
       type: LoadBalancer
+      annotations:
+        metallb.io/loadBalancerIPs: 192.168.2.129
       spec:
         externalTrafficPolicy: Cluster
-        metadata:
-          annotations:
-            metallb.io/loadBalancerIPs: 192.168.2.129
