@@ -40,12 +40,7 @@ spec:
         enabled: true
       kubernetesGateway:
         enabled: true
-        # This option currently enables support for TCPRoute and TLSRoute.
         experimentalChannel: true
-    ports:
-      websecure:
-        http3:
-          enabled: true
     service:
       spec:
         type: LoadBalancer
