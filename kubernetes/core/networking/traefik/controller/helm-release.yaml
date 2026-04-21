@@ -26,7 +26,6 @@ spec:
       isDefaultClass: true
       name: traefik-internal
     gateway:
-      name: traefik-internal
       listeners:
         web:
           namespacePolicy:
