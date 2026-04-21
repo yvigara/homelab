@@ -7,7 +7,7 @@ metadata:
 spec:
   dependsOn:
     - name: core-crds
-    - name: core-helm-repos
+    - name: core-repos
   path: ./kubernetes/core/networking/metallb/controller
   prune: true
   sourceRef:
