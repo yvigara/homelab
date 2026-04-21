@@ -26,6 +26,7 @@ spec:
       isDefaultClass: true
       name: traefik-internal
     gateway:
+      name: traefik-internal
       listeners:
         web:
           namespacePolicy:
@@ -40,10 +41,15 @@ spec:
         enabled: true
       kubernetesGateway:
         enabled: true
+        # This option currently enables support for TCPRoute and TLSRoute.
         experimentalChannel: true
+    ports:
+      websecure:
+        http3:
+          enabled: true
     service:
+      type: LoadBalancer
       spec:
-        type: LoadBalancer
         externalTrafficPolicy: Cluster
         annotations:
           metallb.io/loadBalancerIPs: 192.168.2.129
