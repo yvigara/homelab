@@ -13,4 +13,5 @@ resources:
   - ./prometheus.yaml
   - ./toolhive.yaml
   - ./traefik.yaml
+  - ./trust-manager.yaml
   - ./weave.yaml
