@@ -1,7 +1,15 @@
 terraform {
-  required_version = ">= 1.11"
+  required_version = ">= 1.14"
 
   required_providers {
+    bitwarden-secrets = {
+      source  = "bitwarden/bitwarden-secrets"
+      version = "0.5.4-pre"
+    }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "5.18.0"
+    }
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "~> 3.0"
@@ -9,6 +17,10 @@ terraform {
     helm = {
       source  = "hashicorp/helm"
       version = "~> 3.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.8"
     }
   }
 }
@@ -39,7 +51,7 @@ locals {
 
 module "flux_operator_bootstrap" {
   source  = "controlplaneio-fluxcd/flux-operator-bootstrap/kubernetes"
-  version = "0.2.0"
+  version = "0.4.0"
 
   revision = var.bootstrap_revision
 
@@ -59,7 +71,12 @@ module "flux_operator_bootstrap" {
       data = {
         CLUSTER_REGION = var.cluster_region
         CLUSTER_ENV    = var.cluster_env
+        CLUSTER_NAME   = var.cluster_name
+        DOMAIN         = var.domain
+        LB_INT_IP      = var.interal_lb_ip
+        BGP_CIDR       = var.bgp_cidr
       }
     }
   }
 }
+

@@ -9,3 +9,7 @@ provider "helm" {
     config_context = var.cluster_name
   }
 }
+
+provider "cloudflare" {}
+
+provider "bitwarden-secrets" {}
