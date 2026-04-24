@@ -4,4 +4,4 @@ kind: Kustomization
 namespace: external-secrets
 resources:
   - ks.yaml
-  - namespace
+  - namespace.yaml
