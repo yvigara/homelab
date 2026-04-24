@@ -16,6 +16,9 @@ spec:
       runAsNonRoot: true
       runAsUser: 1000
       runAsGroup: 1000
+    image:
+      tls:
+        secretName: bitwarden-sdk-server-cert
     tls:
       secretName: bitwarden-sdk-server-cert
     securityContext:
