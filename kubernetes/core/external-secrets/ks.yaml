@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://schemas.budimanjojo.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: external-secrets
+spec:
+  targetNamespace: external-secrets
+  interval: 1h
+  prune: true
+  path: ./kubernetes/core/external-secrets/external-secrets
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  wait: true
+---
+# yaml-language-server: $schema=https://schemas.budimanjojo.com/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: bitwarden-sdk-server
+spec:
+  targetNamespace: external-secrets
+  interval: 1h
+  prune: true
+  path: ./kubernetes/core/external-secrets/bitwarden-sdk-server
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  wait: true
+  healthCheckExprs:
+    - apiVersion: external-secrets.io/v1
+      kind: ClusterSecretStore
+      failed: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'False')
+      current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
+  dependsOn:
+    - name: external-secrets
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: flux-runtime-info
