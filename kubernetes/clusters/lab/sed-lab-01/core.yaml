@@ -40,7 +40,7 @@ spec:
           postBuild:
             substituteFrom:
               - kind: ConfigMap
-                name: flux-runtime-info
+                name: cluster-vars
                 optional: true
               - kind: Secret
                 name: cluster-secrets
