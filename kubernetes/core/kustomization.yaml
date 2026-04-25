@@ -3,4 +3,5 @@ kind: Kustomization
 resources:
   - cert-manager
   - external-secrets
+  - reloader
   - networking
