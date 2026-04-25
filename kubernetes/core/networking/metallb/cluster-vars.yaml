@@ -4,4 +4,4 @@ metadata:
   name: cluster-vars
 data:
   BGP_CIDR: ${BGP_CIDR}
-  BGP_PEER_ADDR: ${PEER_ADDR}
+  BGP_PEER_ADDR: ${BGP_PEER_ADDR}
