@@ -4,7 +4,7 @@ metadata:
   name: high-availability
 spec:
   addresses:
-    - 192.168.2.128/26
+    - ${BGP_CIDR}
   autoAssign: false
 ---
 apiVersion: metallb.io/v1beta2
