@@ -61,12 +61,12 @@ spec:
           external-dns.alpha.kubernetes.io/hostname: *hostname
       listeners:
         web:
-          port: 80
+          port: 8000
           protocol: HTTP
           namespacePolicy:
             from: All
         websecure:
-          port: 443
+          port: 8443
           protocol: HTTPS
           namespacePolicy:
             from: All
