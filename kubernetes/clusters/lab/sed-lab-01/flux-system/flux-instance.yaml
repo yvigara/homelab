@@ -31,9 +31,8 @@ spec:
     url: https://github.com/yvigara/homelab.git
     ref: refs/heads/main
     path: kubernetes/clusters/lab/sed-lab-01
-    # Uncomment the following lines if using GitHub App authentication with a private repository.
-    # provider: github
-    # pullSecret: flux-system
+    provider: github
+    pullSecret: flux-system
   kustomize:
     patches:
       - target:
