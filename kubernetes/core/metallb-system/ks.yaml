@@ -7,7 +7,7 @@ spec:
   targetNamespace: metallb-system
   interval: 1h
   prune: true
-  path: ./kubernetes/core/networking/metallb/app
+  path: ./kubernetes/core/metallb-system/app
   sourceRef:
     kind: GitRepository
     name: flux-system
@@ -23,7 +23,7 @@ spec:
   targetNamespace: metallb-system
   interval: 1h
   prune: true
-  path: ./kubernetes/core/networking/metallb/config
+  path: ./kubernetes/core/metallb-system/config
   sourceRef:
     kind: GitRepository
     name: flux-system
