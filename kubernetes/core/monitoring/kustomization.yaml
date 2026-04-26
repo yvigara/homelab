@@ -4,4 +4,4 @@ kind: Kustomization
 namespace: monitoring
 resources:
   - ./namespace.yaml
-  - ./external-dns/ks.yaml
+  - ./monitoring/ks.yaml
