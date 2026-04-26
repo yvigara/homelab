@@ -68,11 +68,25 @@ spec:
         data:
           config.yaml: |-
             ingress:
+              - hostname: "*.${CLUSTER_NAME}.${DOMAIN}"
+                originRequest:
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
+                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
+                  tcpKeepAlive: 7200s
+                service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
+              - hostname: "${REGION}.${ENVIRONMENT}.${DOMAIN}"
+                originRequest:
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
+                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
+                  tcpKeepAlive: 7200s
+                service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
               - hostname: "*.${REGION}.${ENVIRONMENT}.${DOMAIN}"
                 originRequest:
                   http2Origin: true
                   keepAliveTimeout: 3600s
-                  originServerName: external.${REGION}.${ENVIRONMENT}.${DOMAIN}
+                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
                   tcpKeepAlive: 7200s
                 service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
               - service: http_status:404
