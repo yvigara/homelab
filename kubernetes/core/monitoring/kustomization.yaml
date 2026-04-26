@@ -4,4 +4,4 @@ kind: Kustomization
 namespace: monitoring
 resources:
   - ./namespace.yaml
-  - ./monitoring/ks.yaml
+  - ./prometheus-operator/ks.yaml
