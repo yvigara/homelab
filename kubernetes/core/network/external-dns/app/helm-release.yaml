@@ -30,6 +30,7 @@ spec:
     domainFilters:
       - ${DOMAIN}
     sources:
+      - crd
       - service
       - ingress
     serviceMonitor:
