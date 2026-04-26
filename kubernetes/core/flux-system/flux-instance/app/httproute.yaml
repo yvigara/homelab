@@ -10,7 +10,7 @@ spec:
   hostnames:
     - "flux-webhook.${CLUSTER_NAME}.${DOMAIN}"
   parentRefs:
-    - name: traefik-internal
+    - name: traefik
       namespace: network
   rules:
     - backendRefs:
