@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: "${DOMAIN/./-}"
+spec:
+  secretName: "${DOMAIN/./-}-tls"
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: "${DOMAIN}"
+  dnsNames:
+    - "${CLUSTER_NAME}.${DOMAIN}"
+    - "*.${CLUSTER_NAME}.${DOMAIN}"
+    - "${REGION}.${ENVIRONMENT}.${DOMAIN}"
+    - "*.${REGION}.${ENVIRONMENT}.${DOMAIN}"

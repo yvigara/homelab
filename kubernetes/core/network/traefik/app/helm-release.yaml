@@ -21,28 +21,63 @@ spec:
     remediation:
       retries: 3
   values:
+    deployment:
+      enabled: true
+      replicas: 2
+    tlsStore:
+      default:
+        defaultCertificate:
+          secretName: "${DOMAIN/./-}-tls"
+    tlsOptions:
+      default:
+        minVersion: VersionTLS12
+        maxVersion: VersionTLS13
+        sniStrict: true
+    rbac:
+      enabled: true
     ingressClass:
       enabled: true
       isDefaultClass: true
-      name: traefik-internal
-    gateway:
-      name: traefik-internal
-      listeners:
-        web:
-          namespacePolicy:
-            from: All
     ingressRoute:
       dashboard:
-        enabled: true
-        entryPoints:
-          - web
+        enabled: false
     providers:
+      kubernetesCRD:
+        enabled: true
+        allowExternalNameServices: true
+        allowCrossNamespace: true
       kubernetesIngress:
         enabled: true
+        allowExternalNameServices: true
       kubernetesGateway:
         enabled: true
         # This option currently enables support for TCPRoute and TLSRoute.
         experimentalChannel: true
+    gateway:
+      annotations:
+        external-dns.alpha.kubernetes.io/target: &hostname "external.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+      infrastructure:
+        annotations:
+          external-dns.alpha.kubernetes.io/hostname: *hostname
+      listeners:
+        web:
+          port: 80
+          protocol: HTTP
+          namespacePolicy:
+            from: All
+        websecure:
+          port: 443
+          protocol: HTTPS
+          namespacePolicy:
+            from: All
+          certificateRefs:
+            - kind: Secret
+              name: "${DOMAIN/./-}-tls"
+    additionalArguments:
+      - "--api.insecure=true"
+      - "--providers.kubernetesingress.ingressclass=traefik"
+      - "--providers.kubernetesingress.ingressendpoint.ip=${LB_INT_IP}"
+      - "--providers.kubernetescrd.allowexternalnameservices=true"
     ports:
       websecure:
         http3:
