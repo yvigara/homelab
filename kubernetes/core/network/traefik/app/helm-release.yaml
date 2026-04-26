@@ -50,6 +50,6 @@ spec:
     service:
       type: LoadBalancer
       annotations:
-        metallb.io/loadBalancerIPs: 192.168.2.129
+        metallb.io/loadBalancerIPs: ${LB_INT_IP}
       spec:
         externalTrafficPolicy: Cluster
