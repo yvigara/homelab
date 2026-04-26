@@ -7,7 +7,7 @@ spec:
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
-  commonName: "${DOMAIN}"
+  commonName: "${CLUSTER_NAME}.${DOMAIN}"
   dnsNames:
     - "${CLUSTER_NAME}.${DOMAIN}"
     - "*.${CLUSTER_NAME}.${DOMAIN}"
