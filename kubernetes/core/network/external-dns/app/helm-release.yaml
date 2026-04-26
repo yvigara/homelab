@@ -19,7 +19,7 @@ spec:
       - name: CF_API_TOKEN
         valueFrom:
           secretKeyRef:
-            name: cloudflare
+            name: cloudflare-secret
             key: CF_API_TOKEN
     registry: txt
     txtPrefix: k8s.
