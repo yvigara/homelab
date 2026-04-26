@@ -5,4 +5,5 @@ namespace: network
 resources:
   - namespace.yaml
   - cluster-vars.yaml
+  - external-dns/ks.yaml
   - traefik/ks.yaml
