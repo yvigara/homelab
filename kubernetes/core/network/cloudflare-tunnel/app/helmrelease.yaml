@@ -72,15 +72,27 @@ spec:
               - hostname: "*.${CLUSTER_NAME}.${DOMAIN}"
                 service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
                 originRequest:
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
                   originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
+                  tcpKeepAlive: 7200s
+                  matchSNItoHost: true
               - hostname: "${REGION}.${ENVIRONMENT}.${DOMAIN}"
                 service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
                 originRequest:
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
                   originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
+                  tcpKeepAlive: 7200s
+                  matchSNItoHost: true
               - hostname: "*.${REGION}.${ENVIRONMENT}.${DOMAIN}"
                 service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
                 originRequest:
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
                   originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
+                  tcpKeepAlive: 7200s
+                  matchSNItoHost: true
               - service: http_status:404
     persistence:
       config-file:
