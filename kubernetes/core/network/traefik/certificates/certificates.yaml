@@ -13,3 +13,5 @@ spec:
     - "*.${CLUSTER_NAME}.${DOMAIN}"
     - "${REGION}.${ENVIRONMENT}.${DOMAIN}"
     - "*.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+    - "int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+    - "*.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
