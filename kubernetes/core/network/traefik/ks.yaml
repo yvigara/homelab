@@ -38,6 +38,7 @@ kind: Kustomization
 metadata:
   name: traefik-dashboard
 spec:
+  targetNamespace: network
   dependsOn:
     - name: traefik
   path: ./kubernetes/core/network/traefik/dashboard
