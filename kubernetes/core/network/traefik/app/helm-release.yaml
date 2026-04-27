@@ -78,6 +78,12 @@ spec:
       - "--providers.kubernetescrd.allowexternalnameservices=true"
     ports:
       websecure:
+        port: 443
+        exposedPort: 443
+        http:
+          tls:
+            enabled: true
+            options: "default"
         http3:
           enabled: true
     service:
