@@ -21,6 +21,7 @@ spec:
             env:
               NO_AUTOUPDATE: true
               TUNNEL_METRICS: 0.0.0.0:8080
+              TUNNEL_TRANSPORT_PROTOCOL: auto
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
@@ -69,26 +70,17 @@ spec:
           config.yaml: |-
             ingress:
               - hostname: "*.${CLUSTER_NAME}.${DOMAIN}"
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
-                  tcpKeepAlive: 7200s
                 service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
+                originRequest:
+                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
               - hostname: "${REGION}.${ENVIRONMENT}.${DOMAIN}"
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
-                  tcpKeepAlive: 7200s
                 service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
+                originRequest:
+                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
               - hostname: "*.${REGION}.${ENVIRONMENT}.${DOMAIN}"
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
-                  tcpKeepAlive: 7200s
                 service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
+                originRequest:
+                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
               - service: http_status:404
     persistence:
       config-file:
