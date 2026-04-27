@@ -74,7 +74,7 @@ spec:
                 originRequest:
                   http2Origin: true
                   keepAliveTimeout: 3600s
-                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
+                  originServerName: tun-${CLUSTER_NAME}.${DOMAIN}
                   tcpKeepAlive: 7200s
                   matchSNItoHost: true
                   noTLSVerify: true
@@ -83,7 +83,7 @@ spec:
                 originRequest:
                   http2Origin: true
                   keepAliveTimeout: 3600s
-                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
+                  originServerName: tun-${CLUSTER_NAME}.${DOMAIN}
                   tcpKeepAlive: 7200s
                   matchSNItoHost: true
                   noTLSVerify: true
@@ -92,7 +92,7 @@ spec:
                 originRequest:
                   http2Origin: true
                   keepAliveTimeout: 3600s
-                  originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
+                  originServerName: tun-${CLUSTER_NAME}.${DOMAIN}
                   tcpKeepAlive: 7200s
                   matchSNItoHost: true
                   noTLSVerify: true

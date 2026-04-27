@@ -5,7 +5,7 @@ metadata:
   name: cloudflare-tunnel
 spec:
   endpoints:
-    - dnsName: tun.${CLUSTER_NAME}.${DOMAIN}
+    - dnsName: tun-${CLUSTER_NAME}.${DOMAIN}
       recordType: CNAME
       targets:
         - ${CF_TUNNEL_ID}.cfargotunnel.com
