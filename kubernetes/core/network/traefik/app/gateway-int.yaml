@@ -2,8 +2,6 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: traefik-gateway-int
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
   labels:
     app.kubernetes.io/instance: traefik-network
     app.kubernetes.io/name: traefik
