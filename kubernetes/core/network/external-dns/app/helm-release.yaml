@@ -23,6 +23,7 @@ spec:
             key: CF_API_TOKEN
     extraArgs:
       - --cloudflare-dns-records-per-page=1000
+      - --cloudflare-proxied
     registry: txt
     txtPrefix: k8s.
     txtOwnerId: "${CLUSTER_NAME}"
@@ -50,4 +51,4 @@ spec:
       limits:
         memory: 250Mi
     podAnnotations:
-      secret.reloader.stakater.com/reload: cloudflare
+      secret.reloader.stakater.com/reload: cloudflare-secret

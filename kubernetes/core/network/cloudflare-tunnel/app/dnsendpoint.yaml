@@ -9,9 +9,6 @@ spec:
       recordType: CNAME
       targets:
         - ${CF_TUNNEL_ID}.cfargotunnel.com
-      providerSpecific:
-        - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
-          value: "true"
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/externaldns.k8s.io/dnsendpoint_v1alpha1.json
 apiVersion: externaldns.k8s.io/v1alpha1
@@ -24,3 +21,6 @@ spec:
       recordType: A
       targets:
         - ${LB_INT_IP}
+      providerSpecific:
+        - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
+          value: "false"
