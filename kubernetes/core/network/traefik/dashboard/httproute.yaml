@@ -21,7 +21,7 @@ metadata:
   namespace: network
 spec:
   hostnames:
-    - "traefik.${SECRET_PUBLIC_DOMAIN}"
+    - "traefik.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
