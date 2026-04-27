@@ -85,3 +85,8 @@ spec:
         metallb.io/loadBalancerIPs: ${LB_INT_IP}
       spec:
         externalTrafficPolicy: Cluster
+    logs:
+      general:
+        level: "INFO"
+      access:
+        enabled: true
