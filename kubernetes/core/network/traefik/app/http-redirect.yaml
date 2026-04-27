@@ -6,7 +6,7 @@ metadata:
   namespace: networking
 spec:
   parentRefs:
-    - name: traefik-gateway
+    - name: traefik-public
       namespace: network
       sectionName: http
   rules:

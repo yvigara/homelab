@@ -1,7 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: traefik-gateway-int
+  name: traefik-private
   annotations:
     external-dns.alpha.kubernetes.io/target: int.${CLUSTER_NAME}.${DOMAIN}
   labels:

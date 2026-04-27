@@ -54,6 +54,7 @@ spec:
         # This option currently enables support for TCPRoute and TLSRoute.
         experimentalChannel: true
     gateway:
+      name: traefik-public
       annotations:
         external-dns.alpha.kubernetes.io/target: "tun.${CLUSTER_NAME}.${DOMAIN}"
       listeners:

@@ -10,7 +10,7 @@ spec:
   hostnames:
     - "flux-webhook.${CLUSTER_NAME}.${DOMAIN}"
   parentRefs:
-    - name: traefik-gateway
+    - name: traefik-public
       namespace: network
       sectionName: websecure
   rules:
