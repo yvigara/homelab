@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-dashboard
+spec:
+  selector:
+    app.kubernetes.io/instance: traefik-network
+    app.kubernetes.io/name: traefik
+  type: ClusterIP
+  ports:
+    - name: dashboard
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+# switch to httproute
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: traefik-dashboard
+  namespace: network
+spec:
+  hostnames:
+    - "traefik.${SECRET_PUBLIC_DOMAIN}"
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: traefik-gateway
+      namespace: network
+      sectionName: websecure
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: traefik-dashboard
+          namespace: network
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /dashboard/
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: traefik-dashboard
+          namespace: network
+          port: 80

@@ -17,13 +17,30 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: cluster-apps-traefik-certificates
-  namespace: flux-system
+  name: traefik-certificates
 spec:
   targetNamespace: network
   dependsOn:
     - name: traefik
   path: ./kubernetes/core/network/traefik/certificates
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 30m
+  retryInterval: 1m
+  timeout: 3m
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: traefik-dashboard
+spec:
+  dependsOn:
+    - name: traefik
+  path: ./kubernetes/core/network/traefik/dashboard
   prune: true
   sourceRef:
     kind: GitRepository
