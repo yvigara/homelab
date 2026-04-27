@@ -77,6 +77,7 @@ spec:
                   originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
                   tcpKeepAlive: 7200s
                   matchSNItoHost: true
+                  noTLSVerify: true
               - hostname: "${REGION}.${ENVIRONMENT}.${DOMAIN}"
                 service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
                 originRequest:
@@ -85,6 +86,7 @@ spec:
                   originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
                   tcpKeepAlive: 7200s
                   matchSNItoHost: true
+                  noTLSVerify: true
               - hostname: "*.${REGION}.${ENVIRONMENT}.${DOMAIN}"
                 service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
                 originRequest:
@@ -93,6 +95,7 @@ spec:
                   originServerName: tun.${CLUSTER_NAME}.${DOMAIN}
                   tcpKeepAlive: 7200s
                   matchSNItoHost: true
+                  noTLSVerify: true
               - service: http_status:404
     persistence:
       config-file:
