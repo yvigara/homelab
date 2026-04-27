@@ -32,7 +32,7 @@ spec:
       default:
         minVersion: VersionTLS12
         maxVersion: VersionTLS13
-        sniStrict: true
+        sniStrict: false
     rbac:
       enabled: true
     ingressClass:
