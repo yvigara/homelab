@@ -3,16 +3,12 @@ kind: Gateway
 metadata:
   name: traefik-gateway-int
   annotations:
-    external-dns.alpha.kubernetes.io/target: &hostname "int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
     cert-manager.io/cluster-issuer: letsencrypt-prod
   labels:
     app.kubernetes.io/instance: traefik-network
     app.kubernetes.io/name: traefik
 spec:
   gatewayClassName: traefik
-  infrastructure:
-    annotations:
-      external-dns.alpha.kubernetes.io/hostname: *hostname
   listeners:
     - allowedRoutes:
         namespaces:
