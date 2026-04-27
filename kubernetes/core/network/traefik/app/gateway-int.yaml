@@ -2,6 +2,8 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: traefik-gateway-int
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
   labels:
     app.kubernetes.io/instance: traefik-network
     app.kubernetes.io/name: traefik
