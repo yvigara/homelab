@@ -7,17 +7,21 @@ metadata:
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   hostnames:
-    - "flux-webhook.${CLUSTER_NAME}.${DOMAIN}"
+    - "flux-webhook-${CLUSTER_NAME}.${DOMAIN}"
   parentRefs:
-    - name: traefik-public
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: traefik-public
       namespace: network
       sectionName: websecure
   rules:
-    - backendRefs:
-        - name: webhook-receiver
-          namespace: flux-system
-          port: 80
-      matches:
+    - matches:
         - path:
             type: PathPrefix
             value: /hook/
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: webhook-receiver
+          namespace: flux-system
+          port: 80
