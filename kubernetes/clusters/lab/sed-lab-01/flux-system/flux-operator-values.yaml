@@ -15,5 +15,3 @@ web:
         username: flux
         groups:
           - flux-web-admin
-  networkPolicy:
-    create: false
