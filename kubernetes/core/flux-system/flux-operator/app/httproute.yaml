@@ -15,7 +15,13 @@ spec:
       namespace: network
       sectionName: websecure
   rules:
-    - backendRefs:
-        - name: flux-operator
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: flux-operator
           namespace: flux-system
           port: 9080
