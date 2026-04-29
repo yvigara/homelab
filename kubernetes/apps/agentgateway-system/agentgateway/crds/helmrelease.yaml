@@ -8,7 +8,3 @@ spec:
   chartRef:
     kind: OCIRepository
     name: agentgateway-crds
-  upgrade:
-    strategy:
-      name: RetryOnFailure
-      retryInterval: 5m
