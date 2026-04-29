@@ -12,6 +12,6 @@ web:
       anonymous:
         username: flux
         groups:
-          - flux-admin
+          - flux-web-admin
   networkPolicy:
     create: false
