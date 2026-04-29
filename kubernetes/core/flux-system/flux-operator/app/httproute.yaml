@@ -9,19 +9,11 @@ spec:
   hostnames:
     - "flux.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: traefik-private
+    - name: traefik-private
       namespace: network
       sectionName: websecure
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - group: ""
-          kind: Service
-          name: flux-operator
+    - backendRefs:
+        - name: flux-operator
           namespace: flux-system
           port: 9080
