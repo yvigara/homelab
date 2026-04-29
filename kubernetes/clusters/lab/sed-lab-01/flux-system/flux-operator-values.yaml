@@ -3,10 +3,12 @@ multitenancy:
 commonAnnotations:
   cluster-region: ${CLUSTER_REGION}
   cluster-env: ${CLUSTER_ENV}
+  reloader.stakater.com/auto: "true"
 serviceMonitor:
   create: false
 web:
   config:
+    baseURL: https://flux.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
     authentication:
       type: Anonymous
       anonymous:
