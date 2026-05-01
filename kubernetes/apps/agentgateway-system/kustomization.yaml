@@ -4,4 +4,5 @@ kind: Kustomization
 namespace: agentgateway-system
 resources:
   - ./namespace.yaml
+  - ./cluster-vars.yaml
   - ./agentgateway/ks.yaml
