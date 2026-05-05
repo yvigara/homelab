@@ -1,0 +1,70 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nats-server-tls
+spec:
+  secretName: nats-server-tls
+  duration: 2160h # 90 days
+  renewBefore: 240h # 10 days
+  issuerRef:
+    name: tenant-ca
+    kind: Issuer
+  usages:
+    - signing
+    - key encipherment
+    - server auth
+  commonName: nats.nats-system.svc.cluster.local
+  dnsNames:
+    - nats
+    - nats.nats-system.svc
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nats-cluster-tls
+spec:
+  secretName: nats-cluster-tls
+  duration: 2160h # 90 days
+  renewBefore: 240h # 10 days
+  issuerRef:
+    name: ca-issuer
+    kind: ClusterIssuer
+  usages:
+    - signing
+    - key encipherment
+    - server auth
+    - client auth
+  commonName: "*.nats-headless.nats-system.svc.cluster.local"
+  dnsNames:
+    - "*.nats-headless"
+    - "*.nats-headless.nats-system.svc"
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nats-box-tls
+spec:
+  secretName: nats-box-tls
+  duration: 2160h # 90 days
+  renewBefore: 240h # 10 days
+  issuerRef:
+    name: ca-issuer
+    kind: ClusterIssuer
+  commonName: nats-box
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nats-websocket
+spec:
+  secretName: nats-websocket-tls
+  duration: 2160h # 90 days
+  renewBefore: 240h # 10 days
+  issuerRef:
+    name: ca-issuer
+    kind: ClusterIssuer
+  commonName: nats.nats-system.svc.cluster.local
+  dnsNames:
+    - nats
+    - nats.nats-system.svc
+    - nats.${REGION}.${ENVIRONMENT}.${DOMAIN}

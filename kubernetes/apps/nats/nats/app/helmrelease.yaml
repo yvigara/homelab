@@ -1,0 +1,113 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nats
+spec:
+  releaseName: nats
+  chart:
+    spec:
+      # renovate: registryUrl=https://nats-io.github.io/k8s/helm/charts/
+      chart: nats
+      version: 2.12.6
+      sourceRef:
+        kind: HelmRepository
+        name: nats-charts
+  interval: 10m0s
+  values:
+    # reference a common CA Certificate or Bundle in all nats config `tls` blocks and nats-box contexts
+    # note: `tls.verify` still must be set in the appropriate nats config `tls` blocks to require mTLS
+    tlsCA:
+      enabled: false
+      # set configMapName in order to mount an existing configMap to dir
+      configMapName: # set secretName in order to mount an existing secretName to dir
+      secretName: # directory to mount the configMap or secret to
+      dir: /etc/nats-ca-cert
+      # key in the configMap or secret that contains the CA Certificate or Bundle
+      key: ca.crt
+    ################################################################################
+    # NATS Stateful Set and associated resources
+    ################################################################################
+
+    ############################################################
+    # NATS config
+    ############################################################
+    config:
+      cluster:
+        enabled: false
+        port: 6222
+        # must be 2 or higher when jetstream is enabled
+        replicas: 3
+        tls:
+          enabled: false
+          # set secretName in order to mount an existing secret to dir
+          secretName:
+          dir: /etc/nats-certs/cluster
+          cert: tls.crt
+          key: tls.key
+      jetstream:
+        enabled: true
+        fileStore:
+          enabled: true
+          dir: /data
+          ############################################################
+          # stateful set -> volume claim templates -> jetstream pvc
+          ############################################################
+          pvc:
+            enabled: true
+            size: 10Gi
+            storageClassName: local-path
+          # defaults to the PVC size
+          maxSize:
+        memoryStore:
+          enabled: true
+          # ensure that container has a sufficient memory limit greater than maxSize
+          maxSize: 1Gi
+      nats:
+        port: 4222
+        tls:
+          enabled: false
+          # set secretName in order to mount an existing secret to dir
+          secretName:
+          dir: /etc/nats-certs/nats
+          cert: tls.crt
+          key: tls.key
+      leafnodes:
+        enabled: false
+        port: 7422
+        tls:
+          enabled: false
+          # set secretName in order to mount an existing secret to dir
+          secretName:
+          dir: /etc/nats-certs/leafnodes
+          cert: tls.crt
+          key: tls.key
+      websocket:
+        enabled: true
+        port: 8080
+        tls:
+          enabled: false
+          # set secretName in order to mount an existing secret to dir
+          secretName:
+          dir: /etc/nats-certs/websocket
+          cert: tls.crt
+          key: tls.key
+    reloader:
+      enabled: true
+    ############################################################
+    # other nats extension points
+    ############################################################
+
+    # stateful set -> pod template
+    podTemplate:
+      # adds a hash of the ConfigMap as a pod annotation
+      # this will cause the StatefulSet to roll when the ConfigMap is updated
+      # set to true to force pod rollouts on config changes instead of using the reloader for hot updates
+      configChecksumAnnotation: true
+    # pod disruption budget
+    podDisruptionBudget:
+      enabled: true
+    serviceAccount:
+      enabled: true
+    natsBox:
+      serviceAccount:
+        enabled: true
