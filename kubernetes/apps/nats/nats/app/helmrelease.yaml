@@ -74,7 +74,7 @@ spec:
         port: 8080
         tls:
           enabled: true
-          secretName: nats-websocket
+          secretName: nats-websocket-tls
     reloader:
       enabled: true
     ############################################################
