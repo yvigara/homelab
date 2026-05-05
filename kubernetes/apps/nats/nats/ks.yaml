@@ -4,7 +4,7 @@ kind: Kustomization
 metadata:
   name: nats
 spec:
-  targetNamespace: agentgateway-system
+  targetNamespace: nats-system
   path: ./kubernetes/apps/nats/nats/app
   prune: true
   sourceRef:
