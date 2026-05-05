@@ -38,12 +38,8 @@ spec:
         # must be 2 or higher when jetstream is enabled
         replicas: 3
         tls:
-          enabled: false
-          # set secretName in order to mount an existing secret to dir
-          secretName:
-          dir: /etc/nats-certs/cluster
-          cert: tls.crt
-          key: tls.key
+          enabled: true
+          secretName: nats-cluster-tls
       jetstream:
         enabled: true
         fileStore:
@@ -65,32 +61,20 @@ spec:
       nats:
         port: 4222
         tls:
-          enabled: false
-          # set secretName in order to mount an existing secret to dir
-          secretName:
-          dir: /etc/nats-certs/nats
-          cert: tls.crt
-          key: tls.key
+          enabled: true
+          secretName: nats-server-tls
       leafnodes:
         enabled: false
         port: 7422
         tls:
           enabled: false
-          # set secretName in order to mount an existing secret to dir
           secretName:
-          dir: /etc/nats-certs/leafnodes
-          cert: tls.crt
-          key: tls.key
       websocket:
         enabled: true
         port: 8080
         tls:
-          enabled: false
-          # set secretName in order to mount an existing secret to dir
-          secretName:
-          dir: /etc/nats-certs/websocket
-          cert: tls.crt
-          key: tls.key
+          enabled: true
+          secretName: nats-websocket
     reloader:
       enabled: true
     ############################################################
