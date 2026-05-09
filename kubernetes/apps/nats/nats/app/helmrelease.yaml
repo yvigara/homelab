@@ -32,6 +32,9 @@ spec:
     # NATS config
     ############################################################
     config:
+      container:
+        image:
+          tag: 2.14.0-alpine
       cluster:
         enabled: false
         port: 6222
