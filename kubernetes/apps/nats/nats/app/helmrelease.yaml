@@ -32,9 +32,6 @@ spec:
     # NATS config
     ############################################################
     config:
-      container:
-        image:
-          tag: 2.14.0-alpine
       cluster:
         enabled: false
         port: 6222
@@ -78,6 +75,9 @@ spec:
         tls:
           enabled: true
           secretName: nats-websocket-tls
+    container:
+      image:
+        tag: 2.14.0-alpine
     reloader:
       enabled: true
     ############################################################
