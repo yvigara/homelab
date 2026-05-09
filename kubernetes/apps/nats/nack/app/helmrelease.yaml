@@ -17,6 +17,8 @@ spec:
     useLegacyNames: false
     jetstream:
       enabled: true
+      additionalArgs:
+        - --control-loop
       # NATS URL
       nats:
         url: nats://nats:4222
