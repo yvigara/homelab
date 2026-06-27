@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-mcp
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: github-mcp
+  template:
+    metadata:
+      labels:
+        app: github-mcp
+    spec:
+      containers:
+        - name: github-mcp
+          image: ghcr.io/github/github-mcp-server:latest
+          args: ["--transport", "sse", "--port", "8080"]
+          env:
+            - name: GITHUB_PERSONAL_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hermes-secret
+                  key: GITHUB_PERSONAL_ACCESS_TOKEN
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: github-mcp
+  namespace: ai
+spec:
+  selector:
+    app: github-mcp
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fetch-mcp
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fetch-mcp
+  template:
+    metadata:
+      labels:
+        app: fetch-mcp
+    spec:
+      containers:
+        - name: fetch-mcp
+          image: ghcr.io/stackloklabs/gofetch/server:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fetch-mcp
+  namespace: ai
+spec:
+  selector:
+    app: fetch-mcp
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP

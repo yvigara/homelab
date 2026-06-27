@@ -1,0 +1,30 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: github-mcp
+  namespace: ai
+spec:
+  parentRefs:
+    - name: agentgateway-proxy
+      namespace: agentgateway-system
+      sectionName: github-mcp
+  rules:
+    - backendRefs:
+        - name: github-mcp
+          port: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: fetch-mcp
+  namespace: ai
+spec:
+  parentRefs:
+    - name: agentgateway-proxy
+      namespace: agentgateway-system
+      sectionName: fetch-mcp
+  rules:
+    - backendRefs:
+        - name: fetch-mcp
+          port: 8080

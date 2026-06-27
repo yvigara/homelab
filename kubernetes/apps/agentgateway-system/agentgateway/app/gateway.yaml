@@ -12,7 +12,19 @@ spec:
   listeners:
     - protocol: HTTP
       port: 80
-      name: http
+      name: llm
+      allowedRoutes:
+        namespaces:
+          from: All
+    - protocol: HTTP
+      port: 8001
+      name: github-mcp
+      allowedRoutes:
+        namespaces:
+          from: All
+    - protocol: HTTP
+      port: 8002
+      name: fetch-mcp
       allowedRoutes:
         namespaces:
           from: All

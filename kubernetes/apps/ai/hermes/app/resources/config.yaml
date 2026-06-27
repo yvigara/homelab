@@ -1,0 +1,37 @@
+model:
+  # Set this to the actual model name available in your Ollama instance
+  # Run: curl http://<MAC_MINI_IP>:11434/api/tags to list available models
+  default: llama3.2
+  provider: ollama
+  base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local
+terminal:
+  backend: local
+  cwd: /opt/data/workspace
+  timeout: 180
+  persistent_shell: true
+memory:
+  auto_migrate: true
+  auto_summarize:
+    threshold: 50
+compression:
+  enabled: true
+  threshold: 0.5
+  target_ratio: 0.2
+  protect_last_n: 20
+group_sessions_per_user: false
+streaming:
+  enabled: false
+security:
+  redact_secrets: true
+mcp_servers:
+  github:
+    url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8001/sse
+  fetch:
+    url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local:8002/mcp
+agent:
+  max_turns: 90
+  gateway_timeout: 1800
+  restart_drain_timeout: 60
+  api_max_retries: 2
+  reasoning_effort: medium
+  tool_use_enforcement: auto

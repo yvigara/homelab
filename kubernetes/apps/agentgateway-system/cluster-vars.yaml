@@ -4,6 +4,7 @@ metadata:
   name: cluster-vars
 data:
   AG_INT_IP: ${AG_INT_IP}
+  MAC_MINI_IP: ${MAC_MINI_IP}
   CLUSTER_NAME: ${CLUSTER_NAME}
   DOMAIN: ${DOMAIN}
   ENVIRONMENT: ${ENVIRONMENT}
