@@ -54,6 +54,13 @@ spec:
             envFrom:
               - secretRef:
                   name: hermes-secret
+            probes:
+              liveness:
+                enabled: false
+              readiness:
+                enabled: false
+              startup:
+                enabled: false
             ports:
               - containerPort: 8642
                 name: http
