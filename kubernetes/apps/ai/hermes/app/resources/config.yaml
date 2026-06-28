@@ -1,0 +1,45 @@
+model:
+  default: qwen3.5:9b-mlx
+  provider: custom:k8s-ollama
+providers:
+  k8s-ollama:
+    api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama
+    default_model: qwen3.5:9b-mlx
+    models:
+      - qwen3.5:9b-mlx
+      - qwen3-embedding:4b
+    name: Ollama
+fallback_providers: []
+agent:
+  max_turns: 90
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  api_max_retries: 3
+  tool_use_enforcement: auto
+  reasoning_effort: medium
+terminal:
+  backend: local
+  cwd: /opt/data/workspace
+  timeout: 180
+  persistent_shell: true
+compression:
+  enabled: true
+  threshold: 0.5
+  target_ratio: 0.2
+  protect_last_n: 20
+memory:
+  memory_enabled: false
+  user_profile_enabled: false
+  write_approval: false
+  memory_char_limit: 2200
+  user_char_limit: 1375
+  provider: ""
+  flush_min_turns: 6
+  nudge_interval: 10
+security:
+  allow_private_urls: false
+  redact_secrets: true
+streaming:
+  enabled: false
+mcp_servers: {}
+group_sessions_per_user: false

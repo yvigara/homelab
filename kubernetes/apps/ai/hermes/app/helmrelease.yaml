@@ -1,0 +1,140 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: hermes
+  namespace: ai
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10000
+        runAsGroup: 10000
+        fsGroup: 10000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    controllers:
+      hermes:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        strategy: Recreate
+        initContainers:
+          init:
+            image:
+              repository: docker.io/library/alpine
+              tag: "3.24"
+            command:
+              - sh
+              - -c
+              - |
+                set -euo pipefail
+                mkdir -p /opt/data
+                cp /run/config/config.yaml /opt/data/config.yaml
+                chown 10000:10000 /opt/data/config.yaml
+        containers:
+          app:
+            image:
+              repository: docker.io/nousresearch/hermes-agent
+              tag: v2026.6.19@sha256:9f367c7756ef087661a361536a89f438d57a122b958dc23d82d456b1433e6e9e
+            args:
+              - "gateway"
+              - "run"
+            env:
+              TZ: UTC
+              API_SERVER_ENABLED: true
+              API_SERVER_HOST: 0.0.0.0
+              API_SERVER_PORT: &api_port 8642
+              HERMES_HOME: /opt/data
+              HOME: /opt/data
+              TERM: xterm-256color
+            envFrom:
+              - secretRef:
+                  name: hermes-secret
+            ports:
+              - containerPort: 8642
+                name: http
+                protocol: TCP
+            resources:
+              requests:
+                cpu: 100m
+                memory: 1Gi
+              limits:
+                memory: 4Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                add: ["CHOWN"]
+                drop: ["ALL"]
+          dashboard:
+            image:
+              repository: docker.io/nousresearch/hermes-agent
+              tag: v2026.6.19@sha256:9f367c7756ef087661a361536a89f438d57a122b958dc23d82d456b1433e6e9e
+            args:
+              - dashboard
+              - --host
+              - "0.0.0.0"
+              - --insecure
+            env:
+              TZ: UTC
+              GATEWAY_HEALTH_URL: http://localhost:8642
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+            ports:
+              - containerPort: 9119
+                name: http
+                protocol: TCP
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 700Mi
+    service:
+      app:
+        controller: hermes
+        ports:
+          http:
+            port: *api_port
+      dashboard:
+        controller: hermes
+        ports:
+          http:
+            port: 9119
+    route:
+      dashboard:
+        hostnames:
+          - "hermes.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+        parentRefs:
+          - name: traefik-private
+            namespace: network
+            sectionName: websecure
+        rules:
+          - backendRefs:
+              - identifier: dashboard
+                port: http
+    persistence:
+      data:
+        existingClaim: hermes
+        globalMounts:
+          - path: /opt/data
+      config:
+        type: configMap
+        name: hermes-configmap
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/config.yaml
+                subPath: config.yaml
+      tmpfs:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+            subPath: tmp

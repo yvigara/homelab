@@ -3,4 +3,8 @@ kind: ConfigMap
 metadata:
   name: cluster-vars
 data:
+  CLUSTER_NAME: ${CLUSTER_NAME}
+  DOMAIN: ${DOMAIN}
+  ENVIRONMENT: ${ENVIRONMENT}
+  REGION: ${CLUSTER_REGION}
   OLLAMA_SRV1_IP: ${OLLAMA_SRV1_IP}
