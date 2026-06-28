@@ -51,9 +51,9 @@ spec:
               HERMES_HOME: /opt/data
               HOME: /opt/data
               TERM: xterm-256color
-            envFrom:
-              - secretRef:
-                  name: hermes-secret
+            # envFrom:
+            #   - secretRef:
+            #       name: hermes-secret
             probes:
               liveness:
                 enabled: false
@@ -63,7 +63,7 @@ spec:
                 enabled: false
             ports:
               - containerPort: 8642
-                name: http
+                name: app
                 protocol: TCP
             resources:
               requests:
@@ -94,7 +94,7 @@ spec:
               readOnlyRootFilesystem: false
             ports:
               - containerPort: 9119
-                name: http
+                name: dashboard
                 protocol: TCP
             resources:
               requests:
