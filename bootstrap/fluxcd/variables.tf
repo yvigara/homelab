@@ -11,6 +11,18 @@ variable "bw_project_id" {
   nullable    = false
 }
 
+variable "bw_organization_id" {
+  description = "Bitwarden SecretManager Organization ID"
+  type        = string
+  nullable    = false
+}
+
+variable "bgp_peer_addr" {
+  description = "BGP MetalLB peer address"
+  type        = string
+  nullable    = false
+}
+
 variable "bgp_cidr" {
   description = "BGP MetalLB reserved CIDR"
   type        = string
@@ -19,6 +31,12 @@ variable "bgp_cidr" {
 
 variable "interal_lb_ip" {
   description = "Internal LoadBalancer IP address"
+  type        = string
+  nullable    = false
+}
+
+variable "ag_lb_ip" {
+  description = "Agentgateway LoadBalancer IP address"
   type        = string
   nullable    = false
 }
@@ -47,28 +65,3 @@ variable "cluster_region" {
   nullable    = false
 }
 
-variable "git_token" {
-  description = "Git PAT for HTTPS authentication (e.g. for GitLab). Can be omitted for public repositories or when using a GitHub App."
-  sensitive   = true
-  type        = string
-  default     = ""
-}
-
-variable "github_app_id" {
-  description = "GitHub App ID."
-  type        = string
-  default     = ""
-}
-
-variable "github_app_installation_owner" {
-  description = "GitHub App Installation Owner."
-  type        = string
-  default     = ""
-}
-
-variable "github_app_pem" {
-  description = "The contents of the GitHub App private key PEM file."
-  sensitive   = true
-  type        = string
-  default     = ""
-}
