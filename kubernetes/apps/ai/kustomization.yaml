@@ -6,3 +6,4 @@ resources:
   - ./namespace.yaml
   - ./cluster-vars.yaml
   - ./agentgateway/ks.yaml
+  - ./hermes/ks.yaml
