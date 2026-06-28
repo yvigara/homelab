@@ -5,4 +5,4 @@ namespace: agentgateway-system
 resources:
   - ./namespace.yaml
   - ./cluster-vars.yaml
-  - ./agentgateway
+  - ./agentgateway/kustomization.yaml
