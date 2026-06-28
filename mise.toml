@@ -4,7 +4,8 @@ fnox-env = "https://github.com/jdx/mise-env-fnox"
 [tools]
 age = "1.3.1"
 k3sup = "0.13.12"
-fnox = "1.21.0"
+fnox = "1.28.0"
+bitwarden-secrets-manager = "2.1.0"
 
 [env]
 _.fnox-env = { tools = true }
@@ -17,5 +18,8 @@ TF_VAR_cluster_token = { value = "{{ env.CLUSTER_TOKEN }}", tools = true }
 TF_VAR_matchbox_url = { value = "{{ env.MATCHBOX_URL }}", tools = true }
 TF_VAR_domain = { value = "{{ env.CLOUDFLARE_DOMAIN }}", tools = true }
 TF_VAR_bgp_cidr = { value = "{{ env.BGP_CIDR }}", tools = true }
+TF_VAR_bgp_peer_addr = { value = "{{ env.BGP_PEER_ADDR }}", tools = true }
 TF_VAR_interal_lb_ip = { value = "{{ env.INT_LB_IP }}", tools = true }
+TF_VAR_ag_lb_ip = { value = "192.168.2.130", tools = true }
 TF_VAR_bw_project_id = { value = "{{ env.BW_PROJECT_ID }}", tools = true }
+TF_VAR_bw_organization_id = { value = "{{ env.BW_ORGANIZATION_ID }}", tools = true }
