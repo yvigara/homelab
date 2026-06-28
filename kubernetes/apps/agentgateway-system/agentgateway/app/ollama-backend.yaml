@@ -1,25 +1,18 @@
-apiVersion: v1
-kind: Service
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
 metadata:
-  name: ollama-mac-mini
+  name: ollama
   namespace: agentgateway-system
 spec:
-  type: ClusterIP
-  ports:
-    - port: 11434
-      targetPort: 11434
-      protocol: TCP
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: ollama-mac-mini
-  namespace: agentgateway-system
-subsets:
-  - addresses:
-      - ip: ${MAC_MINI_IP}
-    ports:
-      - port: 11434
+  ai:
+    provider:
+      host: "${MAC_MINI_IP}"
+      port: 11434
+      custom:
+        formats:
+          - type: Completions
+          - type: Responses
+          - type: Embeddings
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -33,5 +26,6 @@ spec:
       sectionName: llm
   rules:
     - backendRefs:
-        - name: ollama-mac-mini
-          port: 11434
+        - name: ollama
+          kind: AgentgatewayBackend
+          group: agentgateway.dev
