@@ -11,6 +11,7 @@ spec:
   values:
     defaultPodOptions:
       securityContext:
+        fsGroup: 10000
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: { type: RuntimeDefault }
     controllers:
@@ -28,56 +29,36 @@ spec:
               - -c
               - |
                 set -euo pipefail
-                mkdir -p /opt/data
                 cp /run/config/config.yaml /opt/data/config.yaml
                 chown 10000:10000 /opt/data/config.yaml
         containers:
           app:
-            image:
-              repository: docker.io/nousresearch/hermes-agent
+            image: &image
+              repository: nousresearch/hermes-agent
               tag: v2026.6.19@sha256:9f367c7756ef087661a361536a89f438d57a122b958dc23d82d456b1433e6e9e
             args:
               - "gateway"
               - "run"
-              - "--no-supervise"
             env:
               TZ: UTC
-              API_SERVER_ENABLED: true
-              API_SERVER_HOST: 0.0.0.0
-              API_SERVER_PORT: &api_port 8642
               HERMES_HOME: /opt/data
               HOME: /opt/data
               TERM: xterm-256color
-            # envFrom:
-            #   - secretRef:
-            #       name: hermes-secret
-            probes:
-              liveness:
-                enabled: false
-              readiness:
-                enabled: false
-              startup:
-                enabled: false
+            envFrom:
+              - secretRef:
+                  name: hermes-secret
             ports:
-              - containerPort: 8642
-                name: app
+              - containerPort: &app_port 8642
+                name: http
                 protocol: TCP
             resources:
               requests:
                 cpu: 100m
                 memory: 1Gi
               limits:
-                memory: 4Gi
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false
-              capabilities:
-                add: ["CHOWN"]
-                drop: ["ALL"]
+                memory: 2Gi
           dashboard:
-            image:
-              repository: docker.io/nousresearch/hermes-agent
-              tag: v2026.6.19@sha256:9f367c7756ef087661a361536a89f438d57a122b958dc23d82d456b1433e6e9e
+            image: *image
             args:
               - dashboard
               - --host
@@ -104,7 +85,7 @@ spec:
         controller: hermes
         ports:
           http:
-            port: *api_port
+            port: *app_port
       dashboard:
         controller: hermes
         ports:
