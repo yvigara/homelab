@@ -1,15 +1,16 @@
 model:
   default: qwen3.5:9b-mlx
-  provider: k8s-ollama
-providers:
-  k8s-ollama:
-    api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama
+  provider: custom:k8s-ollama
+custom_providers:
+  - name: k8s-ollama
+    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama
     default_model: qwen3.5:9b-mlx
     models:
       - qwen3.5:9b-mlx
       - qwen3-embedding:4b
-    name: Ollama
 fallback_providers: []
+toolsets:
+  - hermes-cli
 agent:
   max_turns: 90
   gateway_timeout: 1800
@@ -39,6 +40,8 @@ memory:
 security:
   allow_private_urls: false
   redact_secrets: true
+privacy:
+  redact_pii: true
 streaming:
   enabled: false
 mcp_servers: {}

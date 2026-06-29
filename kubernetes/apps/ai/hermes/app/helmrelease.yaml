@@ -33,7 +33,7 @@ spec:
                 chown 10000:10000 /opt/data/config.yaml
         containers:
           app:
-            image: &image
+            image:
               repository: nousresearch/hermes-agent
               tag: v2026.6.19@sha256:9f367c7756ef087661a361536a89f438d57a122b958dc23d82d456b1433e6e9e
             args:
@@ -45,7 +45,11 @@ spec:
               API_SERVER_ENABLED: true
               API_SERVER_HOST: 0.0.0.0
               API_SERVER_PORT: &app_port 8642
+              HERMES_GID: "1000"
               HERMES_HOME: /opt/data
+              HERMES_UID: "1000"
+              HERMES_DASHBOARD: "1"
+              HERMES_DASHBOARD_INSECURE: "1"
               HOME: /opt/data
               TERM: xterm-256color
             envFrom:
@@ -55,7 +59,10 @@ spec:
                   name: hermes-secret
             ports:
               - containerPort: *app_port
-                name: http
+                name: gateway
+                protocol: TCP
+              - containerPort: &dashboard_port 9119
+                name: dashboard
                 protocol: TCP
             resources:
               requests:
@@ -63,43 +70,14 @@ spec:
                 memory: 1Gi
               limits:
                 memory: 2Gi
-          dashboard:
-            image: *image
-            args:
-              - dashboard
-              - --host
-              - "0.0.0.0"
-              - --insecure
-            env:
-              TZ: ${TIMEZONE}
-              GATEWAY_HEALTH_URL: http://localhost:8642
-            envFrom:
-              - secretRef:
-                  name: hermes-api
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false
-            ports:
-              - containerPort: 9119
-                name: dashboard
-                protocol: TCP
-            resources:
-              requests:
-                cpu: 50m
-                memory: 128Mi
-              limits:
-                memory: 700Mi
     service:
       app:
         controller: hermes
         ports:
-          http:
+          gateway:
             port: *app_port
-      dashboard:
-        controller: hermes
-        ports:
-          http:
-            port: 9119
+          dashboard:
+            port: *dashboard_port
     route:
       dashboard:
         hostnames:
@@ -110,8 +88,8 @@ spec:
             sectionName: websecure
         rules:
           - backendRefs:
-              - identifier: dashboard
-                port: http
+              - identifier: app
+                port: dashboard
     persistence:
       data:
         existingClaim: hermes
@@ -126,8 +104,13 @@ spec:
             init:
               - path: /run/config/config.yaml
                 subPath: config.yaml
-      tmpfs:
+      run:
+        type: emptyDir
+        advancedMounts:
+          hermes:
+            app:
+              - path: /run
+      tmp:
         type: emptyDir
         globalMounts:
           - path: /tmp
-            subPath: tmp
