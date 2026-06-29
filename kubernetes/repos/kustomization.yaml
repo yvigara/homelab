@@ -6,6 +6,7 @@ resources:
   - ./bitwarden-sdk-server.yaml
   - ./cert-manager.yaml
   - ./cnpg.yaml
+  - ./dex.yaml
   - ./external-dns.yaml
   - ./external-secrets.yaml
   - ./grafana.yaml
