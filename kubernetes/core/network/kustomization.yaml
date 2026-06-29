@@ -6,6 +6,8 @@ resources:
   - ./namespace.yaml
   - ./cluster-vars.yaml
   - ./cluster-secrets.yaml
+  - ./externalsecret.yaml
   - ./external-dns/ks.yaml
   - ./traefik/ks.yaml
   - ./cloudflare-tunnel/ks.yaml
+  - ./dex/ks.yaml

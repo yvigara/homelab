@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dex
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: dex
+      version: 0.24.1
+      sourceRef:
+        kind: HelmRepository
+        name: dex-chart
+        namespace: flux-system
+      interval: 10m
+  values:
+    image:
+      repository: dexidp/dex
+      tag: v2.45.1
+    config:
+      issuer: "https://dex.${DOMAIN}"
+      storage:
+        type: kubernetes
+        config:
+          inCluster: true
+      oauth2:
+        alwaysShowLoginScreen: false
+        responseTypes: ["code", "token", "id_token"]
+        skipApprovalScreen: true
+      web:
+        http: 0.0.0.0:5556
+      frontend:
+        theme: "tectonic"
+        issuer: "Celestio SSO"
+        issuerUrl: "https://dex.${DOMAIN}"
+        logoUrl: https://avatars.githubusercontent.com/u/72014580?s=200&v=4
+      expiry:
+        signingKeys: "6h"
+        idTokens: "24h"
+      logger:
+        level: debug
+        format: json
+      httpRoute:
+        enabled: true
+        hostnames:
+          - "dex.${DOMAIN}"
+        parentRefs:
+          - name: traefik-public
+            namespace: network
+            sectionName: websecure
+      # Disable default email auth and only use oauth2 providers configured as connectors
+      enablePasswordDB: false
+      # Remember you can have multiple connectors of the same 'type' (with different 'id's)
+      # If you need e.g. logins with groups for two different Microsoft 'tenants'
+      connectors:
+        # GitHub configure 'OAuth Apps' -> 'New OAuth App', add callback URL
+        # https://github.com/settings/developers
+        - type: github
+          id: github
+          name: GitHub
+          config:
+            clientID: "${DEX_GITHUB_CLIENT_ID}"
+            clientSecret: "${DEX_GITHUB_CLIENT_SECRET}"
+            redirectURI: "https://dex.${DOMAIN}/callback"
+            # 'orgs' can be used to map groups from Github
+            # https://github.com/coreos/dex/blob/master/Documentation/connectors/github.md
+            orgs:
+              - name: celest-io
