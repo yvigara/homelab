@@ -46,3 +46,6 @@ streaming:
   enabled: false
 mcp_servers: {}
 group_sessions_per_user: false
+gateway:
+  message_timestamps:
+    enabled: true
