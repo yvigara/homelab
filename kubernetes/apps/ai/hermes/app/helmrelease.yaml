@@ -50,11 +50,11 @@ spec:
               HERMES_UID: "1000"
               HERMES_DASHBOARD: "1"
               HERMES_DASHBOARD_INSECURE: "1"
+              WHATSAPP_ENABLED: true
+              WHATSAPP_MODE: self-chat
               HOME: /opt/data
               TERM: xterm-256color
             envFrom:
-              - secretRef:
-                  name: hermes-api
               - secretRef:
                   name: hermes-secret
             ports:
