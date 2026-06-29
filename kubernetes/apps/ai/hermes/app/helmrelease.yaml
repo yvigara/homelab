@@ -39,16 +39,22 @@ spec:
             args:
               - "gateway"
               - "run"
+              - "--no-supervise"
             env:
-              TZ: UTC
+              TZ: ${TIMEZONE}
+              API_SERVER_ENABLED: true
+              API_SERVER_HOST: 0.0.0.0
+              API_SERVER_PORT: &app_port 8642
               HERMES_HOME: /opt/data
               HOME: /opt/data
               TERM: xterm-256color
             envFrom:
               - secretRef:
+                  name: hermes-api
+              - secretRef:
                   name: hermes-secret
             ports:
-              - containerPort: &app_port 8642
+              - containerPort: *app_port
                 name: http
                 protocol: TCP
             resources:
@@ -65,8 +71,11 @@ spec:
               - "0.0.0.0"
               - --insecure
             env:
-              TZ: UTC
+              TZ: ${TIMEZONE}
               GATEWAY_HEALTH_URL: http://localhost:8642
+            envFrom:
+              - secretRef:
+                  name: hermes-api
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false

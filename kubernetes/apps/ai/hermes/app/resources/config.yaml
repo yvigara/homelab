@@ -1,6 +1,6 @@
 model:
   default: qwen3.5:9b-mlx
-  provider: custom:k8s-ollama
+  provider: k8s-ollama
 providers:
   k8s-ollama:
     api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama
