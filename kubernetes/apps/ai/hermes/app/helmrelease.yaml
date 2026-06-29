@@ -39,7 +39,6 @@ spec:
             args:
               - "gateway"
               - "run"
-              - "--no-supervise"
             env:
               TZ: ${TIMEZONE}
               API_SERVER_ENABLED: true
