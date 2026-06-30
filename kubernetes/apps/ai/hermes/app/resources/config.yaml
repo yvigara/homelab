@@ -49,3 +49,9 @@ group_sessions_per_user: false
 gateway:
   message_timestamps:
     enabled: true
+dashboard:
+  oauth:
+    provider: self-hosted
+    self_hosted:
+      issuer: https://dex.${DOMAIN}
+      client_id: hermes-dashboard
