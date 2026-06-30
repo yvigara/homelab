@@ -68,14 +68,17 @@ spec:
     - # Add Kustomization defaults for all child Kustomizations
       patch: |
         - op: add
-          path: spec.postBuild.substituteFrom
+          path: spec.postBuild.substituteFrom.0
           value:
-            - kind: ConfigMap
-              name: cluster-vars
-              optional: true
-            - kind: Secret
-              name: cluster-secrets
-              optional: true
+            kind: ConfigMap
+            name: cluster-vars
+            optional: true
+        - op: add
+          path: spec.postBuild.substituteFrom.1
+          value:
+            kind: Secret
+            name: cluster-secrets
+            optional: true
       target:
         group: kustomize.toolkit.fluxcd.io
         kind: Kustomization
