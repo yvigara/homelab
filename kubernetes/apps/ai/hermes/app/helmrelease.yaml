@@ -51,6 +51,8 @@ spec:
               HERMES_DASHBOARD_INSECURE: "1"
               WHATSAPP_ENABLED: true
               WHATSAPP_MODE: self-chat
+              HERMES_DASHBOARD_OIDC_ISSUER: "https://dex.${DOMAIN}"
+              HERMES_DASHBOARD_OIDC_CLIENT_ID: "hermes-dashboard"
               HOME: /opt/data
               TERM: xterm-256color
             envFrom:

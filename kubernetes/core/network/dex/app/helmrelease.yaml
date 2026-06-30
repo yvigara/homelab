@@ -18,6 +18,8 @@ spec:
     image:
       repository: dexidp/dex
       tag: v2.45.1
+    envFrom:
+      - dex-secrets
     httpRoute:
       enabled: true
       annotations:
@@ -69,3 +71,9 @@ spec:
             # https://github.com/coreos/dex/blob/master/Documentation/connectors/github.md
             orgs:
               - name: celest-io
+      staticClients:
+        - id: hermes-dashboard
+          redirectURIs:
+            - "https://hermes.int.${REGION}.${ENVIRONMENT}.${DOMAIN}/auth/callback"
+          name: "Hermes Dashboard"
+          secretEnv: HERMES_DASHBOARD_CLIENT_SECRET
