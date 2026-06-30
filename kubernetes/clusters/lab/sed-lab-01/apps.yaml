@@ -36,14 +36,6 @@ spec:
             kind: GitRepository
             name: flux-system
             namespace: flux-system
-          postBuild:
-            substituteFrom:
-              - kind: ConfigMap
-                name: cluster-vars
-                optional: true
-              - kind: Secret
-                name: cluster-secrets
-                optional: true
           patches:
             - patch: |-
                 apiVersion: helm.toolkit.fluxcd.io/v2
@@ -69,6 +61,20 @@ spec:
               target:
                 group: helm.toolkit.fluxcd.io
                 kind: HelmRelease
+      target:
+        group: kustomize.toolkit.fluxcd.io
+        kind: Kustomization
+    - # Add Kustomization defaults for all child Kustomizations
+      patch: |
+        - op: add
+          path: spec.postBuild.substituteFrom
+          value:
+            - kind: ConfigMap
+              name: cluster-vars
+              optional: true
+            - kind: Secret
+              name: cluster-secrets
+              optional: true
       target:
         group: kustomize.toolkit.fluxcd.io
         kind: Kustomization
