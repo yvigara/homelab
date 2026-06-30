@@ -19,7 +19,8 @@ spec:
       repository: dexidp/dex
       tag: v2.45.1
     envFrom:
-      - dex-secrets
+      - secretRef:
+          name: dex-hermes-secret
     httpRoute:
       enabled: true
       annotations:
