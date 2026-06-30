@@ -20,6 +20,8 @@ spec:
       tag: v2.45.1
     httpRoute:
       enabled: true
+      annotations:
+        external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
       hostnames:
         - "dex.${DOMAIN}"
       parentRefs:
