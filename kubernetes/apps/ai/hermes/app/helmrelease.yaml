@@ -48,11 +48,11 @@ spec:
               HERMES_HOME: /opt/data
               HERMES_UID: "1000"
               HERMES_DASHBOARD: "1"
-              HERMES_DASHBOARD_INSECURE: "1"
-              WHATSAPP_ENABLED: true
-              WHATSAPP_MODE: self-chat
+              HERMES_DASHBOARD_PUBLIC_URL: "https://hermes.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
               HERMES_DASHBOARD_OIDC_ISSUER: "https://dex.${DOMAIN}"
               HERMES_DASHBOARD_OIDC_CLIENT_ID: "hermes-dashboard"
+              WHATSAPP_ENABLED: true
+              WHATSAPP_MODE: self-chat
               HOME: /opt/data
               TERM: xterm-256color
             envFrom:
