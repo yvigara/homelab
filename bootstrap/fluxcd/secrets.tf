@@ -27,6 +27,19 @@ data "bitwarden-secrets_secret" "ollama_srv1_ip" {
   id = local.bw_secrets["OLLAMA_SRV1_IP"]
 }
 
+data "bitwarden-secrets_secret" "dex_gh_client_id" {
+  id = local.bw_secrets["DEX_GITHUB_CLIENT_ID"]
+}
+
+data "bitwarden-secrets_secret" "dex_gh_client_secret" {
+  id = local.bw_secrets["DEX_GITHUB_CLIENT_SECRET"]
+}
+
+data "bitwarden-secrets_secret" "dex_hermes_dashboard_secret" {
+  id = local.bw_secrets["HERMES_DASHBOARD_CLIENT_SECRET"]
+}
+
+
 resource "kubernetes_secret_v1" "flux-runtime-info" {
   metadata {
     name      = "flux-runtime-info"
@@ -60,9 +73,12 @@ resource "kubernetes_secret_v1" "cluster-secrets" {
   }
 
   data = {
-    BW_ORGANIZATION_ID = var.bw_organization_id
-    BW_PROJECT_ID      = var.bw_project_id
-    CF_TUNNEL_ID       = cloudflare_zero_trust_tunnel_cloudflared.cluster.id
+    BW_ORGANIZATION_ID             = var.bw_organization_id
+    BW_PROJECT_ID                  = var.bw_project_id
+    CF_TUNNEL_ID                   = cloudflare_zero_trust_tunnel_cloudflared.cluster.id
+    DEX_GITHUB_CLIENT_ID           = data.bitwarden-secrets_secret.dex_gh_client_id.value
+    DEX_GITHUB_CLIENT_SECRET       = data.bitwarden-secrets_secret.dex_gh_client_secret.value
+    HERMES_DASHBOARD_CLIENT_SECRET = data.bitwarden-secrets_secret.dex_hermes_dashboard_secret.value
 
     # FLUX_SLACK_NOTIFICATION_URL     = var.flux_slack_notification_url
     # FLUX_SLACK_NOTIFICATION_CHANNEL = var.flux_slack_notification_channel
