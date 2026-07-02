@@ -53,5 +53,4 @@ dashboard:
   oauth:
     provider: self-hosted
     self_hosted:
-      issuer: https://dex.${DOMAIN}
       client_id: hermes-dashboard
