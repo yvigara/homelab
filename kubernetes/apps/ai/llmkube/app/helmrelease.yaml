@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: llmkube
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: llmkube
+  interval: 1h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    modelCache:
+      enabled: true
+      # perService gives each InferenceService its own RWO cache that binds on the
+      # node its pod schedules to, so the embedder can run on kharkiv's iGPU and the
+      # reranker on paris's Arc without one shared node-pinned (or RWX) volume.
+      # openebs-hostpath is WaitForFirstConsumer + node-local (the default
+      # openebs-zfs is Immediate and would bind on the wrong node).
+      mode: perService
+      size: 20Gi
+      storageClass: openebs-hostpath
+    prometheus:
+      inferencePodMonitor:
+        enabled: false

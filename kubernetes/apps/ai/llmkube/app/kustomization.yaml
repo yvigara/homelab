@@ -1,10 +1,7 @@
+---
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: ai
 resources:
-  - ./namespace.yaml
-  - ./cluster-vars.yaml
-  - ./agentgateway/ks.yaml
-  - ./hermes/ks.yaml
-  - ./llmkube/ks.yaml
+  - ./ocirepository.yaml
+  - ./helmrelease.yaml
