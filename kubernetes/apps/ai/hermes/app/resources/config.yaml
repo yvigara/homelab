@@ -28,13 +28,16 @@ compression:
   threshold: 0.5
   target_ratio: 0.2
   protect_last_n: 20
+plugins:
+  enabled:
+    - memini
 memory:
   memory_enabled: false
   user_profile_enabled: false
   write_approval: false
   memory_char_limit: 2200
   user_char_limit: 1375
-  provider: ""
+  provider: memini
   flush_min_turns: 6
   nudge_interval: 10
 security:

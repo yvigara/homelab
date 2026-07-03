@@ -32,7 +32,7 @@ spec:
   batchSize: 8192
   uBatchSize: 4096
   resources:
-    gpu: 1
+    gpu: 0
     cpu: 100m
     memory: 2Gi
   extraArgs:
