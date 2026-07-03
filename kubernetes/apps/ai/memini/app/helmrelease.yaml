@@ -30,7 +30,7 @@ spec:
               limits:
                 memory: 256Mi
             env:
-              MEMINI_BACKEND: postgres
+              MEMINI_BACKEND: sqlite
               MEMINI_LOG_FORMAT: json
               MEMINI_DEMOTE_AFTER: 1440h
               MEMINI_TOMBSTONE_TTL: 720h
@@ -42,11 +42,6 @@ spec:
               MEMINI_RERANK: http://qwen3-reranker-0-6b.ai.svc.cluster.local:8080/v1
               MEMINI_RERANK_MODEL: qwen3-reranker-0.6b
               MEMINI_RERANK_MAX_DOC_CHARS: "4000"
-              MEMINI_POSTGRES_DSN:
-                valueFrom:
-                  secretKeyRef:
-                    name: memini-postgres
-                    key: url
               MEMINI_API_KEY:
                 valueFrom:
                   secretKeyRef:
@@ -61,18 +56,18 @@ spec:
     route:
       main:
         enabled: true
-        parentRefs:
-          - name: envoy-external
-            namespace: network
         hostnames:
-          - memini.erwanleboucher.dev
+          - "memini.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+        parentRefs:
+          - name: traefik-private
+            namespace: network
+            sectionName: websecure
       # Split-horizon: same host, internal gateway serves the UI (catch-all) on-LAN.
       ui:
         enabled: true
-        annotations:
-          gatus.home-operations.com/enabled: "false"
-        parentRefs:
-          - name: envoy-internal
-            namespace: network
         hostnames:
-          - memini.erwanleboucher.dev
+          - "memini-ui.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+        parentRefs:
+          - name: traefik-private
+            namespace: network
+            sectionName: websecure

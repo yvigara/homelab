@@ -8,3 +8,4 @@ resources:
   - ./agentgateway/ks.yaml
   - ./hermes/ks.yaml
   - ./llmkube/ks.yaml
+  - ./memini/ks.yaml
