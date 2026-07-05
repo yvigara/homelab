@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# Public OAuth2/OIDC endpoints (issuer, discovery, token, /openid/register).
+# Only the Hydra PUBLIC service (:4444) is routed. The admin API (:4445) is never exposed.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hydra
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  hostnames:
+    - "auth.${DOMAIN}"
+  parentRefs:
+    - name: traefik-public
+      namespace: network
+      sectionName: websecure
+  rules:
+    - backendRefs:
+        - name: hydra-public
+          port: 4444
