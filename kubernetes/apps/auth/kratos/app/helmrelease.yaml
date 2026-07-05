@@ -1,0 +1,164 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kratos
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: kratos
+      version: 0.62.1
+      sourceRef:
+        kind: HelmRepository
+        name: ory
+        namespace: flux-system
+      interval: 12h
+  values:
+    fullnameOverride: kratos
+
+    kratos:
+      automigration:
+        enabled: true
+        type: job
+
+      # identity schema mounted at /etc/config by the chart
+      identitySchemas:
+        identity.default.schema.json: |
+          {
+            "$id": "https://schemas.${DOMAIN}/identity.default.schema.json",
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Person",
+            "type": "object",
+            "properties": {
+              "traits": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "title": "E-Mail"
+                  },
+                  "username": {
+                    "type": "string",
+                    "title": "GitHub username"
+                  }
+                },
+                "required": ["username"],
+                "additionalProperties": false
+              }
+            }
+          }
+
+      config:
+        serve:
+          public:
+            base_url: https://kratos.${DOMAIN}/
+            cors:
+              enabled: true
+              allowed_origins:
+                - https://login.${DOMAIN}
+              allowed_methods: [GET, POST, PUT, DELETE]
+              allowed_headers: [Authorization, Content-Type, Cookie]
+              allow_credentials: true
+          admin:
+            base_url: http://kratos-admin.auth.svc.cluster.local:80/
+
+        # Kratos acts as the login/consent provider for Hydra
+        oauth2_provider:
+          url: http://hydra-admin.auth.svc.cluster.local:4445
+
+        selfservice:
+          default_browser_return_url: https://login.${DOMAIN}/
+          allowed_return_urls:
+            - https://login.${DOMAIN}
+            - https://mcp.${DOMAIN}
+            - https://hermes.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
+          flows:
+            error:
+              ui_url: https://login.${DOMAIN}/error
+            login:
+              ui_url: https://login.${DOMAIN}/login
+              lifespan: 10m
+            registration:
+              ui_url: https://login.${DOMAIN}/registration
+              after:
+                oidc:
+                  hooks:
+                    # auto-create a session after first social sign-in
+                    - hook: session
+            settings:
+              ui_url: https://login.${DOMAIN}/settings
+            logout:
+              after:
+                default_browser_return_url: https://login.${DOMAIN}/login
+          methods:
+            # federation only - no local passwords / recovery / verification
+            password:
+              enabled: false
+            oidc:
+              enabled: true
+              config:
+                providers:
+                  - id: github
+                    provider: github
+                    # client_id / client_secret injected via env (see deployment.extraEnv)
+                    mapper_url: "base64://bG9jYWwgY2xhaW1zID0gc3RkLmV4dFZhcignY2xhaW1zJyk7CnsKICBpZGVudGl0eTogewogICAgdHJhaXRzOiB7CiAgICAgIC8vIEdpdEh1YiBhbHdheXMgcmV0dXJucyBhIHZlcmlmaWVkIHByaW1hcnkgZW1haWwgd2hlbiB1c2VyOmVtYWlsIHNjb3BlIGlzIGdyYW50ZWQKICAgICAgW2lmICdlbWFpbCcgaW4gY2xhaW1zICYmIGNsYWltcy5lbWFpbCAhPSBudWxsIHRoZW4gJ2VtYWlsJyBlbHNlIG51bGxdOiBjbGFpbXMuZW1haWwsCiAgICAgIHVzZXJuYW1lOiBjbGFpbXMucHJlZmVycmVkX3VzZXJuYW1lLAogICAgfSwKICB9LAp9Cg=="
+                    scope:
+                      - read:org
+                      - user:email
+
+        identity:
+          default_schema_id: default
+          schemas:
+            - id: default
+              url: file:///etc/config/identity.default.schema.json
+
+        # Kratos requires a courier config; no email flows are enabled so it is never used
+        courier:
+          smtp:
+            connection_uri: smtps://unused:unused@localhost:1025/?skip_ssl_verify=true
+
+        log:
+          level: info
+          format: json
+
+    # DSN + system/cookie/cipher secrets come from our ExternalSecret
+    secret:
+      enabled: false
+      nameOverride: kratos-secret
+
+    # GitHub OAuth credentials injected as Ory env overrides (keeps them out of the ConfigMap)
+    deployment:
+      extraEnv:
+        - name: SELFSERVICE_METHODS_OIDC_CONFIG_PROVIDERS_0_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: kratos-secret
+              key: githubClientId
+        - name: SELFSERVICE_METHODS_OIDC_CONFIG_PROVIDERS_0_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: kratos-secret
+              key: githubClientSecret
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
+
+    # ---------------------------------------------------------------------------
+    # celest-io ORG GATE — NOT YET ENFORCED. Dex restricted logins to the
+    # `celest-io` GitHub org via its native `orgs:` connector option. Kratos has
+    # no equivalent, and a reliable gate cannot be expressed in config alone:
+    #   * GitHub's OIDC claims do not include org membership.
+    #   * Kratos web_hook URLs are not templated, so we cannot call
+    #     /orgs/celest-io/memberships/{username} per-user, and its static `auth`
+    #     block cannot carry the end-user's token.
+    # Follow-up (MUST be completed before pointing Hermes at Ory / removing Dex):
+    # deploy a tiny membership-check webhook (prebuilt image) and wire it as a
+    # `web_hook` with can_interrupt:true on registration.after.oidc and
+    # login.after.oidc. The `read:org` scope above already collects the needed
+    # grant. Tracked in the PR description as the #1 open item.
+    # ---------------------------------------------------------------------------
