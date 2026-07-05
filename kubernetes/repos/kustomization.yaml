@@ -12,6 +12,7 @@ resources:
   - ./grafana.yaml
   - ./metallb.yaml
   - ./node-feature-discovery-charts.yaml
+  - ./ory.yaml
   - ./prometheus.yaml
   - ./toolhive.yaml
   - ./traefik.yaml

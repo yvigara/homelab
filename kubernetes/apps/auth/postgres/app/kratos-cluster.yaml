@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/samples/cluster-example.yaml
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: kratos-postgres
+spec:
+  instances: 1
+  storage:
+    size: 8Gi
+    storageClass: openebs-hostpath
+  primaryUpdateStrategy: unsupervised
+  bootstrap:
+    initdb:
+      database: kratos
+      owner: kratos
+      secret:
+        name: kratos-postgres-owner

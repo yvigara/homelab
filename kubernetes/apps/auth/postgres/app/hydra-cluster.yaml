@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/samples/cluster-example.yaml
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: hydra-postgres
+spec:
+  instances: 1
+  storage:
+    size: 8Gi
+    storageClass: openebs-hostpath
+  # single-node homelab: keep the primary schedulable without anti-affinity spread
+  primaryUpdateStrategy: unsupervised
+  bootstrap:
+    initdb:
+      database: hydra
+      owner: hydra
+      secret:
+        name: hydra-postgres-owner

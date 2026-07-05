@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: auth
+resources:
+  - namespace.yaml
+  - cluster-vars.yaml
+  - postgres/ks.yaml
+  - hydra/ks.yaml
+  - kratos/ks.yaml
+  - kratos-ui/ks.yaml
