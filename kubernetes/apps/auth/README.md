@@ -30,8 +30,7 @@ Create these before Flux reconciles `auth` (ExternalSecrets pull them):
 | `ORY_KRATOS_SECRETS_CIPHER` | random **exactly** 32 chars (AES-256) |
 | `ORY_KRATOS_UI_COOKIE_SECRET` | random ≥ 32 chars |
 | `ORY_KRATOS_UI_CSRF_SECRET` | random ≥ 32 chars |
-| `GITHUB_ORG_READ_TOKEN` | PAT with `read:org` for `celest-io` (org gate, see below) |
-| `DEX_GITHUB_CLIENT_ID` / `DEX_GITHUB_CLIENT_SECRET` | **reused** existing GitHub OAuth App creds |
+| `DEX_GITHUB_CLIENT_ID` / `DEX_GITHUB_CLIENT_SECRET` | **reused** existing GitHub OAuth App creds (already in Bitwarden) |
 
 ## Manual GitHub step
 
@@ -44,13 +43,14 @@ cutover). Same client id/secret are reused.
 This PR is **additive** — Ory runs alongside Dex, and nothing is pointed at it yet.
 Complete these, verified in-cluster, before switching production auth:
 
-1. **`celest-io` org gate — not yet enforced.** Dex restricted logins to the org
+1. **`celest-io` org gate — DEFERRED (decision).** Dex restricted logins to the org
    natively; Kratos cannot do this in config alone (GitHub OIDC claims omit org
-   membership; Kratos web_hook URLs aren't templated). Follow-up: deploy a small
-   membership-check webhook (prebuilt image) and wire it as a `web_hook`
-   (`can_interrupt: true`) on `registration.after.oidc` and `login.after.oidc`.
-   The `read:org` scope is already requested. **Until this exists, any GitHub user
-   can sign in.**
+   membership; Kratos web_hook URLs aren't templated). Deferred to be revisited at the
+   Phase 2 authz layer (enforce `celest-io` membership at AgentGateway/Hermes) or via a
+   small membership-check webhook wired as a `can_interrupt` `web_hook` on
+   `registration.after.oidc` / `login.after.oidc`. The `read:org` scope is already
+   requested. **Until enforced, any GitHub user can sign in** — so keep Dex live and do
+   not cut Hermes over until this is resolved.
 2. **Cut Hermes over.** In `kubernetes/apps/ai/hermes/app/helmrelease.yaml` set
    `HERMES_DASHBOARD_OIDC_ISSUER: https://auth.${DOMAIN}` and provision a
    `hermes-dashboard` client. The `OAuth2Client` CRD cannot pin a fixed `client_id`,
@@ -63,8 +63,10 @@ Complete these, verified in-cluster, before switching production auth:
 
 ## Validation status
 
-Authored without a live cluster or `helm`/`kustomize` available — YAML validated with
-`yq` only. Verify against the running cluster: chart value paths (esp. `secret.nameOverride`
-key names `dsn`/`secretsSystem`/`secretsCookie` etc.), the Ory env-override names, service
-names/ports (`hydra-public:4444`, `kratos-public:80`), and the `kratos-selfservice-ui-node`
-image tag.
+Authored without a live cluster or `helm`/`kustomize` available. Verified against the
+`ory/k8s` chart templates + Ory config schemas: `secret.nameOverride`+`secret.enabled:false`
+DSN/secret injection (helpers return `dsn-loaded-from-env`), secret key names, service
+names/ports (`hydra-public:4444`, `kratos-public:80`), `hydra.config.urls.identity_provider`,
+`kratos.config.oauth2_provider.url`, and the `kratos-selfservice-ui-node:v26.2.0` tag. Still
+confirm end-to-end in-cluster: CNPG readiness + migrations, the OIDC login round-trip, and the
+Kratos↔Hydra login/consent handshake.

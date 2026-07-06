@@ -5,6 +5,7 @@ namespace: auth
 resources:
   - namespace.yaml
   - cluster-vars.yaml
+  - cluster-secrets.yaml
   - postgres/ks.yaml
   - hydra/ks.yaml
   - kratos/ks.yaml

@@ -23,9 +23,8 @@ spec:
         containers:
           app:
             image:
-              # TODO verify/bump: kratos-selfservice-ui-node image tag on Docker Hub
               repository: oryd/kratos-selfservice-ui-node
-              tag: v0.23.10
+              tag: v26.2.0
             env:
               PORT: "3000"
               # server-side (in-cluster) Kratos public API

@@ -102,7 +102,11 @@ spec:
                 providers:
                   - id: github
                     provider: github
-                    # client_id / client_secret injected via env (see deployment.extraEnv)
+                    # creds substituted by Flux from the auth-namespace cluster-secrets
+                    # (../cluster-secrets.yaml, picked up by the inherited substituteFrom) —
+                    # mirrors how Dex is wired in this repo
+                    client_id: ${DEX_GITHUB_CLIENT_ID}
+                    client_secret: ${DEX_GITHUB_CLIENT_SECRET}
                     mapper_url: "base64://bG9jYWwgY2xhaW1zID0gc3RkLmV4dFZhcignY2xhaW1zJyk7CnsKICBpZGVudGl0eTogewogICAgdHJhaXRzOiB7CiAgICAgIC8vIEdpdEh1YiBhbHdheXMgcmV0dXJucyBhIHZlcmlmaWVkIHByaW1hcnkgZW1haWwgd2hlbiB1c2VyOmVtYWlsIHNjb3BlIGlzIGdyYW50ZWQKICAgICAgW2lmICdlbWFpbCcgaW4gY2xhaW1zICYmIGNsYWltcy5lbWFpbCAhPSBudWxsIHRoZW4gJ2VtYWlsJyBlbHNlIG51bGxdOiBjbGFpbXMuZW1haWwsCiAgICAgIHVzZXJuYW1lOiBjbGFpbXMucHJlZmVycmVkX3VzZXJuYW1lLAogICAgfSwKICB9LAp9Cg=="
                     scope:
                       - read:org
@@ -128,19 +132,7 @@ spec:
       enabled: false
       nameOverride: kratos-secret
 
-    # GitHub OAuth credentials injected as Ory env overrides (keeps them out of the ConfigMap)
     deployment:
-      extraEnv:
-        - name: SELFSERVICE_METHODS_OIDC_CONFIG_PROVIDERS_0_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: kratos-secret
-              key: githubClientId
-        - name: SELFSERVICE_METHODS_OIDC_CONFIG_PROVIDERS_0_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: kratos-secret
-              key: githubClientSecret
       resources:
         requests:
           cpu: 50m
@@ -149,16 +141,11 @@ spec:
           memory: 256Mi
 
     # ---------------------------------------------------------------------------
-    # celest-io ORG GATE — NOT YET ENFORCED. Dex restricted logins to the
-    # `celest-io` GitHub org via its native `orgs:` connector option. Kratos has
-    # no equivalent, and a reliable gate cannot be expressed in config alone:
-    #   * GitHub's OIDC claims do not include org membership.
-    #   * Kratos web_hook URLs are not templated, so we cannot call
-    #     /orgs/celest-io/memberships/{username} per-user, and its static `auth`
-    #     block cannot carry the end-user's token.
-    # Follow-up (MUST be completed before pointing Hermes at Ory / removing Dex):
-    # deploy a tiny membership-check webhook (prebuilt image) and wire it as a
-    # `web_hook` with can_interrupt:true on registration.after.oidc and
-    # login.after.oidc. The `read:org` scope above already collects the needed
-    # grant. Tracked in the PR description as the #1 open item.
+    # celest-io ORG GATE — DEFERRED (decision: revisit at the Phase 2 authz layer).
+    # Dex restricted logins to the `celest-io` org natively; Kratos cannot express
+    # this in config alone (GitHub OIDC claims omit org membership; Kratos web_hook
+    # URLs aren't templated). The `read:org` scope above already collects the grant
+    # a future membership-check web_hook would need. Until enforced (here or at the
+    # AgentGateway/Hermes authz layer), any GitHub user can sign in — so do NOT
+    # point Hermes at Ory / remove Dex until this is resolved. See auth/README.md.
     # ---------------------------------------------------------------------------
