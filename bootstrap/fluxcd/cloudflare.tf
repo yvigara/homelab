@@ -73,3 +73,23 @@ resource "bitwarden-secrets_secret" "cf_account_id" {
   note       = "Cloudflare Account ID"
   project_id = var.bw_project_id
 }
+
+# Dex's JWKS/discovery/token endpoints are hit by machine clients (e.g. hermes-agent's
+# Python urllib), which Browser Integrity Check blocks as non-browser traffic.
+resource "cloudflare_ruleset" "dex_bic_bypass" {
+  zone_id     = data.cloudflare_zone.main.id
+  name        = "Disable BIC for dex"
+  description = "Dex is an OIDC provider queried by non-browser clients; Browser Integrity Check false-positives on them."
+  kind        = "zone"
+  phase       = "http_config_settings"
+
+  rules = [{
+    action = "set_config"
+    action_parameters = {
+      bic = false
+    }
+    expression  = "(http.host eq \"dex.${var.domain}\")"
+    description = "Disable Browser Integrity Check for dex"
+    enabled     = true
+  }]
+}
