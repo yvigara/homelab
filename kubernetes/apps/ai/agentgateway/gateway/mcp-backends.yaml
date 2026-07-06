@@ -1,0 +1,67 @@
+# MCP backend(s) multiplexed behind the single public endpoint, with OAuth (Auth0)
+# authentication enforced at the gateway. Mirrors ollama-backend.yaml (spec.ai) but
+# uses spec.mcp.
+#
+# ⚠️  VERIFY AGAINST THE INSTALLED agentgateway v1.3 CRDs — the docs site is
+#     unreachable from CI, so the exact field layout below is a best effort:
+#       kubectl explain agentgatewaybackend.spec.mcp
+#       kubectl explain agentgatewaybackend.spec.mcp.authentication
+#     Confirm (a) how MCP targets are declared (host/port vs a Service ref, and the
+#     protocol field for streamable-HTTP/SSE) and (b) whether `mcpAuthentication`
+#     belongs on the backend (as below) or on a separate policy CRD attached to the
+#     `mcp` listener. The *content* of `authentication` (issuer/jwks/audiences/
+#     resourceMetadata) is the stable part.
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: mcp
+  namespace: agentgateway-system
+spec:
+  mcp:
+    # Each target is one backend MCP server; agentgateway federates them into one
+    # endpoint and namespaces tool names per target. Add more targets here to
+    # multiplex additional MCP servers behind the same protected endpoint.
+    targets:
+      # searxng web-search MCP server (kubernetes/apps/ai/searxng/mcp) — serves
+      # streamable HTTP at /mcp on :3000.
+      - name: searxng
+        host: mcp-searxng.ai.svc.cluster.local
+        port: 3000
+        # path: /mcp
+        # protocol: streamable-http
+    authentication:
+      mode: strict
+      issuer: https://auth.${DOMAIN}/
+      jwks:
+        url: https://auth.${DOMAIN}/.well-known/jwks.json
+      # Must equal the Auth0 API identifier from bootstrap/auth0 (auth0_resource_server.mcp),
+      # which is the host with NO path.
+      audiences:
+        - https://mcp.${DOMAIN}
+      # Protected Resource Metadata served at /.well-known/oauth-protected-resource;
+      # points MCP clients at Auth0, where they DCR and log in via GitHub (celest-io).
+      resourceMetadata:
+        resource: https://mcp.${DOMAIN}
+        authorizationServers:
+          - https://auth.${DOMAIN}/
+        bearerMethodsSupported:
+          - header
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mcp
+spec:
+  parentRefs:
+    - name: agentgateway-proxy
+      namespace: agentgateway-system
+      sectionName: mcp
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /mcp
+      backendRefs:
+        - name: mcp
+          kind: AgentgatewayBackend
+          group: agentgateway.dev

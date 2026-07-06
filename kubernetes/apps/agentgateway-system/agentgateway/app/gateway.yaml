@@ -16,3 +16,12 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    # Dedicated MCP listener. TLS is terminated upstream (Cloudflare edge + Traefik);
+    # this stays plain HTTP internally. Kept separate from the Ollama `http` listener
+    # so the public MCP route can never reach Ollama.
+    - protocol: HTTP
+      port: 8080
+      name: mcp
+      allowedRoutes:
+        namespaces:
+          from: All
