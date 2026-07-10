@@ -28,7 +28,7 @@ spec:
               tag: 1.11@sha256:ec0ca986ea9dde137607c44335b2e96a8e6a4d7876dee36198f406c34b35cbe0
             env:
               MCP_HTTP_HOST: 0.0.0.0
-              SEARXNG_URL: http://searxng.ai:8080
+              SEARXNG_URL: http://searxng:8080
               MCP_HTTP_PORT: &port 3000
               TZ: ${TIMEZONE}
             resources:
@@ -45,7 +45,7 @@ spec:
     route:
       app:
         hostnames:
-          - "search-mcp.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+          - "search-mcp.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
         parentRefs:
           - name: traefik-private
             namespace: network
