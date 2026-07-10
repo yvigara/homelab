@@ -21,13 +21,13 @@ storage:
           sed -i "/linux_append systemd.machine_id=.*/d" /usr/share/oem/grub.cfg
           echo "set linux_append=\"\$linux_append systemd.machine_id=$(cat /etc/machine-id)\"" >> /usr/share/oem/grub.cfg
           touch /boot/flatcar/first_boot
-    - path: /opt/extensions/k3s/k3s-v1.35.3+k3s1-x86-64.raw
+    - path: /opt/extensions/k3s/k3s-v1.36.2+k3s1-x86-64.raw
       mode: 0644
       contents:
-        source: https://extensions.flatcar.org/extensions/k3s-v1.35.3+k3s1-x86-64.raw
-    - path: /etc/sysupdate.k3s-v1.35.d/k3s-v1.35.conf
+        source: https://extensions.flatcar.org/extensions/k3s-v1.36.2+k3s1-x86-64.raw
+    - path: /etc/sysupdate.k3s-v1.36.d/k3s-v1.36.conf
       contents:
-        source: https://extensions.flatcar.org/extensions/k3s/k3s-v1.35.conf
+        source: https://extensions.flatcar.org/extensions/k3s/k3s-v1.36.conf
     - path: /etc/sysupdate.d/noop.conf
       contents:
         source: https://extensions.flatcar.org/extensions/noop.conf
@@ -39,8 +39,17 @@ storage:
 
           disable:
             - traefik
+    - path: /etc/sysctl.d/10-kernel.conf
+      contents:
+        inline: |
+          fs.inotify.max_user_watches=1048576
+          fs.inotify.max_user_instances=8192
+          vm.max_map_count=524288
+          user.max_user_namespaces=11255
+          net.core.rmem_max=67108864
+          net.core.wmem_max=67108864
   links:
-    - target: /opt/extensions/k3s/k3s-v1.35.3+k3s1-x86-64.raw
+    - target: /opt/extensions/k3s/k3s-v1.36.2+k3s1-x86-64.raw
       path: /etc/extensions/k3s.raw
       hard: false
     - path: /etc/systemd/system/multi-user.target.wants/k3s.service
@@ -73,7 +82,7 @@ systemd:
           contents: |
             [Service]
             ExecStartPre=/usr/bin/sh -c "readlink --canonicalize /etc/extensions/k3s.raw > /tmp/k3s"
-            ExecStartPre=/usr/lib/systemd/systemd-sysupdate -C k3s-v1.35 update
+            ExecStartPre=/usr/lib/systemd/systemd-sysupdate -C k3s-v1.36 update
             ExecStartPost=/usr/bin/sh -c "readlink --canonicalize /etc/extensions/k3s.raw > /tmp/k3s-new"
             ExecStartPost=/usr/bin/sh -c "if ! cmp --silent /tmp/k3s /tmp/k3s-new; then touch /run/reboot-required; fi"
     - name: update-engine.service
