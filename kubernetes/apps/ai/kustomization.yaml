@@ -9,3 +9,4 @@ resources:
   - ./hermes/ks.yaml
   - ./llmkube/ks.yaml
   - ./memini/ks.yaml
+  - ./searxng/ks.yaml
