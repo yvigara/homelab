@@ -50,6 +50,7 @@ spec:
     persistence:
       data:
         enabled: true
+        storageClass: "openebs-hostpath"
     serviceMonitor:
       main:
         enabled: true
