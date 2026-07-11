@@ -16,3 +16,9 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    - protocol: HTTP
+      port: 81
+      name: mcp
+      allowedRoutes:
+        namespaces:
+          from: All
