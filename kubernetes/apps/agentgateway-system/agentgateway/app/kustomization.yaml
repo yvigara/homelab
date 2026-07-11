@@ -6,3 +6,5 @@ resources:
   - ./ocirepository.yaml
   - ./gateway.yaml
   - ./agparameters.yaml
+  - ./agproxy-int-svc.yaml
+  - ./httproute-mcp-int.yaml
