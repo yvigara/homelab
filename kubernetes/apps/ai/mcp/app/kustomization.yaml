@@ -4,4 +4,3 @@ kind: Kustomization
 resources:
   - ./mcp-searxng.yaml
   - ./agentgateway.yaml
-  - ./httproute.yaml
