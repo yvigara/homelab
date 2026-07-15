@@ -57,3 +57,5 @@ dashboard:
     provider: self-hosted
     self_hosted:
       client_id: hermes-dashboard
+web:
+  search_backend: searxng

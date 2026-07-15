@@ -53,6 +53,12 @@ spec:
               HERMES_DASHBOARD_OIDC_CLIENT_ID: "hermes-dashboard"
               MEMINI_URL: http://memini.ai.svc.cluster.local:8080
               MEMINI_NAMESPACE: hermes
+              MEMINI_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: hermes-config
+                    key: MEMINI_API_KEY
+              SEARXNG_URL: http://searxng.ai.svc.cluster.local:8080
               WHATSAPP_ENABLED: true
               WHATSAPP_MODE: self-chat
               HOME: /opt/data
