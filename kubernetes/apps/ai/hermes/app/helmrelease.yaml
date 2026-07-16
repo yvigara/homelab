@@ -64,6 +64,8 @@ spec:
               HOME: /opt/data
               TERM: xterm-256color
             envFrom:
+              - configMapRef:
+                  name: cluster-vars
               - secretRef:
                   name: hermes-secret
             ports:
