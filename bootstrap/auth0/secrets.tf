@@ -7,11 +7,11 @@ locals {
 
 # Reused GitHub OAuth App credentials (originally provisioned for Dex).
 data "bitwarden-secrets_secret" "github_client_id" {
-  id = local.bw_secrets["DEX_GITHUB_CLIENT_ID"]
+  id = local.bw_secrets["AUTH0_GITHUB_CLIENT_ID"]
 }
 
 data "bitwarden-secrets_secret" "github_client_secret" {
-  id = local.bw_secrets["DEX_GITHUB_CLIENT_SECRET"]
+  id = local.bw_secrets["AUTH0_GITHUB_CLIENT_SECRET"]
 }
 
 # Publish the Auth0 application credentials back to Bitwarden so External Secrets
