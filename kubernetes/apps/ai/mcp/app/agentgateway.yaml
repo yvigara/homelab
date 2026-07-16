@@ -12,7 +12,7 @@ spec:
               app.kubernetes.io/instance: mcp-searxng
       - name: linkedin
         static:
-          host: 192.168.2.192
+          host: ${OLLAMA_SRV1_IP}
           port: 9080
           protocol: StreamableHTTP
       - name: memini
