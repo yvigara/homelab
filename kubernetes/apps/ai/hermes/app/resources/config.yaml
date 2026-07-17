@@ -53,6 +53,9 @@ mcp_servers:
   jira:
     url: https://mcp.atlassian.com/v1/mcp/authv2
     auth: oauth
+  meeting-notes:
+    url: ${MEETING_NOTES_MCP_URL}
+    auth: oauth
 group_sessions_per_user: false
 gateway:
   message_timestamps:
