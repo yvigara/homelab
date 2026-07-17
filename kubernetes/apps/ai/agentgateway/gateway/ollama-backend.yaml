@@ -7,7 +7,6 @@ spec:
   ai:
     provider:
       custom:
-        model: qwen3.5:9b-mlx
         formats:
           - type: Completions
             path: /v1/chat/completions
