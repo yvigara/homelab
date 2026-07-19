@@ -1,0 +1,40 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: omlx
+  namespace: agentgateway-system
+spec:
+  ai:
+    provider:
+      openai: {}
+      host: "${OLLAMA_SRV1_IP}"
+      port: 80000
+  policies:
+    auth:
+      secretRef:
+        name: omlx-secret
+    ai:
+      routes:
+        "/v1/responses": "Responses"
+        "/v1/chat/completions": "Completions"
+        "/v1/models": "Models"
+        "*": "Passthrough"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: omlx
+spec:
+  parentRefs:
+    - name: agentgateway-proxy
+      namespace: agentgateway-system
+      sectionName: http
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /omlx
+      backendRefs:
+        - name: omlx
+          kind: AgentgatewayBackend
+          group: agentgateway.dev
