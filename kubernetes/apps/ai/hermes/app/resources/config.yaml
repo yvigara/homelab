@@ -11,6 +11,12 @@ custom_providers:
       - qwen3-embedding:4b
       - Bonsai-27B-gguf:Q1_0
       - gemma4:12b-mlx
+  - name: k8s-omlx
+    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
+    default_model: Qwen3.5-9B-OptiQ-4bit
+    models:
+      - gemma-4-12B-it-qat-OptiQ-4bit
+      - Qwen3.5-9B-8bit
 fallback_providers: []
 toolsets:
   - hermes-cli
