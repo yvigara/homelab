@@ -6,19 +6,24 @@ metadata:
 spec:
   ai:
     provider:
-      openai: {}
+      custom:
+        formats:
+          - type: Completions
+            path: /v1/chat/completions
+          - type: Messages
+            path: /v1/messages
+          - type: Embeddings
+            path: /v1/embeddings
+          - type: Rerank
+            path: /v1/rerank
+          - type: Responses
+            path: /v1/responses
       host: "${OLLAMA_SRV1_IP}"
       port: 8000
   policies:
     auth:
       secretRef:
         name: omlx-secret
-    ai:
-      routes:
-        "/v1/responses": "Responses"
-        "/v1/chat/completions": "Completions"
-        "/v1/models": "Models"
-        "*": "Passthrough"
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
