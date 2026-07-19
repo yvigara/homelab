@@ -17,6 +17,7 @@ custom_providers:
     models:
       - gemma-4-12B-it-qat-OptiQ-4bit
       - Qwen3.5-9B-8bit
+      - Qwen3.5-9B-OptiQ-4bit
 fallback_providers: []
 toolsets:
   - hermes-cli
