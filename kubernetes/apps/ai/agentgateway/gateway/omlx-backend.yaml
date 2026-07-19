@@ -14,8 +14,6 @@ spec:
             path: /v1/messages
           - type: Embeddings
             path: /v1/embeddings
-          - type: Rerank
-            path: /v1/rerank
           - type: Responses
             path: /v1/responses
       host: "${OLLAMA_SRV1_IP}"
