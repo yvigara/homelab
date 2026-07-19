@@ -8,7 +8,7 @@ spec:
     provider:
       openai: {}
       host: "${OLLAMA_SRV1_IP}"
-      port: 80000
+      port: 8000
   policies:
     auth:
       secretRef:
