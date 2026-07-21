@@ -66,6 +66,12 @@ mcp_servers:
     # meeting-notes:
     # url: ${MEETING_NOTES_MCP_URL}
     # auth: oauth
+  x:
+    command: npx
+    args: ["-y", "@xdevplatform/xurl", "mcp", "https://api.x.com/mcp"]
+    env:
+      CLIENT_ID: ${X_MCP_CLIENT_ID}
+      CLIENT_SECRET: ${X_MCP_CLIENT_SECRET}
 group_sessions_per_user: false
 gateway:
   message_timestamps:
