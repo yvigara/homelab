@@ -42,7 +42,7 @@ plugins:
   enabled:
     - memini
 memory:
-  memory_enabled: false
+  memory_enabled: true
   user_profile_enabled: false
   write_approval: false
   memory_char_limit: 2200
