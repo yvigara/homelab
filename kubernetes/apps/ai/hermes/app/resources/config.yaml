@@ -72,6 +72,8 @@ mcp_servers:
     env:
       CLIENT_ID: ${X_MCP_CLIENT_ID}
       CLIENT_SECRET: ${X_MCP_CLIENT_SECRET}
+      PATH: /usr/local/bin:/usr/bin:/bin
+      HOME: /opt/data
 group_sessions_per_user: false
 gateway:
   message_timestamps:
