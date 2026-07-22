@@ -66,6 +66,10 @@ mcp_servers:
     # meeting-notes:
     # url: ${MEETING_NOTES_MCP_URL}
     # auth: oauth
+  obsidian:
+    url: http://${OLLAMA_SRV1_IP}:27124/mcp
+    headers:
+      Authorization: ${OBSIDIAN_AUTH_HEADER}
   x:
     command: npx
     args: ["-y", "@xdevplatform/xurl", "mcp", "https://api.x.com/mcp"]
