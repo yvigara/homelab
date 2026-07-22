@@ -12,7 +12,7 @@ custom_providers:
       - Qwen3.5-9B-OptiQ-4bit
       - Ternary-Bonsai-27B-mlx-2bit
       - Bonsai-27B-mlx-1bit
-      - gemma-4-e4b-it-4bit
+      - gemma-4-e4b-it-qat-OptiQ-4bit
 model_aliases:
   qwen:
     model: Qwen3.5-9B-OptiQ-4bit
@@ -21,7 +21,7 @@ model_aliases:
     model: gemma-4-12B-it-qat-OptiQ-4bit
     provider: custom:k8s-omlx
   gemma4-e4b:
-    model: gemma-4-e4b-it-4bit
+    model: gemma-4-e4b-it-qat-OptiQ-4bit
     provider: custom:k8s-omlx
   bonsai:
     model: Bonsai-27B-mlx-1bit
