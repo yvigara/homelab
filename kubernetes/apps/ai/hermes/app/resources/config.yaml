@@ -1,20 +1,22 @@
 model:
-  default: Qwen3.5-9B-OptiQ-4bit
+  default: Qwen3.5-9B-MLX-4bit
   provider: custom:k8s-omlx
   context_length: 65536
 custom_providers:
   - name: k8s-omlx
     base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
-    default_model: Qwen3.5-9B-OptiQ-4bit
+    api_key: "${HERMES_OMLX_KEY}"
+    default_model: Qwen3.5-9B-MLX-4bit
     models:
       - Qwen3.5-9B-OptiQ-4bit
+      - Qwen3.5-9B-MLX-4bit
       - Ternary-Bonsai-27B-mlx-2bit
       - Bonsai-27B-mlx-1bit
       - gemma-4-e4b-it-qat-OptiQ-4bit
       - gemma-4-e2b-it-qat-OptiQ-4bit
 model_aliases:
-  qwen:
-    model: Qwen3.5-9B-OptiQ-4bit
+  qwen35:
+    model: Qwen3.5-9B-MLX-4bit
     provider: custom:k8s-omlx
   gemma4-e4b:
     model: gemma-4-e4b-it-qat-OptiQ-4bit
@@ -30,7 +32,7 @@ model_aliases:
     provider: custom:k8s-omlx
 fallback_providers:
   - provider: custom:k8s-omlx
-    model: Qwen3.5-9B-OptiQ-4bit
+    model: Qwen3.5-9B-MLX-4bit
 auxiliary:
   compression:
     provider: custom:k8s-omlx
@@ -92,6 +94,10 @@ privacy:
   redact_pii: true
 streaming:
   enabled: false
+approvals:
+  mode: smart
+  timeout: 60
+  cron_mode: deny
 mcp_servers:
   linkedin:
     url: http://${OLLAMA_SRV1_IP}:9080/mcp

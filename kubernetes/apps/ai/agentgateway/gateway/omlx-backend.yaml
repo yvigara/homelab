@@ -43,3 +43,17 @@ spec:
         - name: omlx
           kind: AgentgatewayBackend
           group: agentgateway.dev
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: omlx-apikey
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: omlx
+  traffic:
+    apiKeyAuthentication:
+      secretRef:
+        name: omlx-client-keys
