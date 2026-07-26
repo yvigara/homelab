@@ -114,9 +114,8 @@ mcp_servers:
   x:
     command: npx
     args: ["-y", "@xdevplatform/xurl", "mcp", "https://api.x.com/mcp"]
-    env:
-      CLIENT_ID: ${X_MCP_CLIENT_ID}
-      CLIENT_SECRET: ${X_MCP_CLIENT_SECRET}
+    headers:
+      Authorization: ${X_MCP_AUTH_HEADER}
 group_sessions_per_user: false
 gateway:
   message_timestamps:
