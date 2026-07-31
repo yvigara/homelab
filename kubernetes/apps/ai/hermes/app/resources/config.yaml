@@ -9,6 +9,8 @@ custom_providers:
     models:
       Qwen3.5-9B-MLX-4bit:
         context_length: 81920
+      Nanbeige4.2-3B-OptiQ-4bit:
+        context_length: 81920
       Ternary-Bonsai-27B-mlx-2bit:
         context_length: 65536
       Bonsai-27B-mlx-1bit:
