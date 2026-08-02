@@ -47,19 +47,19 @@ auxiliary:
     model: gemma-4-e4b-it-qat-OptiQ-4bit
   session_search:
     provider: custom:k8s-omlx
-    model: gemma-4-e2b-it-qat-OptiQ-4bit
+    model: Qwen3.5-9B-MLX-4bit
   vision:
     provider: custom:k8s-omlx
     model: gemma-4-e4b-it-qat-OptiQ-4bit
   title_generation:
     provider: custom:k8s-omlx
-    model: gemma-4-e2b-it-qat-OptiQ-4bit
+    model: Qwen3.5-9B-MLX-4bit
   profile_describer:
     provider: custom:k8s-omlx
     model: gemma-4-e2b-it-qat-OptiQ-4bit
   curator:
     provider: custom:k8s-omlx
-    model: gemma-4-e4b-it-qat-OptiQ-4bit
+    model: Qwen3.5-9B-MLX-4bit
     timeout: 600
 toolsets:
   - hermes-cli
