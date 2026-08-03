@@ -8,17 +8,11 @@ custom_providers:
     default_model: Qwen3.5-9B-MLX-4bit
     models:
       Qwen3.5-9B-MLX-4bit:
-        context_length: 81920
-      Nanbeige4.2-3B-OptiQ-4bit:
-        context_length: 81920
-      Ternary-Bonsai-27B-mlx-2bit:
-        context_length: 65536
-      Bonsai-27B-mlx-1bit:
-        context_length: 65536
+        context_length: 77824
       gemma-4-e4b-it-qat-OptiQ-4bit:
-        context_length: 65536
+        context_length: 110592
       gemma-4-e2b-it-qat-OptiQ-4bit:
-        context_length: 65536
+        context_length: 131072
 model_aliases:
   qwen35:
     model: Qwen3.5-9B-MLX-4bit
@@ -28,12 +22,6 @@ model_aliases:
     provider: custom:k8s-omlx
   gemma4-e2b:
     model: gemma-4-e2b-it-qat-OptiQ-4bit
-    provider: custom:k8s-omlx
-  bonsai:
-    model: Bonsai-27B-mlx-1bit
-    provider: custom:k8s-omlx
-  ternary-bonsai:
-    model: Ternary-Bonsai-27B-mlx-2bit
     provider: custom:k8s-omlx
 fallback_providers:
   - provider: custom:k8s-omlx
