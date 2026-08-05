@@ -34,7 +34,7 @@ spec:
               MEMINI_LOG_FORMAT: json
               MEMINI_DEMOTE_AFTER: 1440h
               MEMINI_TOMBSTONE_TTL: 720h
-              MEMINI_REEMBED_ON_MODEL_CHANGE: true
+              MEMINI_REEMBED_ON_MODEL_CHANGE: "true"
               MEMINI_EMBED_BASE_URL: http://lfm2-5-embedding-350m.ai.svc.cluster.local:8080/v1
               MEMINI_EMBED_MODEL: lfm2-5-embedding-350m
               MEMINI_EMBED_DIMS: "1024"
