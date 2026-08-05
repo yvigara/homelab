@@ -2,19 +2,19 @@
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: Model
 metadata:
-  name: qwen3-reranker-0.6b
+  name: lfm2.5-2.6b
 spec:
   format: gguf
   quantization: Q4_K_M
-  source: https://huggingface.co/Voodisss/Qwen3-Reranker-0.6B-GGUF-llama_cpp/resolve/main/Qwen3-Reranker-0.6B-Q4_K_M.gguf
+  source: https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/resolve/main/LFM2.5-2.6B-Q4_K_M.gguf
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/inference.llmkube.dev/inferenceservice_v1alpha1.json
 apiVersion: inference.llmkube.dev/v1alpha1
 kind: InferenceService
 metadata:
-  name: qwen3-reranker-0.6b
+  name: lfm2.5-2.6b
 spec:
-  modelRef: qwen3-reranker-0.6b
+  modelRef: lfm2.5-2.6b
   runtime: llamacpp
   image: ghcr.io/ggml-org/llama.cpp:server-b10276@sha256:bde659bfc300ee7d4d2e558e8a97e06211bc2bf079e31d22b61497f4f2cd85b1
   replicas: 1
@@ -26,30 +26,28 @@ spec:
     supplementalGroups:
       - 44
       - 992
-  # per-slot ctx = contextSize/parallelSlots; 2 slots = 4096, fits memini's query+doc.
-  contextSize: 8192
-  parallelSlots: 2
+  contextSize: 65536
+  parallelSlots: 1
   batchSize: 8192
   uBatchSize: 4096
   resources:
     gpu: 0
     cpu: 100m
-    memory: 2Gi
+    memory: 8Gi
   extraArgs:
-    # Qwen3-Reranker needs rank pooling; --reranking + --pooling rank exposes
-    # the Cohere-style /v1/rerank endpoint memini calls.
-    - --reranking
-    - --pooling
-    - rank
-    - --embedding
-    - --cache-ram
-    - "0"
+    - -t
+    - "6"
+    - -fa
+    - "on"
     - --no-mmap
-    - --sleep-idle-seconds
-    - "300"
+    - --temp
+    - "0.1"
+    - --top-k
+    - "50"
+    - --repeat-penalty
+    - "1.1"
     - --alias
-    - qwen3-reranker-0.6b
-    - --metrics
+    - lfm2.5-2.6b
   endpoint:
     port: 8080
     type: ClusterIP
