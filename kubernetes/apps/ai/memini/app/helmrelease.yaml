@@ -34,13 +34,13 @@ spec:
               MEMINI_LOG_FORMAT: json
               MEMINI_DEMOTE_AFTER: 1440h
               MEMINI_TOMBSTONE_TTL: 720h
-              MEMINI_EMBED_BASE_URL: http://qwen3-embedding-0-6b.ai.svc.cluster.local:8080/v1
-              MEMINI_EMBED_MODEL: qwen3-embedding-0.6b
+              MEMINI_EMBED_BASE_URL: http://lfm2-5-embedding-350m.ai.svc.cluster.local:8080/v1
+              MEMINI_EMBED_MODEL: lfm2-5-embedding-350m
               MEMINI_EMBED_DIMS: "1024"
               MEMINI_EMBED_QUERY_PREFIX: "Instruct: Given a user message, retrieve relevant past memories\nQuery: "
               MEMINI_RECALL_MIN_SEMANTIC_SCORE: "0.46"
-              MEMINI_RERANK: http://qwen3-reranker-0-6b.ai.svc.cluster.local:8080/v1
-              MEMINI_RERANK_MODEL: qwen3-reranker-0.6b
+              MEMINI_RERANK: http://jina-reranker-v3-5-0-6b.ai.svc.cluster.local:8080/v1
+              MEMINI_RERANK_MODEL: jina-reranker-v3-5-0-6b
               MEMINI_RERANK_MAX_DOC_CHARS: "4000"
               MEMINI_API_KEY:
                 valueFrom:
