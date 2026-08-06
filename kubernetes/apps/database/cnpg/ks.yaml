@@ -21,7 +21,7 @@ spec:
       kind: Cluster
       failed: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'False')
       current: status.conditions.filter(e, e.type == 'Ready').all(e, e.status == 'True')
-  path: ./kubernetes/apps/database/cnpg/postgresql
+  path: ./kubernetes/apps/database/cnpg/postgres
   prune: true
   sourceRef:
     kind: GitRepository
