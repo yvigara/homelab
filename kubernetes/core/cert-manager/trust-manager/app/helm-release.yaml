@@ -8,3 +8,8 @@ spec:
     kind: OCIRepository
     name: trust-manager
     namespace: flux-system
+  values:
+    secretTargets:
+      enabled: true
+      authorizedSecrets:
+        - cluster-ca-secret
