@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/cluster_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18-minimal-trixie
+  certificates:
+    serverCASecret: cluster-ca-secret
+    serverTLSSecret: postgres-server-cert
+  storage:
+    size: 10Gi
+    storageClass: openebs-hostpath
+  postgresql:
+    extensions:
+      - name: pgvector
+        image:
+          # renovate: suite=trixie-pgdg depName=postgresql-18-pgvector
+          reference: ghcr.io/cloudnative-pg/pgvector:0.8.6-18-trixie
+      - name: timescaledb-oss
+        image:
+          # renovate: suite=trixie-pgdg depName=postgresql-18-timescaledb
+          reference: ghcr.io/cloudnative-pg/timescaledb-oss:2.29.0-18-trixie
+    parameters:
+      max_connections: "100"
+      max_locks_per_transaction: "256"
+      shared_buffers: 64MB
+      timescaledb.max_background_workers: "32"
+      timescaledb.max_tuples_decompressed_per_dml_transaction: "0"
+      timescaledb.telemetry_level: "off"
+    shared_preload_libraries:
+      - timescaledb
+  bootstrap:
+    initdb: {}
