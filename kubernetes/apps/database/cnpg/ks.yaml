@@ -4,6 +4,7 @@ kind: Kustomization
 metadata:
   name: &app cnpg-cluster
 spec:
+  targetNamespace: database
   commonMetadata:
     labels:
       app.kubernetes.io/name: cnpg
