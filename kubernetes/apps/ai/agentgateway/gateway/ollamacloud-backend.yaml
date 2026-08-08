@@ -56,4 +56,4 @@ spec:
   traffic:
     apiKeyAuthentication:
       secretRef:
-        name: omlx-secret
+        name: omlx-client-keys
