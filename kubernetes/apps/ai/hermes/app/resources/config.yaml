@@ -13,6 +13,12 @@ custom_providers:
         context_length: 110592
       gemma-4-e2b-it-qat-OptiQ-4bit:
         context_length: 131072
+      maple-preview-2bit-mlx:
+        context_length: 131072
+      LFM2.5-2.6B-MLX-4bit:
+        context_length: 131072
+      LFM2.5-2.6B-MLX-8bit:
+        context_length: 131072
   - name: k8s-lfm2.5-2.6b
     base_url: http://lfm2-5-2-6b.ai.svc.cluster.local:8080
     default_model: lfm2.5-2.6b
