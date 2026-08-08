@@ -2,6 +2,10 @@ model:
   default: Qwen3.5-9B-MLX-4bit
   provider: custom:k8s-omlx
 custom_providers:
+  - name: k8s-ollamacloud
+    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-cloud
+    api_key: "${HERMES_OMLX_KEY}"
+    default_model: deepseek-v4-flash:cloud
   - name: k8s-omlx
     base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
     api_key: "${HERMES_OMLX_KEY}"
@@ -60,6 +64,58 @@ auxiliary:
     timeout: 600
 toolsets:
   - hermes-cli
+platform_toolsets:
+  cli:
+    - browser
+    - clarify
+    - code_execution
+    - cronjob
+    - delegation
+    - file
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - web
+  slack:
+    - browser
+    - clarify
+    - code_execution
+    - cronjob
+    - delegation
+    - file
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - web
+skills:
+  disabled:
+    - airtable
+    - audiocraft-audio-generation
+    - baoyu-infographic
+    - computer-use
+    - gif-search
+    - heartmula
+    - hermes-desktop-plugins
+    - inspecting-hermes-desktop-dom
+    - jupyter-live-kernel
+    - llama-cpp
+    - manim-video
+    - notion
+    - obsidian
+    - openhue
+    - petdex
+    - polymarket
+    - research-paper-writing
+    - serving-llms-vllm
+    - songsee
+    - songwriting-and-ai-music
+    - teams-meeting-pipeline
+    - touchdesigner-mcp
+    - yuanbao
 agent:
   max_turns: 90
   gateway_timeout: 1800
@@ -67,6 +123,13 @@ agent:
   api_max_retries: 3
   tool_use_enforcement: auto
   reasoning_effort: medium
+  disabled_toolsets:
+    - homeassistant
+    - spotify
+    - computer_use
+    - browser
+    - tts
+    - stt
 terminal:
   backend: local
   cwd: /opt/data/workspace
