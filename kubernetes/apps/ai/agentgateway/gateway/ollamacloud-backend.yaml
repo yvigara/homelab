@@ -9,13 +9,13 @@ spec:
       custom:
         formats:
           - type: Completions
-            path: /chat/completions
+            path: /v1/chat/completions
           - type: Messages
-            path: /messages
+            path: /v1/messages
           - type: Embeddings
-            path: /embeddings
+            path: /v1/embeddings
           - type: Responses
-            path: /responses
+            path: /v1/responses
       host: ollama.com
       port: 443
   policies:
