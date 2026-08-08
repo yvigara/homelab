@@ -19,6 +19,8 @@ spec:
       host: ollama.com
       port: 443
   policies:
+    tls:
+      sni: ollama.com
     auth:
       secretRef:
         name: ollama-cloud-apikey
@@ -54,4 +56,4 @@ spec:
   traffic:
     apiKeyAuthentication:
       secretRef:
-        name: omlx-client-keys
+        name: omlx-secret
