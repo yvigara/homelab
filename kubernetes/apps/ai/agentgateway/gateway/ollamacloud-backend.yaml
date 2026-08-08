@@ -1,0 +1,57 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: ollama-cloud
+  namespace: agentgateway-system
+spec:
+  ai:
+    provider:
+      custom:
+        formats:
+          - type: Completions
+            path: /chat/completions
+          - type: Messages
+            path: /messages
+          - type: Embeddings
+            path: /embeddings
+          - type: Responses
+            path: /responses
+      host: ollama.com
+      port: 443
+  policies:
+    auth:
+      secretRef:
+        name: ollama-cloud-apikey
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ollama-cloud
+spec:
+  parentRefs:
+    - name: agentgateway-proxy
+      namespace: agentgateway-system
+      sectionName: http
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ollama-cloud
+      backendRefs:
+        - name: ollama-cloud
+          kind: AgentgatewayBackend
+          group: agentgateway.dev
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: ollama-cloud-apikey
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: ollama-cloud
+  traffic:
+    apiKeyAuthentication:
+      secretRef:
+        name: omlx-client-keys

@@ -5,3 +5,4 @@ resources:
   - ./ollama-backend.yaml
   - ./externalsecret.yaml
   - ./omlx-backend.yaml
+  - ./ollamacloud-backend.yaml
