@@ -21,7 +21,6 @@ spec:
   cluster:
     name: postgres
   databaseRoleReclaimPolicy: retain
-  disablePassword: true
   ensure: present
   login: true
   name: memini
