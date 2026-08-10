@@ -1,6 +1,6 @@
 model:
-  default: Qwen3.5-9B-MLX-4bit
-  provider: custom:k8s-omlx
+  default: deepseek-v4-flash:cloud
+  provider: custom:k8s-ollamacloud
 custom_providers:
   - name: k8s-ollamacloud
     base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-cloud
