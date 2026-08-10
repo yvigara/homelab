@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/database_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: postgres-memini
+  namespace: postgres
+spec:
+  name: memini
+  owner: memini
+  cluster:
+    name: postgres
+  extensions:
+    - name: vector
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/databaserole_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: postgres-memini
+spec:
+  cluster:
+    name: postgres
+  databaseRoleReclaimPolicy: retain
+  disablePassword: true
+  ensure: present
+  login: true
+  name: memini
+  superuser: false
+  passwordSecret:
+    name: memini-postgres
