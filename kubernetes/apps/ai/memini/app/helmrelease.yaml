@@ -30,7 +30,7 @@ spec:
               limits:
                 memory: 256Mi
             env:
-              MEMINI_BACKEND: sqlite
+              MEMINI_BACKEND: postgres
               MEMINI_LOG_FORMAT: json
               MEMINI_DEMOTE_AFTER: 1440h
               MEMINI_TOMBSTONE_TTL: 720h
@@ -48,6 +48,11 @@ spec:
                   secretKeyRef:
                     name: *name
                     key: MEMINI_API_KEY
+              MEMINI_POSTGRES_DSN:
+                valueFrom:
+                  secretKeyRef:
+                    name: *name
+                    key: MEMINI_POSTGRES_DSN
     persistence:
       data:
         enabled: true
