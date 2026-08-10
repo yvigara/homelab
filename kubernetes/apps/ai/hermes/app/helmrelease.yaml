@@ -101,6 +101,32 @@ spec:
           - backendRefs:
               - identifier: app
                 port: dashboard
+      public-dashboard:
+        annotations:
+          external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+        hostnames:
+          - "hermes.${DOMAIN}"
+        parentRefs:
+          - name: traefik-public
+            namespace: network
+            sectionName: websecure
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: dashboard
+      api:
+        annotations:
+          external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+        hostnames:
+          - "hermes-api.${DOMAIN}"
+        parentRefs:
+          - name: traefik-public
+            namespace: network
+            sectionName: websecure
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: gateway
     persistence:
       data:
         existingClaim: hermes
