@@ -35,6 +35,9 @@ metadata:
   name: memini-postgres
 spec:
   refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: bitwarden-secretsmanager
   target:
     name: memini-postgres
     template:
