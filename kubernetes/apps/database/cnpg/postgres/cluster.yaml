@@ -24,7 +24,7 @@ spec:
           reference: ghcr.io/cloudnative-pg/timescaledb-oss:2.29.0-18-trixie
       - name: vchord
         image:
-          reference: ghcr.io/jdijt/cnpg-vchord:1.1.1-18-20260620183030-trixie
+          reference: ghcr.io/jdijt/cnpg-vchord:1.1.1-20260727194135-18-trixie
     parameters:
       max_connections: "100"
       max_locks_per_transaction: "256"
