@@ -22,6 +22,9 @@ spec:
         image:
           # renovate: suite=trixie-pgdg depName=postgresql-18-timescaledb
           reference: ghcr.io/cloudnative-pg/timescaledb-oss:2.29.0-18-trixie
+      - name: vchord
+        image:
+          reference: ghcr.io/jdijt/cnpg-vchord:1.1.1-18-20260620183030-trixie
     parameters:
       max_connections: "100"
       max_locks_per_transaction: "256"
@@ -31,5 +34,6 @@ spec:
       timescaledb.telemetry_level: "off"
     shared_preload_libraries:
       - timescaledb
+      - vchord
   bootstrap:
     initdb: {}
