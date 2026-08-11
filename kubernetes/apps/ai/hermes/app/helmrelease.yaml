@@ -50,7 +50,7 @@ spec:
               HERMES_DASHBOARD: "1"
               HERMES_DASHBOARD_PUBLIC_URL: "https://hermes.${DOMAIN}"
               HERMES_DASHBOARD_OIDC_ISSUER: "https://dex.${DOMAIN}"
-              HERMES_DASHBOARD_OIDC_CLIENT_ID: "hermes-dashboard"
+              HERMES_DASHBOARD_OIDC_CLIENT_ID: "hermes-dashboard-public"
               MEMINI_BASE_URL: http://memini.ai.svc.cluster.local:8080
               MEMINI_NAMESPACE: hermes
               MEMINI_API_KEY:
