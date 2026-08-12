@@ -47,8 +47,8 @@ spec:
 
                 # real activation for interactive `kubectl exec` shells
                 touch /opt/data/.bashrc
-                grep -qF 'mise activate bash' /opt/data/.bashrc \
-                  || echo 'eval "$(mise activate bash)"' >> /opt/data/.bashrc
+                grep -qF '/opt/data/.local/bin/mise activate bash' /opt/data/.bashrc \
+                  || echo 'eval "$(/opt/data/.local/bin/mise activate bash)"' >> /opt/data/.bashrc
 
                 mkdir -p /opt/data/.cache/mise
                 chown -R hermes:hermes /opt/data/.bashrc /opt/data/.config/mise \
