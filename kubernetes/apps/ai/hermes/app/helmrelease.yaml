@@ -36,7 +36,7 @@ spec:
               - |
                 set -euo pipefail
                 cp /run/config/config.yaml /opt/data/config.yaml
-                chown 10000:10000 /opt/data/config.yaml
+                chown hermes:hermes /opt/data/config.yaml
 
                 mkdir -p /opt/data/.config/mise /opt/data/.local/bin \
                   /opt/data/.local/share/mise /opt/data/.local/state/mise /opt/data/.cache/mise
@@ -50,7 +50,8 @@ spec:
                 grep -qF 'mise activate bash' /opt/data/.bashrc \
                   || echo 'eval "$(mise activate bash)"' >> /opt/data/.bashrc
 
-                chown -R 1000:1000 /opt/data/.bashrc /opt/data/.config/mise \
+                mkdir -p /opt/data/.cache/mise
+                chown -R hermes:hermes /opt/data/.bashrc /opt/data/.config/mise \
                   /opt/data/.local/bin/mise /opt/data/.local/share/mise \
                   /opt/data/.local/state/mise /opt/data/.cache/mise
                 su - hermes -c "$MISE_INSTALL_PATH install"
