@@ -9,6 +9,7 @@ configMapGenerator:
   - name: hermes-configmap
     files:
       - config.yaml=./resources/config.yaml
+      - mise.toml=./resources/mise.toml
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

@@ -21,21 +21,42 @@ spec:
         strategy: Recreate
         initContainers:
           init:
-            image:
-              repository: docker.io/library/alpine
-              tag: "3.24"
+            image: &app_image
+              repository: nousresearch/hermes-agent
+              tag: v2026.8.3@sha256:16788311e2fa3035456bdc1bafb8ec2b1777db64ebf020af9bb7eb73c3712c9e
+            env:
+              HOME: /opt/data
+              MISE_VERSION: v2026.8.5
+              MISE_INSTALL_PATH: /opt/data/.local/bin/mise
+              MISE_INSTALL_SKIP_IF_EXISTS: "1"
+              MISE_YES: "1"
             command:
-              - sh
+              - bash
               - -c
               - |
                 set -euo pipefail
                 cp /run/config/config.yaml /opt/data/config.yaml
                 chown 10000:10000 /opt/data/config.yaml
+
+                mkdir -p /opt/data/.config/mise /opt/data/.local/bin \
+                  /opt/data/.local/share/mise /opt/data/.local/state/mise /opt/data/.cache/mise
+                cp /run/config/mise.toml /opt/data/.config/mise/config.toml
+
+                # no-ops when $MISE_INSTALL_PATH is already at $MISE_VERSION
+                curl -fsSL https://mise.run | sh
+
+                # real activation for interactive `kubectl exec` shells
+                touch /opt/data/.bashrc
+                grep -qF 'mise activate bash' /opt/data/.bashrc \
+                  || echo 'eval "$(mise activate bash)"' >> /opt/data/.bashrc
+
+                chown -R 1000:1000 /opt/data/.bashrc /opt/data/.config/mise \
+                  /opt/data/.local/bin/mise /opt/data/.local/share/mise \
+                  /opt/data/.local/state/mise /opt/data/.cache/mise
+                su - hermes mise install
         containers:
           app:
-            image:
-              repository: nousresearch/hermes-agent
-              tag: v2026.8.3@sha256:16788311e2fa3035456bdc1bafb8ec2b1777db64ebf020af9bb7eb73c3712c9e
+            image: *app_image
             args:
               - "gateway"
               - "run"
@@ -63,6 +84,7 @@ spec:
               WHATSAPP_MODE: self-chat
               HOME: /opt/data
               TERM: xterm-256color
+              PATH: /opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.local/bin:/opt/data/.local/share/mise/shims:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
             envFrom:
               - configMapRef:
                   name: cluster-vars
@@ -141,6 +163,8 @@ spec:
             init:
               - path: /run/config/config.yaml
                 subPath: config.yaml
+              - path: /run/config/mise.toml
+                subPath: mise.toml
       run:
         type: emptyDir
         advancedMounts:
