@@ -38,6 +38,8 @@ spec:
                 cp /run/config/config.yaml /opt/data/config.yaml
                 chown hermes:hermes /opt/data/config.yaml
 
+                echo 'export PATH="/opt/data/.local/bin:/opt/data/.local/share/mise/shims:$PATH"' > /opt/data/.profile
+
                 mkdir -p /opt/data/.config/mise /opt/data/.local/bin \
                   /opt/data/.local/share/mise /opt/data/.local/state/mise /opt/data/.cache/mise
                 cp /run/config/mise.toml /opt/data/.config/mise/config.toml
