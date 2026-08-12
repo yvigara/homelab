@@ -38,9 +38,9 @@ spec:
                 cp /run/config/config.yaml /opt/data/config.yaml
                 chown hermes:hermes /opt/data/config.yaml
 
-                mkdir -p /opt/data/.config/mise /opt/data/.local/bin \
+                mkdir -p /etc/mise /opt/data/.config/mise /opt/data/.local/bin \
                   /opt/data/.local/share/mise /opt/data/.local/state/mise /opt/data/.cache/mise
-                cp /run/config/mise.toml /opt/data/.config/mise/config.toml
+                cp /run/config/mise.toml /etc/mise/miserc.toml
 
                 # no-ops when $MISE_INSTALL_PATH is already at $MISE_VERSION
                 curl -fsSL https://mise.run | sh
