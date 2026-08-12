@@ -53,7 +53,7 @@ spec:
                 chown -R 1000:1000 /opt/data/.bashrc /opt/data/.config/mise \
                   /opt/data/.local/bin/mise /opt/data/.local/share/mise \
                   /opt/data/.local/state/mise /opt/data/.cache/mise
-                su - hermes mise install
+                su - hermes -c "$MISE_INSTALL_PATH install"
         containers:
           app:
             image: *app_image
