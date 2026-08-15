@@ -1,14 +1,29 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    ":dependencyDashboard",
-    ":semanticCommits",
-    ":timezone(Australia/Melbourne)"
+    ":timezone(Australia/Melbourne)",
+    "github>home-operations/renovate-presets#7.0.0"
   ],
-  "labels": ["renovate"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/\\.yaml(?:\\.j2)?$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+url: \"https://github\\.com/(?:[^/]+/[^/]+)/releases/download/(?<currentValue>[^/]+)/[^\"]+\""
+      ],
+      "datasourceTemplate": "{{datasource}}",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "labels": [
+    "renovate"
+  ],
   "kubernetes": {
-    "managerFilePatterns": ["/^kubernetes/.+\\.ya?ml$/"]
+    "managerFilePatterns": [
+      "/^kubernetes/.+\\.ya?ml$/"
+    ]
   },
   "packageRules": [
     {
@@ -21,18 +36,28 @@
     },
     {
       "description": "Keep the CRD manifests in kubernetes/crds in step with their chart",
-      "matchFileNames": ["kubernetes/crds/**"],
+      "matchFileNames": [
+        "kubernetes/crds/**"
+      ],
       "groupName": "crds"
     },
     {
       "description": "Major bumps get their own PR and a visible label",
-      "matchUpdateTypes": ["major"],
-      "labels": ["renovate", "major"],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "labels": [
+        "renovate",
+        "major"
+      ],
       "minimumReleaseAge": "3 days"
     },
     {
       "description": "Let a release settle before proposing it",
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "minimumReleaseAge": "1 day"
     }
   ]
