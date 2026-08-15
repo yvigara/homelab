@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/database_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: postgres-pocket-id
+spec:
+  name: pocket-id
+  owner: pocket-id
+  cluster:
+    name: postgres
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/databaserole_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: postgres-pocket-id
+spec:
+  cluster:
+    name: postgres
+  databaseRoleReclaimPolicy: retain
+  ensure: present
+  login: true
+  name: pocket-id
+  superuser: false
+  passwordSecret:
+    name: pocket-id-postgres
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/external-secrets.io/externalsecret_v1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: pocket-id-postgres
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: bitwarden-secretsmanager
+  target:
+    name: pocket-id-postgres
+    template:
+      engineVersion: v2
+      metadata:
+        labels:
+          cnpg.io/reload: "true"
+      type: kubernetes.io/basic-auth
+      data:
+        username: "pocket-id"
+        password: "{{ .POCKET_ID_PG_PASSWORD }}"
+  data:
+    - secretKey: POCKET_ID_PG_PASSWORD
+      remoteRef:
+        key: POCKET_ID_PG_PASSWORD

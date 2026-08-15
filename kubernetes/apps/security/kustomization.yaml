@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: security
 resources:
-  - ./certificate.yaml
-  - ./cluster.yaml
-  - ./db-memini.yaml
-  - ./db-pocket-id.yaml
+  - ./namespace.yaml
+  - ./cluster-vars.yaml
+  - ./pocket-id/ks.yaml
