@@ -24,7 +24,7 @@ locals {
 
 module "flux_operator_bootstrap" {
   source  = "controlplaneio-fluxcd/flux-operator-bootstrap/kubernetes"
-  version = "0.7.0"
+  version = "0.8.0"
 
   revision = var.bootstrap_revision
 
