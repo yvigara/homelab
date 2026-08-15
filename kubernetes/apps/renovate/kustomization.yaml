@@ -6,4 +6,3 @@ resources:
   - ./namespace.yaml
   - ./cluster-vars.yaml
   - ./renovate-operator/ks.yaml
-  - ./konflate/ks.yaml

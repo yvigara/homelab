@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 #
 # Public, because GitHub has to reach it. Same shape as the Flux webhook receiver
-# in kubernetes/core/flux-system/flux-instance/app/httproute.yaml.
+# next door in ../../flux-instance/app/httproute.yaml.
 #
 # Unlike the operator, konflate serves its webhook on the *same* port as the UI
 # (8080 carries UI, API, websocket and webhook alike). So the path match here is
@@ -19,7 +19,7 @@ metadata:
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   hostnames:
-    - "konflate-webhook-${CLUSTER_NAME}.${DOMAIN}"
+    - "konflate-${CLUSTER_NAME}.${DOMAIN}"
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway

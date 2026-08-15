@@ -74,7 +74,7 @@ spec:
     # POLICY_ALLOWED_HOSTS (a URL set in chart values is approved by construction).
     webhook:
       enabled: true
-      baseUrl: https://renovate-webhook-${CLUSTER_NAME}.${DOMAIN}
+      baseUrl: https://renovate-${CLUSTER_NAME}.${DOMAIN}
 
     resources:
       requests:

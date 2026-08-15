@@ -20,7 +20,7 @@ metadata:
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   hostnames:
-    - "renovate-webhook-${CLUSTER_NAME}.${DOMAIN}"
+    - "renovate-${CLUSTER_NAME}.${DOMAIN}"
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
