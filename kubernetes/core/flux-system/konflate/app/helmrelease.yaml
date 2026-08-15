@@ -1,4 +1,3 @@
----
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 #
 # konflate renders each open PR as a *rendered Flux diff* instead of a raw file
@@ -21,49 +20,37 @@ spec:
   values:
     config:
       repo: github://yvigara/homelab
-      # The Flux entry point for this cluster — the same path the FluxInstance
-      # syncs (kubernetes/clusters/lab/sed-lab-01/flux-system/flux-instance.yaml).
-      # Kustomization paths inside it are root-relative and still resolve, because
-      # flate resolves them from the git root rather than from this directory.
-      clusterPath: kubernetes/clusters/lab/sed-lab-01
-
-      # Missed-webhook backstop, not the primary trigger — the GitHub App webhook
-      # (see ./httproute-webhook.yaml) renders a PR within seconds of it opening
-      # or its head advancing. This just catches deliveries that never arrived.
       refreshInterval: 30m
-
-      # Write-back. Both need the GitHub App credential below and stay inert
-      # without it. The comment is posted once and updated in place per render.
       statusChecks: true
       prComments: true
-      publicUrl: https://konflate.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
-
-      # Check that images a PR newly references actually exist in their registry.
-      # Pairs well with Renovate: a bad tag is caught here rather than as an
-      # ImagePullBackOff after merge. Only same-repo (trusted) PRs are checked.
       verifyImages: true
-
+      publicUrl: "https://konflate-${CLUSTER_NAME}.${DOMAIN}"
+      mcp: true
     secret:
       existingSecret: konflate-github-app
-
     # Caches, the bare git mirror and the rendered diffs. Without it every restart
     # re-clones and re-renders every open PR from scratch.
     persistence:
       enabled: true
       storageClass: openebs-hostpath
       size: 10Gi
-
     # Routed by ./httproute.yaml, matching the rest of this repo.
     ingress:
       enabled: false
     httpRoute:
       enabled: false
-
+      annotations:
+        external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+      parentRefs:
+        - name: traefik-public
+          namespace: network
+          sectionName: websecure
+      hostnames:
+        - "konflate-${CLUSTER_NAME}.${DOMAIN}"
     # Roll the pod when the mounted App credential changes; the repo already runs
     # reloader for exactly this.
     deploymentAnnotations:
       reloader.stakater.com/auto: "true"
-
     resources:
       requests:
         cpu: 50m
