@@ -1,0 +1,119 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app rustfs
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  interval: 1h
+  values:
+    controllers:
+      *app :
+        annotations:
+          reloader.stakater.com/auto: "true"
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: rustfs/rustfs
+              tag: 1.0.0-beta.12@sha256:41fe89380f4120a337790c02af192c3fe7bb55c3edc2e6e9357b487b47c6ab21
+            args: ["/data"]
+            env:
+              TZ: ${TIMEZONE}
+              RUSTFS_ADDRESS: ":9000"
+              RUSTFS_CONSOLE_ADDRESS: ":9001"
+              RUSTFS_CONSOLE_ENABLE: "true"
+              RUSTFS_BROWSER_REDIRECT_URL: "https://rustfs.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+              RUSTFS_SERVER_DOMAINS: "s3.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+              # beta.12 routes OIDC discovery/JWKS/token calls through an
+              # outbound egress policy (rustfs#5159) that rejects private origins
+              RUSTFS_OUTBOUND_ALLOW_ORIGINS: "https://dex.${DOMAIN}"
+              RUSTFS_IDENTITY_OPENID_ENABLE: "true"
+              RUSTFS_IDENTITY_OPENID_CONFIG_URL: "https://dex.${DOMAIN}/.well-known/openid-configuration"
+              RUSTFS_IDENTITY_OPENID_CLIENT_ID: *app
+              RUSTFS_IDENTITY_OPENID_REDIRECT_URI: "https://rustfs.int.${REGION}.${ENVIRONMENT}.${DOMAIN}/rustfs/admin/v3/oidc/callback/default"
+              RUSTFS_IDENTITY_OPENID_REDIRECT_URI_DYNAMIC: "off"
+              RUSTFS_IDENTITY_OPENID_SCOPES: "openid,profile,email,groups"
+              RUSTFS_IDENTITY_OPENID_CLAIM_NAME: "groups"
+              RUSTFS_IDENTITY_OPENID_DISPLAY_NAME: "Celestio SSO"
+            envFrom:
+              - secretRef:
+                  name: rustfs-secret
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: &s3_port 9000
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 6
+              readiness: *probes
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: &console_port 9001
+          s3:
+            port: *s3_port
+    route:
+      app:
+        hostnames:
+          - "rustfs.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+        parentRefs:
+          - name: traefik-private
+            namespace: network
+            sectionName: websecure
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *console_port
+      s3:
+        hostnames:
+          - "s3.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+        parentRefs:
+          - name: traefik-private
+            namespace: network
+            sectionName: websecure
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *s3_port
+    persistence:
+      data:
+        existingClaim: *app
+        globalMounts:
+          - path: /data
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
