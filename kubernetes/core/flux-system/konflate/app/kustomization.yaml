@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://json.schemastore.org/kustomization
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: flux-system
 resources:
-  - ./cluster-vars.yaml
-  - ./flux-instance/ks.yaml
-  - ./flux-operator/ks.yaml
-  - ./konflate/ks.yaml
+  - ./ocirepository.yaml
+  - ./externalsecret.yaml
+  - ./helmrelease.yaml
+  - ./httproute.yaml
+  - ./httproute-webhook.yaml

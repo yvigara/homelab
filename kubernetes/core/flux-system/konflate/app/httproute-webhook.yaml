@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+#
+# Public, because GitHub has to reach it. Same shape as the Flux webhook receiver
+# next door in ../../flux-instance/app/httproute.yaml.
+#
+# Unlike the operator, konflate serves its webhook on the *same* port as the UI
+# (8080 carries UI, API, websocket and webhook alike). So the path match here is
+# `Exact: /hooks` rather than a prefix — a prefix would publish the whole UI, and
+# the UI shows rendered manifests including cleartext Secret values from the repo.
+# The UI stays private via ./httproute.yaml.
+#
+# Deliveries are authenticated by KONFLATE_WEBHOOK_SECRET: GitHub signs each POST
+# as X-Hub-Signature-256 and konflate verifies it before acting.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: konflate-webhook
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  hostnames:
+    - "konflate-${CLUSTER_NAME}.${DOMAIN}"
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: traefik-public
+      namespace: network
+      sectionName: websecure
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /hooks
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: konflate
+          port: 8080

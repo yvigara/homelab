@@ -1,0 +1,72 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+#
+# konflate renders each open PR as a *rendered Flux diff* instead of a raw file
+# diff. That is the piece that makes automated dependency PRs reviewable: a
+# one-line OCIRepository tag bump can add, remove or mutate dozens of rendered
+# resources, and the git diff shows only the line.
+#
+# It renders the cluster at the PR's merge-base and at its head with flate, then
+# diffs the two — no cluster access, no kubectl. Its HTTP surface is read-only;
+# the only writes are the commit status and PR comment its own render loop posts.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: konflate
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: konflate
+  values:
+    config:
+      repo: github://yvigara/homelab
+      # The Flux entry point for this cluster — the same path the FluxInstance
+      # syncs (kubernetes/clusters/lab/sed-lab-01/flux-system/flux-instance.yaml).
+      # Kustomization paths inside it are root-relative and still resolve, because
+      # flate resolves them from the git root rather than from this directory.
+      clusterPath: kubernetes/clusters/lab/sed-lab-01
+
+      # Missed-webhook backstop, not the primary trigger — the GitHub App webhook
+      # (see ./httproute-webhook.yaml) renders a PR within seconds of it opening
+      # or its head advancing. This just catches deliveries that never arrived.
+      refreshInterval: 30m
+
+      # Write-back. Both need the GitHub App credential below and stay inert
+      # without it. The comment is posted once and updated in place per render.
+      statusChecks: true
+      prComments: true
+      publicUrl: https://konflate.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
+
+      # Check that images a PR newly references actually exist in their registry.
+      # Pairs well with Renovate: a bad tag is caught here rather than as an
+      # ImagePullBackOff after merge. Only same-repo (trusted) PRs are checked.
+      verifyImages: true
+
+    secret:
+      existingSecret: konflate-github-app
+
+    # Caches, the bare git mirror and the rendered diffs. Without it every restart
+    # re-clones and re-renders every open PR from scratch.
+    persistence:
+      enabled: true
+      storageClass: openebs-hostpath
+      size: 10Gi
+
+    # Routed by ./httproute.yaml, matching the rest of this repo.
+    ingress:
+      enabled: false
+    httpRoute:
+      enabled: false
+
+    # Roll the pod when the mounted App credential changes; the repo already runs
+    # reloader for exactly this.
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
