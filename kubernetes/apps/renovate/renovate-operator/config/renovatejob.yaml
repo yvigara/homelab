@@ -1,0 +1,64 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/renovate-operator.mogenius.com/renovatejob_v1alpha1.json
+apiVersion: renovate-operator.mogenius.com/v1alpha1
+kind: RenovateJob
+metadata:
+  name: renovate-github
+spec:
+  # Hourly discovery. Renovate itself only opens PRs when something actually
+  # changed, and the per-repo schedule in renovate.json narrows when it may do so.
+  schedule: "0 * * * *"
+  image: ghcr.io/renovatebot/renovate:44.30.2
+  parallelism: 2
+
+  provider:
+    name: github
+    # endpoint defaults to https://api.github.com
+
+  # Which repositories to process, out of those the GitHub App installation can
+  # see. The installation is the real boundary: Renovate can only discover repos
+  # the App was installed on, so this filter just narrows within that set.
+  discoveryFilters:
+    - yvigara/*
+
+  # No PAT, no static token. The operator mints a short-lived installation access
+  # token from these App credentials and injects it as RENOVATE_TOKEN.
+  githubAppReference:
+    secretName: renovate-github-app
+    appIdSecretKey: APP_ID
+    installationIdSecretKey: INSTALLATION_ID
+    pemSecretKey: PEM
+
+  # Global (self-hosted) Renovate config, mounted read-only and pointed at by
+  # RENOVATE_CONFIG_FILE. JSON rather than JS deliberately: a .js config is
+  # executed by the Renovate runtime, and nothing here needs that.
+  #
+  # platformCommit is what makes commits signed. With it enabled Renovate writes
+  # commits through GitHub's API instead of `git`, and GitHub signs anything an App
+  # commits that way — the "Verified" badge on every Renovate commit. It only works
+  # for a GitHub App, which is why the PAT route cannot produce signed commits
+  # without managing a GPG key yourself.
+  #
+  # It is set twice on purpose: once as a normal default, and once under `force`,
+  # which outranks any repository's own renovate.json. A repo therefore cannot turn
+  # signing off. Note that gitAuthor must stay unset — with platform commits GitHub
+  # decides the author, and setting it is explicitly discouraged upstream.
+  renovateConfig:
+    fileName: config.json
+    inline: |
+      {
+        "platformCommit": "enabled",
+        "force": {
+          "platformCommit": "enabled"
+        },
+        "onboardingConfig": {
+          "extends": ["config:recommended"]
+        }
+      }
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
