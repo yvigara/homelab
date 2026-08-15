@@ -27,9 +27,10 @@ spec:
       # flate resolves them from the git root rather than from this directory.
       clusterPath: kubernetes/clusters/lab/sed-lab-01
 
-      # Backstop poll. There is no inbound webhook (that would need a public
-      # endpoint), so this interval is how quickly a new Renovate PR gets rendered.
-      refreshInterval: 10m
+      # Missed-webhook backstop, not the primary trigger — the GitHub App webhook
+      # (see ./httproute-webhook.yaml) renders a PR within seconds of it opening
+      # or its head advancing. This just catches deliveries that never arrived.
+      refreshInterval: 30m
 
       # Write-back. Both need the GitHub App credential below and stay inert
       # without it. The comment is posted once and updated in place per render.

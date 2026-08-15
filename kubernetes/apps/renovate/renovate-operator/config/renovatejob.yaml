@@ -56,6 +56,25 @@ spec:
         }
       }
 
+  # Webhook-triggered runs, so ticking a Dependency Dashboard checkbox or a PR's
+  # "rebase now" box acts within seconds instead of waiting for the next hour.
+  # The hourly schedule above still drives normal discovery.
+  #
+  # sync makes the operator create its own webhook on every repository it
+  # discovers, using the GitHub App token, and remove it again when a repo leaves
+  # the set or this RenovateJob is deleted. That is why no webhook is configured
+  # by hand on GitHub — but it does require the App to hold the "Webhooks:
+  # Read and write" repository permission.
+  webhook:
+    enabled: true
+    authentication:
+      enabled: true
+      secretRef:
+        name: renovate-webhook-token
+        key: token
+    sync:
+      enabled: true
+
   resources:
     requests:
       cpu: 100m

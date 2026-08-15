@@ -62,10 +62,19 @@ spec:
     route:
       enabled: false
 
-    # Inbound webhooks would need a publicly reachable endpoint; the RenovateJob
-    # runs on a cron schedule instead.
+    # Webhook server, on its own port (8082) separate from the UI. Only this port
+    # is published publicly — see ./httproute-webhook.yaml. It receives Dependency
+    # Dashboard checkbox ticks and PR "rebase now" requests, which are the two
+    # things that are useless on an hourly cron.
+    #
+    # baseUrl is set explicitly because the route is a standalone HTTPRoute rather
+    # than the chart's `webhook.route`, so the chart has nothing to derive it from.
+    # It is load-bearing twice over: the operator writes it onto each repository's
+    # webhook as the delivery URL, and the chart appends its hostname to
+    # POLICY_ALLOWED_HOSTS (a URL set in chart values is approved by construction).
     webhook:
-      enabled: false
+      enabled: true
+      baseUrl: https://renovate-webhook-${CLUSTER_NAME}.${DOMAIN}
 
     resources:
       requests:

@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+#
+# Public, because GitHub has to reach it. Same shape as the Flux webhook receiver
+# in kubernetes/core/flux-system/flux-instance/app/httproute.yaml: public gateway,
+# cloudflare-proxied, and a path prefix so only the webhook surface is published.
+#
+# This deliberately targets the webhook port (8082), not the UI port (8081). The
+# UI has no authentication configured — every request that reaches it is treated
+# as an admin, and it streams unredacted Renovate logs — so it stays on the
+# private gateway in ./httproute.yaml.
+#
+# Deliveries are authenticated: the operator writes its webhook onto each repo
+# with a shared secret, and GitHub signs every delivery as X-Hub-Signature-256.
+# An unsigned or wrongly signed POST here is rejected.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: renovate-webhook
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  hostnames:
+    - "renovate-webhook-${CLUSTER_NAME}.${DOMAIN}"
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: traefik-public
+      namespace: network
+      sectionName: websecure
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /webhook/
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: renovate-operator
+          port: 8082
