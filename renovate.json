@@ -42,6 +42,24 @@
       "groupName": "crds"
     },
     {
+      "description": "All Terraform providers move together",
+      "matchManagers": [
+        "terraform"
+      ],
+      "matchDepTypes": [
+        "provider",
+        "required_provider"
+      ],
+      "groupName": "terraform providers"
+    },
+    {
+      "description": "All mise tools move together",
+      "matchManagers": [
+        "mise"
+      ],
+      "groupName": "mise"
+    },
+    {
       "description": "Major bumps get their own PR and a visible label",
       "matchUpdateTypes": [
         "major"
