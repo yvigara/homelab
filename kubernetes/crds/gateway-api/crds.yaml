@@ -7,7 +7,7 @@ spec:
   interval: 30m
   url: https://github.com/kubernetes-sigs/gateway-api
   ref:
-    # renovate: datasource=github-tags depName=traefik/traefik-helm-chart
+    # renovate: datasource=github-tags depName=kubernetes-sigs/gateway-api
     tag: v1.6.1
   ignore: |
     # exclude all but the CDRs
