@@ -4,7 +4,7 @@ terraform {
   required_providers {
     auth0 = {
       source  = "auth0/auth0"
-      version = "1.51.0"
+      version = "1.55.0"
     }
     bitwarden-secrets = {
       source  = "bitwarden/bitwarden-secrets"
@@ -12,7 +12,7 @@ terraform {
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
-      version = "5.21.1"
+      version = "5.23.0"
     }
     random = {
       source  = "hashicorp/random"
