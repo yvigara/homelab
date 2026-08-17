@@ -94,6 +94,8 @@ spec:
                   name: cluster-vars
               - secretRef:
                   name: hermes-secret
+              - secretRef:
+                  name: hermes-github-app
             ports:
               - containerPort: *app_port
                 name: gateway
