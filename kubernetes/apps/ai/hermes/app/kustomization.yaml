@@ -3,6 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./externalsecret.yaml
+  - ./signingkey.yaml
   - ./pvc.yaml
   - ./helmrelease.yaml
 configMapGenerator:
@@ -11,6 +12,7 @@ configMapGenerator:
       - config.yaml=./resources/config.yaml
       - mise.toml=./resources/mise.toml
       - git-init.sh=./resources/git-init.sh
+      - ssh-agent.sh=./resources/ssh-agent.sh
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

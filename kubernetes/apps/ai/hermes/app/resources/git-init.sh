@@ -1,22 +1,41 @@
 #!/usr/bin/env bash
-# Renders the agent's git configuration from the GitHub App credentials exposed
-# by the hermes-github-app ExternalSecret (GH_APP_* environment variables).
+# Renders the agent's git configuration from the secrets projected into this
+# container: the GitHub App credentials (GH_APP_*) for authentication, and the
+# public half of the commit-signing key (SSH_SIGNING_KEY_PUB).
 #
 # Authentication is delegated to git-credential-github-app, installed via mise
 # (see mise.toml). It mints short-lived GitHub App installation tokens on demand;
 # git-credential-cache holds each token for its lifetime so the GitHub API is not
 # called on every git operation.
+#
+# Signing is delegated to ssh-keygen talking to the ssh-agent sidecar, which is
+# the only place the signing key's private half exists.
 set -euo pipefail
 
 : "${HOME:=/opt/data}"
 
 gh_app_dir="${HOME}/.config/github-app"
 private_key_file="${gh_app_dir}/private-key.pem"
+ssh_dir="${HOME}/.ssh"
+signing_key_pub="${ssh_dir}/signing_key.pub"
+allowed_signers="${ssh_dir}/allowed_signers"
 
 # The helper only accepts the private key as a file, so project it out of the env.
 install -d -m 0700 "${gh_app_dir}"
 printf '%s\n' "${GH_APP_PRIVATE_KEY}" >"${private_key_file}"
 chmod 0600 "${private_key_file}"
+
+# Only the public half of the signing key is written here. The private key stays
+# in the ssh-agent container, so git signs by handing the public key to
+# ssh-keygen, which finds the matching identity over SSH_AUTH_SOCK.
+install -d -m 0700 "${ssh_dir}"
+printf '%s\n' "${SSH_SIGNING_KEY_PUB}" >"${signing_key_pub}"
+chmod 0644 "${signing_key_pub}"
+
+# Lets `git log --show-signature` verify locally; GitHub uses its own copy of the
+# key, registered as a signing key on the committer's account.
+printf '%s %s\n' "${GIT_COMMITTER_EMAIL}" "${SSH_SIGNING_KEY_PUB}" >"${allowed_signers}"
+chmod 0644 "${allowed_signers}"
 
 # Helpers are consulted in order: the cache answers first, the GitHub App helper
 # is the fallback that actually mints the token. Git runs a helper with arguments
@@ -25,6 +44,7 @@ cat >"${HOME}/.gitconfig" <<EOF
 [user]
 	name = ${GH_APP_USERNAME}
 	email = ${GH_APP_USERNAME}@users.noreply.github.com
+	signingkey = ${signing_key_pub}
 
 [credential "https://github.com"]
 	helper = cache --timeout=43200
@@ -35,7 +55,19 @@ cat >"${HOME}/.gitconfig" <<EOF
 
 [init]
 	defaultBranch = main
+
+[gpg]
+	format = ssh
+
+[gpg "ssh"]
+	allowedSignersFile = ${allowed_signers}
+
+[commit]
+	gpgsign = true
+
+[tag]
+	gpgsign = true
 EOF
 chmod 0600 "${HOME}/.gitconfig"
 
-chown -R hermes:hermes "${gh_app_dir}" "${HOME}/.gitconfig"
+chown -R hermes:hermes "${gh_app_dir}" "${ssh_dir}" "${HOME}/.gitconfig"

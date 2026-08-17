@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/generators.external-secrets.io/sshkey_v1alpha1.json
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: hermes-signing-key
+spec:
+  keyType: ed25519
+  comment: hermes[bot] commit signing
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/external-secrets.io/externalsecret_v1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: hermes-signing-key
+spec:
+  # Generated once, never refreshed: the public key is registered by hand as a
+  # signing key on GitHub, and rotating it would orphan every existing signature.
+  # Deleting this ExternalSecret (or its Secret) mints a brand new key.
+  refreshInterval: "0"
+  target:
+    name: hermes-signing-key
+    creationPolicy: Owner
+    template:
+      data:
+        SSH_SIGNING_KEY: "{{ .privateKey }}"
+        SSH_SIGNING_KEY_PUB: "{{ .publicKey }}"
+        # The SSHKey generator cannot encrypt the key it emits, so the passphrase
+        # is generated alongside it and applied by the ssh-agent container.
+        SSH_SIGNING_KEY_PASSPHRASE: "{{ .password }}"
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: SSHKey
+          name: hermes-signing-key
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: ClusterGenerator
+          name: pw
