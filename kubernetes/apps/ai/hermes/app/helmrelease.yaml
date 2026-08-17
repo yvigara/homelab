@@ -23,10 +23,10 @@ spec:
           init:
             image: &app_image
               repository: nousresearch/hermes-agent
-              tag: v2026.8.16@sha256:f8f548d87d16634d1ad9e3777280f3f577ba2358703f04e18e74007ffd3621bf
+              tag: v2026.8.16.2@sha256:a39fc11620213e3669a327aff5c6cb1eb2b8a238c6044e33e7ef8885833d89a7
             env:
               HOME: /opt/data
-              MISE_VERSION: v2026.8.5
+              MISE_VERSION: v2026.8.8
               MISE_INSTALL_PATH: /opt/data/.local/bin/mise
               MISE_INSTALL_SKIP_IF_EXISTS: "1"
               MISE_YES: "1"
