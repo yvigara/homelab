@@ -30,6 +30,9 @@ spec:
               MISE_INSTALL_PATH: /opt/data/.local/bin/mise
               MISE_INSTALL_SKIP_IF_EXISTS: "1"
               MISE_YES: "1"
+            envFrom:
+              - secretRef:
+                  name: hermes-github-app
             command:
               - bash
               - -c
@@ -58,6 +61,9 @@ spec:
                   /opt/data/.local/state/mise /opt/data/.cache/mise \
                   /opt/data/.profile
                 su - hermes -c "$MISE_INSTALL_PATH install"
+
+                # git config + GitHub App credential helper, from hermes-github-app
+                bash /run/config/git-init.sh
         containers:
           app:
             image: *app_image
@@ -171,6 +177,8 @@ spec:
                 subPath: config.yaml
               - path: /run/config/mise.toml
                 subPath: mise.toml
+              - path: /run/config/git-init.sh
+                subPath: git-init.sh
       run:
         type: emptyDir
         advancedMounts:
