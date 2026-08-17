@@ -1,4 +1,3 @@
----
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/renovate-operator.mogenius.com/renovatejob_v1alpha1.json
 apiVersion: renovate-operator.mogenius.com/v1alpha1
 kind: RenovateJob
@@ -8,19 +7,16 @@ spec:
   # Hourly discovery. Renovate itself only opens PRs when something actually
   # changed, and the per-repo schedule in renovate.json narrows when it may do so.
   schedule: "0 * * * *"
-  image: ghcr.io/renovatebot/renovate:44.30.2
-  parallelism: 2
-
+  image: ghcr.io/renovatebot/renovate:44.32.1
+  parallelism: 4
   provider:
     name: github
     # endpoint defaults to https://api.github.com
-
   # Which repositories to process, out of those the GitHub App installation can
   # see. The installation is the real boundary: Renovate can only discover repos
   # the App was installed on, so this filter just narrows within that set.
   discoveryFilters:
     - yvigara/*
-
   # No PAT, no static token. The operator mints a short-lived installation access
   # token from these App credentials and injects it as RENOVATE_TOKEN.
   githubAppReference:
@@ -28,7 +24,6 @@ spec:
     appIdSecretKey: APP_ID
     installationIdSecretKey: INSTALLATION_ID
     pemSecretKey: PEM
-
   # Global (self-hosted) Renovate config, mounted read-only and pointed at by
   # RENOVATE_CONFIG_FILE. JSON rather than JS deliberately: a .js config is
   # executed by the Renovate runtime, and nothing here needs that.
@@ -55,7 +50,42 @@ spec:
           "extends": ["config:recommended"]
         }
       }
+  extraEnv:
+    - name: DOCKERHUB_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: docker-hub-token
+          key: DOCKERHUB_USERNAME
+    - name: DOCKERHUB_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: docker-hub-token
+          key: DOCKERHUB_TOKEN
+    - name: RENOVATE_HOST_RULES
+      value: >-
+        [
 
+          {
+            "hostType": "docker",
+            "matchHost": "docker.io",
+            "username": "$(DOCKERHUB_USERNAME)",
+            "password": "$(DOCKERHUB_TOKEN)"
+          }
+        ]
+    - name: RENOVATE_CACHE_DIR
+      value: /cache
+    - name: RENOVATE_REPOSITORY_CACHE
+      value: enabled
+    - name: RENOVATE_ALLOWED_UNSAFE_EXECUTIONS
+      value: |-
+        ["mise"]
+  extraVolumes:
+    - name: renovate-cache
+      persistentVolumeClaim:
+        claimName: renovate-cache
+  extraVolumeMounts:
+    - name: renovate-cache
+      mountPath: /cache
   # Webhook-triggered runs, so ticking a Dependency Dashboard checkbox or a PR's
   # "rebase now" box acts within seconds instead of waiting for the next hour.
   # The hourly schedule above still drives normal discovery.
@@ -74,7 +104,6 @@ spec:
         key: token
     sync:
       enabled: true
-
   resources:
     requests:
       cpu: 100m
