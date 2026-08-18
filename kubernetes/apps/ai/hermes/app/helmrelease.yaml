@@ -30,6 +30,13 @@ spec:
               MISE_INSTALL_PATH: /opt/data/.local/bin/mise
               MISE_INSTALL_SKIP_IF_EXISTS: "1"
               MISE_YES: "1"
+              GIT_COMMITTER_NAME: &committer_name yvigara
+              GIT_COMMITTER_EMAIL: &committer_email 704600+yvigara@users.noreply.github.com
+            envFrom:
+              - secretRef:
+                  name: hermes-github-app
+              - secretRef:
+                  name: hermes-signing-key
             command:
               - bash
               - -c
@@ -58,6 +65,9 @@ spec:
                   /opt/data/.local/state/mise /opt/data/.cache/mise \
                   /opt/data/.profile
                 su - hermes -c "$MISE_INSTALL_PATH install"
+
+                # git config + GitHub App credential helper, from hermes-github-app
+                bash /run/config/git-init.sh
         containers:
           app:
             image: *app_image
@@ -88,6 +98,11 @@ spec:
               WHATSAPP_MODE: self-chat
               HOME: /opt/data
               TERM: xterm-256color
+              # Author stays hermes[bot] (user.email in the gitconfig); GitHub
+              # verifies SSH signatures against the committer, and only a user
+              # account can own a signing key.
+              GIT_COMMITTER_NAME: *committer_name
+              GIT_COMMITTER_EMAIL: *committer_email
               PATH: /opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.local/bin:/opt/data/.local/share/mise/shims:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
             envFrom:
               - configMapRef:
@@ -171,6 +186,8 @@ spec:
                 subPath: config.yaml
               - path: /run/config/mise.toml
                 subPath: mise.toml
+              - path: /run/config/git-init.sh
+                subPath: git-init.sh
       run:
         type: emptyDir
         advancedMounts:
