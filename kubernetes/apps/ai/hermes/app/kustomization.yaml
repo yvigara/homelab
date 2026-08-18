@@ -12,7 +12,6 @@ configMapGenerator:
       - config.yaml=./resources/config.yaml
       - mise.toml=./resources/mise.toml
       - git-init.sh=./resources/git-init.sh
-      - ssh-agent.sh=./resources/ssh-agent.sh
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

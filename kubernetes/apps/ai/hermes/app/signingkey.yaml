@@ -24,17 +24,9 @@ spec:
       data:
         SSH_SIGNING_KEY: "{{ .privateKey }}"
         SSH_SIGNING_KEY_PUB: "{{ .publicKey }}"
-        # The SSHKey generator cannot encrypt the key it emits, so the passphrase
-        # is generated alongside it and applied by the ssh-agent container.
-        SSH_SIGNING_KEY_PASSPHRASE: "{{ .password }}"
   dataFrom:
     - sourceRef:
         generatorRef:
           apiVersion: generators.external-secrets.io/v1alpha1
           kind: SSHKey
           name: hermes-signing-key
-    - sourceRef:
-        generatorRef:
-          apiVersion: generators.external-secrets.io/v1alpha1
-          kind: ClusterGenerator
-          name: pw

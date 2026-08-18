@@ -30,18 +30,13 @@ spec:
               MISE_INSTALL_PATH: /opt/data/.local/bin/mise
               MISE_INSTALL_SKIP_IF_EXISTS: "1"
               MISE_YES: "1"
-              # Public half only: the private key never leaves the ssh-agent container.
-              SSH_SIGNING_KEY_PUB:
-                valueFrom:
-                  secretKeyRef:
-                    name: hermes-signing-key
-                    key: SSH_SIGNING_KEY_PUB
               GIT_COMMITTER_NAME: &committer_name yvigara
               GIT_COMMITTER_EMAIL: &committer_email 704600+yvigara@users.noreply.github.com
             envFrom:
               - secretRef:
                   name: hermes-github-app
-            dependsOn: ssh-agent
+              - secretRef:
+                  name: hermes-signing-key
             command:
               - bash
               - -c
@@ -73,31 +68,6 @@ spec:
 
                 # git config + GitHub App credential helper, from hermes-github-app
                 bash /run/config/git-init.sh
-          # Native sidecar: starts before the app container and keeps running, so
-          # the signing key is loaded in the agent by the time hermes commits.
-          ssh-agent:
-            image: *app_image
-            restartPolicy: Always
-            # Matches HERMES_UID/HERMES_GID so the agent socket is usable by the
-            # hermes process in the app container.
-            securityContext:
-              runAsUser: 1000
-              runAsGroup: 1000
-              allowPrivilegeEscalation: false
-              capabilities: { drop: ["ALL"] }
-            envFrom:
-              - secretRef:
-                  name: hermes-signing-key
-            command:
-              - bash
-              - -c
-              - exec bash /run/config/ssh-agent.sh
-            resources:
-              requests:
-                cpu: 10m
-                memory: 32Mi
-              limits:
-                memory: 64Mi
         containers:
           app:
             image: *app_image
@@ -128,7 +98,6 @@ spec:
               WHATSAPP_MODE: self-chat
               HOME: /opt/data
               TERM: xterm-256color
-              SSH_AUTH_SOCK: /run/ssh-agent/agent.sock
               # Author stays hermes[bot] (user.email in the gitconfig); GitHub
               # verifies SSH signatures against the committer, and only a user
               # account can own a signing key.
@@ -219,27 +188,6 @@ spec:
                 subPath: mise.toml
               - path: /run/config/git-init.sh
                 subPath: git-init.sh
-            ssh-agent:
-              - path: /run/config/ssh-agent.sh
-                subPath: ssh-agent.sh
-      # Socket only, shared with the app container.
-      ssh-agent:
-        type: emptyDir
-        medium: Memory
-        advancedMounts:
-          hermes:
-            ssh-agent:
-              - path: /run/ssh-agent
-            app:
-              - path: /run/ssh-agent
-      # Where the key is briefly written to be encrypted and loaded. Not shared.
-      ssh-key:
-        type: emptyDir
-        medium: Memory
-        advancedMounts:
-          hermes:
-            ssh-agent:
-              - path: /run/ssh-key
       run:
         type: emptyDir
         advancedMounts:
