@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+#
+# konflate renders each open PR as a *rendered Flux diff* instead of a raw file
+# diff. That is the piece that makes automated dependency PRs reviewable: a
+# one-line OCIRepository tag bump can add, remove or mutate dozens of rendered
+# resources, and the git diff shows only the line.
+#
+# It renders the cluster at the PR's merge-base and at its head with flate, then
+# diffs the two — no cluster access, no kubectl. Its HTTP surface is read-only;
+# the only writes are the commit status and PR comment its own render loop posts.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: konflate
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: konflate
+  values:
+    config:
+      repo: github://yvigara/homelab
+      refreshInterval: 30m
+      statusChecks: true
+      prComments: true
+      verifyImages: true
+      publicUrl: "https://konflate-${CLUSTER_NAME}.${DOMAIN}"
+      mcp: true
+    secret:
+      existingSecret: konflate-github-app
+    # Caches, the bare git mirror and the rendered diffs. Without it every restart
+    # re-clones and re-renders every open PR from scratch.
+    persistence:
+      enabled: true
+      storageClass: openebs-hostpath
+      size: 10Gi
+    # Routed by ./httproute.yaml, matching the rest of this repo.
+    ingress:
+      enabled: false
+    httpRoute:
+      enabled: true
+      annotations:
+        external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+      parentRefs:
+        - name: traefik-public
+          namespace: network
+          sectionName: websecure
+      hostnames:
+        - "konflate-${CLUSTER_NAME}.${DOMAIN}"
+    # Roll the pod when the mounted App credential changes; the repo already runs
+    # reloader for exactly this.
+    deploymentAnnotations:
+      reloader.stakater.com/auto: "true"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        memory: 1Gi

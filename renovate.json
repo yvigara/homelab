@@ -1,0 +1,82 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    ":timezone(Australia/Melbourne)",
+    "github>home-operations/renovate-presets#7.0.0"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/\\.yaml(?:\\.j2)?$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+url: \"https://github\\.com/(?:[^/]+/[^/]+)/releases/download/(?<currentValue>[^/]+)/[^\"]+\""
+      ],
+      "datasourceTemplate": "{{datasource}}",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "labels": [
+    "renovate"
+  ],
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/^kubernetes/.+\\.ya?ml$/"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Flux controllers and the flux-operator move together",
+      "matchPackageNames": [
+        "ghcr.io/controlplaneio-fluxcd/**",
+        "ghcr.io/fluxcd/**"
+      ],
+      "groupName": "flux"
+    },
+    {
+      "description": "Keep the CRD manifests in kubernetes/crds in step with their chart",
+      "matchFileNames": [
+        "kubernetes/crds/**"
+      ],
+      "groupName": "crds"
+    },
+    {
+      "description": "All Terraform providers move together",
+      "matchManagers": [
+        "terraform"
+      ],
+      "matchDepTypes": [
+        "provider",
+        "required_provider"
+      ],
+      "groupName": "terraform providers"
+    },
+    {
+      "description": "All mise tools move together",
+      "matchManagers": [
+        "mise"
+      ],
+      "groupName": "mise"
+    },
+    {
+      "description": "Major bumps get their own PR and a visible label",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "labels": [
+        "renovate",
+        "major"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Let a release settle before proposing it",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "minimumReleaseAge": "1 day"
+    }
+  ]
+}

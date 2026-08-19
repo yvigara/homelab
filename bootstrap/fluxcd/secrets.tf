@@ -43,7 +43,6 @@ data "bitwarden-secrets_secret" "dex_rustfs_client_secret" {
   id = local.bw_secrets["RUSTFS_OIDC_CLIENT_SECRET"]
 }
 
-
 resource "kubernetes_secret_v1" "flux-runtime-info" {
   metadata {
     name      = "flux-runtime-info"
