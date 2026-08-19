@@ -124,6 +124,33 @@ spec:
                 memory: 1Gi
               limits:
                 memory: 2Gi
+          codeserver:
+            image:
+              repository: ghcr.io/coder/code-server
+              tag: 4.133.0@sha256:e073a441c61c85821a7f16b64cf93b4e77b4092899bb1f3bed906fbd558afd62
+            env:
+              TZ: America/Edmonton
+            args:
+              [
+                "--auth",
+                "none",
+                "--user-data-dir",
+                "/home/node/.vscode",
+                "--extensions-dir",
+                "/home/node/.vscode",
+                "--port",
+                "12321",
+                "/opt/data",
+              ]
+            ports:
+              - containerPort: &codeserverPort 12321
+                name: codeserver
+                protocol: TCP
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 1Gi
     service:
       app:
         controller: hermes
@@ -170,6 +197,19 @@ spec:
           - backendRefs:
               - identifier: app
                 port: gateway
+      codeserver:
+        annotations:
+          external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+        hostnames:
+          - "hermes-code.${DOMAIN}"
+        parentRefs:
+          - name: traefik-public
+            namespace: network
+            sectionName: websecure
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: codeserver
     persistence:
       data:
         existingClaim: hermes
