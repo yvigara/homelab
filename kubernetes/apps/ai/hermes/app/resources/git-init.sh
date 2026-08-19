@@ -47,27 +47,51 @@ cat >"${HOME}/.gitconfig" <<EOF
 	email = ${GH_APP_USERNAME}@users.noreply.github.com
 	signingkey = ${signing_key}
 
+[checkout]
+  defaultRemote = origin
+
+[push]
+  default = current
+  followTags = true
+  autoSetupRemote = true
+
+[pull]
+  default = current
+  ff = only
+
+[fetch]
+  prune = true
+
+[rebase]
+  autosquash = true
+
+[credential "https://github.com/yvigara"]
+  useHttpPath = true
+  helper = "github-app -username ${GH_APP_USERNAME} -appId ${GH_APP_ID} -privateKeyFile ${private_key_file} -installationId ${GH_APP_INSTALLATION_ID}"
+
 [credential "https://github.com"]
-	helper = cache --timeout=43200
-	helper = github-app -username '${GH_APP_USERNAME}' -appId ${GH_APP_ID} -installationId ${GH_APP_INSTALLATION_ID} -privateKeyFile ${private_key_file}
+  helper = "cache --timeout=43200"
 
 [url "https://github.com"]
-	insteadOf = ssh://git@github.com
+  insteadOf = ssh://git@github.com
+
+[url "https://github.com/yvigara"]
+  insteadOf = git@github.com:yvigara
 
 [init]
-	defaultBranch = main
+  defaultBranch = main
 
 [gpg]
-	format = ssh
+  format = ssh
 
 [gpg "ssh"]
-	allowedSignersFile = ${allowed_signers}
+  allowedSignersFile = ${allowed_signers}
 
 [commit]
-	gpgsign = true
+  gpgsign = true
 
 [tag]
-	gpgsign = true
+  gpgsign = true
 EOF
 chmod 0600 "${HOME}/.gitconfig"
 

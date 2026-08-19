@@ -60,9 +60,9 @@ spec:
                   || echo 'eval "$(/opt/data/.local/bin/mise activate bash)"' >> /opt/data/.bashrc
 
                 mkdir -p /opt/data/.cache/mise
-                chown -R hermes:hermes /opt/data/.bashrc /opt/data/.config/mise \
+                chown -R hermes:hermes /opt/data/.bashrc /opt/data/.config \
                   /opt/data/.local/bin/mise /opt/data/.local/share/mise \
-                  /opt/data/.local/state/mise /opt/data/.cache/mise \
+                  /opt/data/.local/state/mise /opt/data/.cache \
                   /opt/data/.profile
                 su - hermes -c "$MISE_INSTALL_PATH install"
 
