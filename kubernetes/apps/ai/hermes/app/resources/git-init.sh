@@ -51,8 +51,12 @@ cat >"${HOME}/.gitconfig" <<EOF
 	helper = cache --timeout=43200
 	helper = github-app -username '${GH_APP_USERNAME}' -appId ${GH_APP_ID} -installationId ${GH_APP_INSTALLATION_ID} -privateKeyFile ${private_key_file}
 
-[url "https://github.com"]
-	insteadOf = ssh://git@github.com
+# Both SSH spellings, so a remote cloned either way still goes over HTTPS and
+# through the credential helper. The scp-like form is not a prefix of the
+# ssh:// one, so it needs its own rule.
+[url "https://github.com/"]
+	insteadOf = git@github.com:
+	insteadOf = ssh://git@github.com/
 
 [init]
 	defaultBranch = main
