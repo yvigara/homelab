@@ -1,0 +1,116 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &name buzz
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: *name
+  interval: 1h
+  values:
+    # Public WebSocket URL. Also drives NIP-42 auth challenges and, through the
+    # chart, BUZZ_MEDIA_BASE_URL (https://<host>/media).
+    relayUrl: wss://buzz.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
+    ownerPubkey: "${BUZZ_OWNER_PUBKEY}"
+
+    # A relay's git state and media live in Postgres and the object store, but
+    # huddle audio has no SFU yet and only works on a single pod.
+    replicaCount: 1
+    podDisruptionBudget:
+      enabled: false
+
+    # The only GitOps-safe secret path: the chart's own randAlphaNum autogen
+    # regenerates on every server-side render.
+    secrets:
+      existingSecret: *name
+
+    relay:
+      requireAuthToken: true
+      requireRelayMembership: true
+      allowNipOaAuth: true
+      corsOrigins:
+        - https://buzz.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
+      extraEnv:
+        - name: RUST_LOG
+          value: buzz_relay=info,buzz_db=info,buzz_auth=info,buzz_pubsub=info,tower_http=info
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 2Gi
+
+    # Postgres, Redis and S3 are all external to the chart: DATABASE_URL and
+    # REDIS_URL come from the buzz Secret, the bucket from the cluster's MinIO.
+    s3:
+      endpoint: http://minio.buzz.svc.cluster.local:9000
+      bucket: buzz-media
+      region: us-east-1
+      # MinIO's Service DNS resolves one hostname, not <bucket>.minio.
+      addressingStyle: path
+
+    # The relay's startup object-store conformance probe is fatal and does not
+    # create the bucket itself, so create it before the relay's first probe
+    # rather than crash-looping until it appears.
+    extraInitContainers:
+      - name: create-bucket
+        image: docker.io/minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
+        env:
+          - name: MC_CONFIG_DIR
+            value: /tmp/.mc
+          - name: S3_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: *name
+                key: BUZZ_S3_ACCESS_KEY
+          - name: S3_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: *name
+                key: BUZZ_S3_SECRET_KEY
+        command:
+          - /bin/sh
+          - -c
+          - |
+            set -eu
+            until mc alias set minio http://minio.buzz.svc.cluster.local:9000 "$S3_ACCESS_KEY" "$S3_SECRET_KEY" >/dev/null 2>&1; do
+              echo "waiting for minio..."
+              sleep 2
+            done
+            mc mb --ignore-existing minio/buzz-media
+            mc anonymous set none minio/buzz-media
+            echo "bucket buzz-media ready"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+
+    # Scratch space for the ephemeral repos hydrated per git request; the
+    # durable copy is in the object store.
+    persistence:
+      git:
+        enabled: true
+        accessMode: ReadWriteOnce
+        storageClass: openebs-hostpath
+        size: 10Gi
+
+    httproute:
+      enabled: true
+      parentRefs:
+        - name: traefik-private
+          namespace: network
+          sectionName: websecure
+      hostnames:
+        - buzz.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
+
+    serviceMonitor:
+      enabled: true
