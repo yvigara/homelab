@@ -80,3 +80,8 @@ spec:
             - "https://hermes.${DOMAIN}/auth/callback"
           name: "Hermes Dashboard"
           public: true
+        - id: rustfs
+          redirectURIs:
+            - "https://rustfs.int.${REGION}.${ENVIRONMENT}.${DOMAIN}/rustfs/admin/v3/oidc/callback/default"
+          name: "RustFS"
+          secret: ${RUSTFS_OIDC_CLIENT_SECRET}

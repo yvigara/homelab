@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-vars
+data:
+  CLUSTER_NAME: ${CLUSTER_NAME}
+  DOMAIN: ${DOMAIN}
+  ENVIRONMENT: ${ENVIRONMENT}
+  REGION: ${CLUSTER_REGION}
+  TIMEZONE: "Australia/Melbourne"
