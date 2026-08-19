@@ -8,7 +8,7 @@ store behind it.
 | Piece | Where it comes from |
 | --- | --- |
 | Relay | `relay/` — upstream chart `oci://ghcr.io/block/buzz/charts/buzz` |
-| Object store | `minio/` — a MinIO dedicated to this namespace, bucket `buzz-media` |
+| Object store | RustFS at `rustfs.storage.svc.cluster.local:9000`, bucket `buzz-media` |
 | Postgres | Shared CNPG cluster; database/role in `kubernetes/apps/database/cnpg/postgres/db-buzz.yaml` |
 | Redis | Shared Dragonfly at `dragonfly.database.svc:6379` |
 
@@ -20,6 +20,19 @@ gateway. To publish it, point the `httproute` values in
 Cloudflare tunnel, whose request body limit is below the relay's 500 MiB
 `git.maxPackBytes` default.
 
+## Object storage
+
+The relay talks to RustFS in the `storage` namespace with its root credentials,
+the same `RUSTFS_ROOT_USER` / `RUSTFS_ROOT_PASSWORD` pair RustFS itself reads.
+Swapping in a scoped access key is a matter of changing the two template lines
+in `relay/app/externalsecret.yaml` once RustFS grows declarative IAM users here.
+
+Buzz keeps git ref state in object storage and serializes writers with a
+pointer compare-and-swap, so it gates startup on a conformance probe that races
+32 concurrent `If-Match` updates against one key. A backend without linearizable
+conditional writes fails that probe and the relay exits — deliberately, since
+the manifest-pointer protocol is unsound without it.
+
 ## Before this reconciles cleanly
 
 **Owner pubkey.** `BUZZ_OWNER_PUBKEY` in `cluster-vars.yaml` is a placeholder of
@@ -28,16 +41,15 @@ one member that cannot be removed. Replace it with the real 64-character
 lowercase hex pubkey (not an `npub`) before the relay is of any use. The chart
 fails to render on anything that is not 64 hex characters.
 
-**Bitwarden Secrets Manager entries.** Both ExternalSecrets read these; create
-them first, and back up the first two — losing either is unrecoverable.
+**Bitwarden Secrets Manager entries.** Back up the first two — losing either is
+unrecoverable.
 
 | Key | What |
 | --- | --- |
 | `BUZZ_RELAY_PRIVATE_KEY` | 64 hex chars. The relay's own Nostr identity; rotating it makes it a different relay. |
 | `BUZZ_GIT_HOOK_HMAC_SECRET` | 64 random chars. |
 | `BUZZ_PG_PASSWORD` | Password for the `buzz` Postgres role. |
-| `BUZZ_S3_ACCESS_KEY` | MinIO root user, also the relay's S3 access key. Minimum 3 characters. |
-| `BUZZ_S3_SECRET_KEY` | MinIO root password, also the relay's S3 secret key. Minimum 8 characters. |
+| `RUSTFS_ROOT_USER`, `RUSTFS_ROOT_PASSWORD` | Already required by RustFS; the relay reuses them. |
 
 ## Backups
 

@@ -11,8 +11,9 @@ spec:
       namespace: database
     - name: dragonfly
       namespace: database
-    - name: buzz-minio
-      namespace: buzz
+    # Serves the buzz-media bucket.
+    - name: rustfs
+      namespace: storage
   path: ./kubernetes/apps/buzz/relay/app
   prune: true
   sourceRef:

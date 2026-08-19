@@ -5,5 +5,4 @@ namespace: buzz
 resources:
   - ./namespace.yaml
   - ./cluster-vars.yaml
-  - ./minio/ks.yaml
   - ./relay/ks.yaml
