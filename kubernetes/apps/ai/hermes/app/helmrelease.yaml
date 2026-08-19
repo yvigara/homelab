@@ -131,17 +131,17 @@ spec:
             env:
               TZ: America/Edmonton
             args:
-              [
-                "--auth",
-                "none",
-                "--user-data-dir",
-                "/home/node/.vscode",
-                "--extensions-dir",
-                "/home/node/.vscode",
-                "--port",
-                "12321",
-                "/opt/data",
-              ]
+              - --auth
+              - none
+              - --disable-telemetry
+              - --disable-update-check
+              - --user-data-dir
+              - /opt/data/.vscode
+              - --extensions-dir
+              - /opt/data/.vscode
+              - --port
+              - "12321"
+              - /opt/data
             ports:
               - containerPort: &codeserverPort 12321
                 name: codeserver
