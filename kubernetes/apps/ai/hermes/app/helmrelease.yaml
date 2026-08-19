@@ -159,6 +159,8 @@ spec:
             port: *app_port
           dashboard:
             port: *dashboard_port
+          codeserver:
+            port: *codeserverPort
     route:
       dashboard:
         hostnames:
