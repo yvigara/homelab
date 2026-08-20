@@ -43,7 +43,6 @@ spec:
     s3:
       endpoint: http://rustfs.storage.svc.cluster.local:9000
       bucket: buzz-media
-      addressingStyle: path
     # The relay's startup object-store conformance probe is fatal and does not
     # create the bucket itself, so create it before the relay's first probe
     # rather than crash-looping until it appears. mc is just the S3 client
