@@ -13,18 +13,15 @@ spec:
     # chart, BUZZ_MEDIA_BASE_URL (https://<host>/media).
     relayUrl: wss://buzz.${DOMAIN}
     ownerPubkey: "${BUZZ_OWNER_PUBKEY}"
-
     # A relay's git state and media live in Postgres and the object store, but
     # huddle audio has no SFU yet and only works on a single pod.
     replicaCount: 1
     podDisruptionBudget:
       enabled: false
-
     # The only GitOps-safe secret path: the chart's own randAlphaNum autogen
     # regenerates on every server-side render.
     secrets:
       existingSecret: *name
-
     relay:
       requireAuthToken: true
       requireRelayMembership: true
@@ -40,18 +37,13 @@ spec:
           memory: 512Mi
         limits:
           memory: 2Gi
-
     # Postgres, Redis and S3 are all external to the chart: DATABASE_URL and
     # REDIS_URL come from the buzz Secret, the bucket from RustFS in the
     # storage namespace.
     s3:
       endpoint: http://rustfs.storage.svc.cluster.local:9000
       bucket: buzz-media
-      region: us-east-1
-      # RustFS answers virtual-host style only on RUSTFS_SERVER_DOMAINS, which
-      # the in-cluster Service name is not.
       addressingStyle: path
-
     # The relay's startup object-store conformance probe is fatal and does not
     # create the bucket itself, so create it before the relay's first probe
     # rather than crash-looping until it appears. mc is just the S3 client
@@ -95,7 +87,6 @@ spec:
             memory: 32Mi
           limits:
             memory: 64Mi
-
     # Scratch space for the ephemeral repos hydrated per git request; the
     # durable copy is in the object store.
     persistence:
@@ -104,9 +95,7 @@ spec:
         accessMode: ReadWriteOnce
         storageClass: openebs-hostpath
         size: 10Gi
-
     # The public route lives in httproute.yaml — the chart's own httproute
     # template cannot carry the external-dns annotation it needs.
-
     serviceMonitor:
       enabled: true
