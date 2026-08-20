@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/database_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: postgres-buzz
+spec:
+  name: buzz
+  owner: buzz
+  cluster:
+    name: postgres
+  extensions:
+    # The relay's embedded sqlx migrations run `CREATE EXTENSION IF NOT EXISTS
+    # pgcrypto` as the buzz role; declare it here so it exists beforehand.
+    - name: pgcrypto
+      ensure: present
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/postgresql.cnpg.io/databaserole_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: DatabaseRole
+metadata:
+  name: postgres-buzz
+spec:
+  cluster:
+    name: postgres
+  databaseRoleReclaimPolicy: retain
+  ensure: present
+  login: true
+  name: buzz
+  superuser: false
+  passwordSecret:
+    name: buzz-postgres
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/external-secrets.io/externalsecret_v1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: buzz-postgres
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: bitwarden-secretsmanager
+  target:
+    name: buzz-postgres
+    template:
+      engineVersion: v2
+      metadata:
+        labels:
+          cnpg.io/reload: "true"
+      type: kubernetes.io/basic-auth
+      data:
+        username: "buzz"
+        password: "{{ .BUZZ_PG_PASSWORD }}"
+  data:
+    - secretKey: BUZZ_PG_PASSWORD
+      remoteRef:
+        key: BUZZ_PG_PASSWORD
