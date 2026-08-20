@@ -11,7 +11,7 @@ spec:
   values:
     # Public WebSocket URL. Also drives NIP-42 auth challenges and, through the
     # chart, BUZZ_MEDIA_BASE_URL (https://<host>/media).
-    relayUrl: wss://buzz.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
+    relayUrl: wss://buzz.${DOMAIN}
     ownerPubkey: "${BUZZ_OWNER_PUBKEY}"
 
     # A relay's git state and media live in Postgres and the object store, but
@@ -30,7 +30,7 @@ spec:
       requireRelayMembership: true
       allowNipOaAuth: true
       corsOrigins:
-        - https://buzz.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
+        - https://buzz.${DOMAIN}
       extraEnv:
         - name: RUST_LOG
           value: buzz_relay=info,buzz_db=info,buzz_auth=info,buzz_pubsub=info,tower_http=info
@@ -105,14 +105,8 @@ spec:
         storageClass: openebs-hostpath
         size: 10Gi
 
-    httproute:
-      enabled: true
-      parentRefs:
-        - name: traefik-private
-          namespace: network
-          sectionName: websecure
-      hostnames:
-        - buzz.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
+    # The public route lives in httproute.yaml — the chart's own httproute
+    # template cannot carry the external-dns annotation it needs.
 
     serviceMonitor:
       enabled: true

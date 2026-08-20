@@ -12,13 +12,29 @@ store behind it.
 | Postgres | Shared CNPG cluster; database/role in `kubernetes/apps/database/cnpg/postgres/db-buzz.yaml` |
 | Redis | Shared Dragonfly at `dragonfly.database.svc:6379` |
 
-The relay is reachable on the LAN only, at
-`wss://buzz.int.<region>.<environment>.<domain>`, through the `traefik-private`
-gateway. To publish it, point the `httproute` values in
-`relay/app/helmrelease.yaml` at `traefik-public` and update `relayUrl` and
-`relay.corsOrigins` to match — note that the public gateway runs over a
-Cloudflare tunnel, whose request body limit is below the relay's 500 MiB
-`git.maxPackBytes` default.
+The relay is public, at `wss://buzz.<domain>`, through the `traefik-public`
+gateway and the Cloudflare tunnel. `relay/app/httproute.yaml` holds the route
+rather than the chart's `httproute` values, because that template renders no
+annotations and external-dns needs `cloudflare-proxied` to point the record at
+the tunnel. `relayUrl` and `relay.corsOrigins` follow the same hostname; NIP-42
+auth challenges bind to it, so there is one hostname and no split-horizon
+second route.
+
+Public does not mean open: `requireRelayMembership` and `requireAuthToken` are
+on, so only the owner and members the owner admits can use the relay.
+
+Two things follow from being behind Cloudflare:
+
+- **Request body limit.** Cloudflare caps proxied request bodies (100 MB on
+  Free and Pro), well under the relay's 500 MiB `git.maxPackBytes` default. A
+  git push above the cap is rejected at the edge, not by the relay. Lower
+  `git.maxPackBytes` to sit under whatever the plan allows if large pushes
+  matter.
+- **Client addresses.** Buzz never records the network address of an upload
+  unless `relay.uploadRecords` and `relay.uploadIpHeader` are set; behind this
+  tunnel the header would be `cf-connecting-ip`. Whether to record it is an
+  operator decision — upstream flags it for anyone hosting a community for
+  other people.
 
 ## Object storage
 
