@@ -49,21 +49,24 @@ pointer compare-and-swap, so it gates startup on a conformance probe that races
 conditional writes fails that probe and the relay exits — deliberately, since
 the manifest-pointer protocol is unsound without it.
 
-## Before this reconciles cleanly
+## Configuration and secrets
 
-**Owner pubkey.** `BUZZ_OWNER_PUBKEY` in `cluster-vars.yaml` is a placeholder of
-64 zeroes. Buzz is closed-membership: this pubkey is the operator account, the
-one member that cannot be removed. Replace it with the real 64-character
-lowercase hex pubkey (not an `npub`) before the relay is of any use. The chart
-fails to render on anything that is not 64 hex characters.
+Nothing in this directory carries a value that has to be edited by hand.
 
-**Bitwarden Secrets Manager entries.** Back up the first two — losing either is
-unrecoverable.
+`${DOMAIN}` and `${BUZZ_OWNER_PUBKEY}` arrive through Flux post-build
+substitution. `BUZZ_OWNER_PUBKEY` is the operator's Nostr public key — Buzz is
+closed-membership and this is the one account that cannot be removed — and it
+reaches the cluster from Bitwarden via `bootstrap/fluxcd/secrets.tf`, which
+puts it in `cluster-secrets`. The chart hard-fails rendering on anything that
+is not 64 lowercase hex characters, so a substitution that silently resolves
+to empty shows up as a failed HelmRelease rather than a running relay.
+
+The rest come from Bitwarden through External Secrets:
 
 | Key | What |
 | --- | --- |
 | `BUZZ_RELAY_PRIVATE_KEY` | 64 hex chars. The relay's own Nostr identity; rotating it makes it a different relay. |
-| `BUZZ_GIT_HOOK_HMAC_SECRET` | 64 random chars. |
+| `BUZZ_GIT_HOOK_HMAC_SECRET` | 64 hex chars, generated in `bootstrap/fluxcd/buzz.tf`. |
 | `BUZZ_PG_PASSWORD` | Password for the `buzz` Postgres role. |
 | `RUSTFS_ROOT_USER`, `RUSTFS_ROOT_PASSWORD` | Already required by RustFS; the relay reuses them. |
 

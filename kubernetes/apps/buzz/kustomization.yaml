@@ -4,5 +4,4 @@ kind: Kustomization
 namespace: buzz
 resources:
   - ./namespace.yaml
-  - ./cluster-vars.yaml
   - ./relay/ks.yaml
