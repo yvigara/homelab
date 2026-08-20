@@ -78,6 +78,7 @@ resource "kubernetes_secret_v1" "cluster-secrets" {
   data = {
     BW_ORGANIZATION_ID             = var.bw_organization_id
     BW_PROJECT_ID                  = var.bw_project_id
+    BUZZ_RELAY_PRIVATE_KEY         = random_bytes.buzz_relay_private_key.hex
     CF_TUNNEL_ID                   = cloudflare_zero_trust_tunnel_cloudflared.cluster.id
     DEX_GITHUB_CLIENT_ID           = data.bitwarden-secrets_secret.dex_gh_client_id.value
     DEX_GITHUB_CLIENT_SECRET       = data.bitwarden-secrets_secret.dex_gh_client_secret.value
