@@ -43,6 +43,14 @@ data "bitwarden-secrets_secret" "dex_rustfs_client_secret" {
   id = local.bw_secrets["RUSTFS_OIDC_CLIENT_SECRET"]
 }
 
+data "bitwarden-secrets_secret" "buzz_owner_pubkey_secret" {
+  id = local.bw_secrets["BUZZ_OWNER_PUBKEY"]
+}
+
+data "bitwarden-secrets_secret" "buzz_relay_private_key_secret" {
+  id = local.bw_secrets["BUZZ_RELAY_PRIVATE_KEY"]
+}
+
 resource "kubernetes_secret_v1" "flux-runtime-info" {
   metadata {
     name      = "flux-runtime-info"
@@ -78,12 +86,13 @@ resource "kubernetes_secret_v1" "cluster-secrets" {
   data = {
     BW_ORGANIZATION_ID             = var.bw_organization_id
     BW_PROJECT_ID                  = var.bw_project_id
-    BUZZ_RELAY_PRIVATE_KEY         = random_bytes.buzz_relay_private_key.hex
+    BUZZ_RELAY_PRIVATE_KEY         = data.bitwarden-secrets_secret.buzz_relay_private_key_secret.value
     CF_TUNNEL_ID                   = cloudflare_zero_trust_tunnel_cloudflared.cluster.id
     DEX_GITHUB_CLIENT_ID           = data.bitwarden-secrets_secret.dex_gh_client_id.value
     DEX_GITHUB_CLIENT_SECRET       = data.bitwarden-secrets_secret.dex_gh_client_secret.value
     HERMES_DASHBOARD_CLIENT_SECRET = data.bitwarden-secrets_secret.dex_hermes_dashboard_secret.value
     RUSTFS_OIDC_CLIENT_SECRET      = data.bitwarden-secrets_secret.dex_rustfs_client_secret.value
+    BUZZ_OWNER_PUBKEY              = data.bitwarden-secrets_secret.buzz_owner_pubkey_secret.value
 
     # FLUX_SLACK_NOTIFICATION_URL     = var.flux_slack_notification_url
     # FLUX_SLACK_NOTIFICATION_CHANNEL = var.flux_slack_notification_channel
