@@ -41,7 +41,7 @@ spec:
     # REDIS_URL come from the buzz Secret, the bucket from RustFS in the
     # storage namespace.
     s3:
-      endpoint: http://rustfs.storage.svc.cluster.local:9000
+      endpoint: https://s3.int.${REGION}.${ENVIRONMENT}.${DOMAIN}
       bucket: buzz-media
     # The relay's startup object-store conformance probe is fatal and does not
     # create the bucket itself, so create it before the relay's first probe
@@ -74,7 +74,7 @@ spec:
           - -c
           - |
             set -eu
-            until mc alias set rustfs http://rustfs.storage.svc.cluster.local:9000 "$S3_ACCESS_KEY" "$S3_SECRET_KEY" >/dev/null 2>&1; do
+            until mc alias set rustfs https://s3.int.${REGION}.${ENVIRONMENT}.${DOMAIN} "$S3_ACCESS_KEY" "$S3_SECRET_KEY" >/dev/null 2>&1; do
               echo "waiting for rustfs..."
               sleep 2
             done
