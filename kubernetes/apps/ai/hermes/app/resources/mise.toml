@@ -2,7 +2,7 @@
 aube = "1.41.0"
 fd = "10.4.2"
 gh = "2.97.0"
-hk = "1.55.0"
+hk = "1.56.0"
 jq = "1.8.2"
 rg = "15.2.0"
 "github:bdellegrazie/git-credential-github-app" = "0.4.5"
