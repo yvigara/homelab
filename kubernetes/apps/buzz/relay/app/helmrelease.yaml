@@ -94,6 +94,10 @@ spec:
         accessMode: ReadWriteOnce
         storageClass: openebs-hostpath
         size: 10Gi
+    migrate:
+      autoMigrate: true
+      preUpgradeJob:
+        enabled: true
     # The public route lives in httproute.yaml — the chart's own httproute
     # template cannot carry the external-dns annotation it needs.
     serviceMonitor:
