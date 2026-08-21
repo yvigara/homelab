@@ -2,7 +2,9 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     ":timezone(Australia/Melbourne)",
-    "github>home-operations/renovate-presets#7.0.0"
+    "github>home-operations/renovate-presets#7.0.0",
+    "github>home-operations/renovate-presets//apps/searxng.json5#7.0.0",
+    "github>home-operations/renovate-presets//apps/cnpg.json5#7.0.0"
   ],
   "customManagers": [
     {
@@ -58,6 +60,36 @@
         "mise"
       ],
       "groupName": "mise"
+    },
+    {
+      "description": "llama.cpp ships build-number tags. The bundle's apps/llamacpp preset assumes a variant segment (server-vulkan-bN) that these pins do not carry, so the variant is optional here.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/ggml-org/llama.cpp"
+      ],
+      "versioning": "regex:^server-(?:(?<compatibility>[a-z]+)-)?b(?<patch>\\d+)$"
+    },
+    {
+      "description": "rustfs release candidates. Default docker versioning treats the text after the dash as a compatibility suffix that must match exactly, so rc.2 never sees rc.3.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "rustfs/rustfs"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:-rc\\.(?<build>\\d+))?$"
+    },
+    {
+      "description": "cnpg-vchord tags are '<semver>-<build timestamp>-<pg major>-<distro>'. Drop the timestamp so rebuilds of the same version are not upgrades, and hold the pg major and distro as compatibility so it stays on the running Postgres line.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/jdijt/cnpg-vchord"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-\\d+-(?<compatibility>\\d+-\\w+)$"
     },
     {
       "description": "Major bumps get their own PR and a visible label",

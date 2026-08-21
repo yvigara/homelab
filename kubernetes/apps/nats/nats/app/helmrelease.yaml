@@ -77,6 +77,7 @@ spec:
           secretName: nats-websocket-tls
     container:
       image:
+        repository: nats
         tag: 2.14.0-alpine
     reloader:
       enabled: true
