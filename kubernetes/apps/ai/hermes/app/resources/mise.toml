@@ -6,3 +6,8 @@ hk = "1.56.0"
 jq = "1.8.2"
 rg = "15.2.0"
 "github:bdellegrazie/git-credential-github-app" = "0.4.5"
+rust = "latest"
+
+[tools."cargo:https://github.com/block/buzz"]
+version = "tag:desktop-v0.5.17"
+crate = "buzz-cli"
