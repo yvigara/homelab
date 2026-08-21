@@ -208,7 +208,6 @@ gateway:
     buzz:
       enabled: true
       extra:
-        relay_url: https://buzz.${DOMAIN}
         transport: auto
         require_mention: true
         poll_interval: 4

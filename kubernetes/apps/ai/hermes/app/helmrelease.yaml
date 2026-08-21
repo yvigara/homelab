@@ -80,6 +80,7 @@ spec:
               API_SERVER_ENABLED: true
               API_SERVER_HOST: 0.0.0.0
               API_SERVER_PORT: &app_port 8642
+              BUZZ_RELAY_URL: wss://buzz.${DOMAIN}
               HERMES_GID: "1000"
               HERMES_HOME: /opt/data
               HERMES_UID: "1000"
