@@ -91,6 +91,19 @@ platform_toolsets:
     - terminal
     - todo
     - web
+  buzz:
+    - browser
+    - clarify
+    - code_execution
+    - cronjob
+    - delegation
+    - file
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - web
 skills:
   disabled:
     - airtable
@@ -140,9 +153,15 @@ compression:
   threshold: 0.5
   target_ratio: 0.2
   protect_last_n: 20
+display:
+  platforms:
+    buzz:
+      interim_assistant_messages: false
+      tool_progress: "off"
 plugins:
   enabled:
     - memini
+    - buzz-platform
 memory:
   memory_enabled: true
   user_profile_enabled: false
@@ -185,6 +204,17 @@ group_sessions_per_user: false
 gateway:
   message_timestamps:
     enabled: true
+  platforms:
+    buzz:
+      enabled: true
+      extra:
+        relay_url: https://buzz.${DOMAIN}
+        transport: auto
+        require_mention: true
+        poll_interval: 4
+        allow_all_users: false
+        allowed_users:
+          - ${BUZZ_OWNER_PUBKEY}
 dashboard:
   oauth:
     provider: self-hosted
