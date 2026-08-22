@@ -1,0 +1,95 @@
+# The public MCP edge for the knowledge base.
+#
+# OpenKnowledge authenticates nobody: whoever reaches the server has full read
+# and write access as the same owner. Rather than invent a second auth story,
+# /mcp is routed through agentgateway — the same Auth0 JWT + MCP OAuth edge the
+# cluster's other MCP servers sit behind.
+#
+# This is a route of its own rather than another target on the shared `mcp`
+# backend because the server admits exactly one non-loopback Host, the one in
+# OK_EXTERNAL_URL. agentgateway forwards the caller's original authority to the
+# upstream, so a request that arrived as ok.${DOMAIN} still reads as
+# ok.${DOMAIN} at the server. Aggregating it under mcp.${DOMAIN} instead would
+# present that host and earn a 403 on every call.
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: open-knowledge-mcp
+spec:
+  mcp:
+    targets:
+      - name: open-knowledge
+        static:
+          backendRef:
+            name: open-knowledge
+          port: 8080
+          # The default for StreamableHTTP, spelled out because it is also the
+          # path OpenKnowledge serves and worth seeing next to the port.
+          path: /mcp
+          protocol: StreamableHTTP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: open-knowledge-mcp
+spec:
+  # Hostname-scoped so it wins over the cluster-wide `mcp` route, which matches
+  # /mcp on every host.
+  hostnames:
+    - ok.${DOMAIN}
+  parentRefs:
+    - name: agentgateway-proxy
+      namespace: agentgateway-system
+      sectionName: http
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /mcp
+        - path:
+            type: PathPrefix
+            value: /.well-known/oauth-protected-resource/mcp
+        - path:
+            type: PathPrefix
+            value: /.well-known/oauth-authorization-server/mcp
+      backendRefs:
+        - name: open-knowledge-mcp
+          kind: AgentgatewayBackend
+          group: agentgateway.dev
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: open-knowledge-mcp-auth
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: open-knowledge-mcp
+  traffic:
+    jwtAuthentication:
+      mode: Strict
+      providers:
+        - issuer: https://auth.${DOMAIN}/
+          # The existing MCP Gateway API from bootstrap/auth0
+          # (auth0_resource_server.mcp). Reused as-is: this is another route
+          # behind the same gateway, not a separate API, so no new Auth0
+          # resource server or client grant is needed.
+          audiences:
+            - https://mcp.${DOMAIN}
+          jwks:
+            remote:
+              backendRef:
+                group: agentgateway.dev
+                kind: AgentgatewayBackend
+                name: auth0
+                port: 443
+              jwksPath: /.well-known/jwks.json
+      # Protected Resource Metadata pointing MCP clients at Auth0, where they
+      # register dynamically and log in via GitHub (celest-io).
+      mcp:
+        provider: Auth0
+        resourceMetadata:
+          resource: https://ok.${DOMAIN}/mcp
+          bearerMethodsSupported:
+            - header

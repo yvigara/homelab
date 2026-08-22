@@ -10,5 +10,6 @@ resources:
   - ./hermes/ks.yaml
   - ./llmkube/ks.yaml
   - ./memini/ks.yaml
+  - ./open-knowledge/ks.yaml
   - ./searxng/ks.yaml
   - ./mcp/ks.yaml

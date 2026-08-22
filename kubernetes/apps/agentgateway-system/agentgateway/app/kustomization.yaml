@@ -8,3 +8,4 @@ resources:
   - ./agparameters.yaml
   - ./agproxy-int-svc.yaml
   - ./httproute-mcp.yaml
+  - ./referencegrant.yaml

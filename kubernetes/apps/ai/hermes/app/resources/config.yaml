@@ -209,6 +209,17 @@ mcp_servers:
     args: ["-y", "@xdevplatform/xurl", "mcp", "https://api.x.com/mcp"]
     headers:
       Authorization: ${X_MCP_AUTH_HEADER}
+  open-knowledge:
+    # Straight to the pod, skipping both public edges: the browser login the
+    # editor sits behind (Hermes cannot complete a cookie flow) and the Auth0
+    # JWT on the agentgateway route (in-cluster callers hold no token).
+    #
+    # The Host header is load-bearing, not decoration. OpenKnowledge admits
+    # exactly one non-loopback Host — the one in OK_EXTERNAL_URL — and refuses
+    # everything else with a 403, the cluster-internal service name included.
+    url: http://open-knowledge.ai.svc.cluster.local:8080/mcp
+    headers:
+      Host: ok.${DOMAIN}
 group_sessions_per_user: false
 gateway:
   message_timestamps:
