@@ -31,7 +31,8 @@ Two consequences worth knowing:
 | --- | --- |
 | `/data` | The PVC. `HOME`, the npm global prefix, and the project all live here. |
 | `/data/.npm-global` | The `ok` CLI, on `PATH` for the app container. Kept outside the project so `node_modules` never lands in the knowledge base. |
-| `/data/project` | The knowledge base itself — a live git repo the server watches and writes. |
+| `/data/project` | The knowledge base itself — a clone of `yvigara/lifeos`, which the server watches, writes and syncs. |
+| `/data/.ssh` | The deploy key, `known_hosts` and the `github.com` ssh config. |
 
 ## The single-Host constraint
 
@@ -61,6 +62,42 @@ arranged to do that:
 
 `/healthz` and `/readyz` are mounted above every admission gate, which is why
 kubelet probes — arriving with an IP `Host` — are not refused.
+
+## The knowledge base repo
+
+The content lives in its own repository, `yvigara/lifeos`, cloned over SSH on
+first boot and kept in sync from then on. Later boots find the clone and skip
+straight to starting the server.
+
+**Sync is `full`**: the server fetches from the remote, commits edits made in
+the editor or by agents, and pushes them back — so automated commits land in
+that repo's history. There is no environment variable for this (the recognized
+`OK_*` surface covers server settings only), so the init script writes
+`autoSync.mode: full` into the gitignored `.ok/local/config.yml`, and leaves it
+alone once present so a change made in the editor's Sync settings survives a
+restart.
+
+### The deploy key
+
+Generated in-cluster by the external-secrets `SSHKey` generator, the same way
+`hermes-signing-key` is: the private half never leaves the cluster, and
+`refreshInterval: "0"` keeps it from being regenerated out from under the
+registered public half. Deleting the ExternalSecret or its Secret mints a brand
+new key, which then has to be re-registered on the repo.
+
+**The key must be configured under `$HOME`, not in the environment.** The server
+replaces — not merges — the environment of every git it spawns, preserving only
+a fixed allowlist. `GIT_SSH_COMMAND` is not on that allowlist, so a git-over-SSH
+setting passed that way is silently dropped mid-sync. `HOME` *is* on it, which
+is exactly how ssh is meant to find its own config, so the init script writes
+`~/.ssh/{id_ed25519,config,known_hosts}` instead.
+
+`known_hosts` is fetched from `api.github.com/meta` over TLS rather than
+discovered by connecting on port 22. The trust root is then GitHub's
+certificate instead of whatever answered first, and it self-heals when GitHub
+rotates a host key (as they did in 2023). `StrictHostKeyChecking` stays at
+`yes`; if the fetch fails and no cached file exists, the init container fails
+rather than connecting unverified.
 
 ## Auth
 
@@ -111,6 +148,18 @@ Two secrets have to exist in Bitwarden Secrets Manager:
 | `OPEN_KNOWLEDGE_OIDC_CLIENT_SECRET` | `openssl rand -hex 32` — must match the Dex staticClient. |
 | `OPEN_KNOWLEDGE_COOKIE_SECRET` | `openssl rand -hex 16`. Must decode to 16, 24 or 32 bytes; `openssl rand -base64 32` produces 44 characters and oauth2-proxy refuses to start. |
 
+The deploy key is *not* one of them — it is generated in-cluster. Once the
+Secret exists, read the public half out and register it on `yvigara/lifeos`
+under **Settings → Deploy keys**, with **Allow write access** ticked (full sync
+pushes):
+
+```sh
+kubectl -n ai get secret open-knowledge-deploy-key -o jsonpath='{.data.SSH_DEPLOY_KEY_PUB}' | base64 -d
+```
+
+Until that key is registered the init container's clone fails and the pod stays
+in init — which is the intended failure mode, not a silent read-only start.
+
 ## Operational notes
 
 - **One replica, always.** The collaboration server is single-writer: one
@@ -124,5 +173,6 @@ Two secrets have to exist in Bitwarden Secrets Manager:
   must preserve `Host` and forward `X-Forwarded-Proto: https` — without the
   latter the server hands the editor a `ws://` socket that browsers block as
   mixed content on an `https` page.
+- **The repo is the durable copy.** With full sync on, content is pushed to `yvigara/lifeos`; the PVC holds the working clone, the CLI and per-machine config. Losing the volume costs the local state, not the knowledge base.
 - **Back up `/data` before bumping `OK_VERSION`.** Upgrades run against the
   existing volume; the project, history and settings stay on it.

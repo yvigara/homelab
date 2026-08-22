@@ -49,8 +49,16 @@ spec:
               OK_VERSION: &ok_version 0.61.3
               GIT_AUTHOR_NAME: &git_name open-knowledge
               GIT_AUTHOR_EMAIL: &git_email open-knowledge@${DOMAIN}
+              # The knowledge base lives in its own repo, cloned over SSH with
+              # the generated deploy key. Full sync means the server commits and
+              # pushes back, so that key needs write access.
+              OK_GIT_REMOTE: &git_remote git@github.com:yvigara/lifeos.git
+              OK_GIT_BRANCH: &git_branch main
               PATH: &path /data/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
               TZ: ${TIMEZONE}
+            envFrom:
+              - secretRef:
+                  name: open-knowledge-deploy-key
             resources:
               requests:
                 cpu: 50m
@@ -68,6 +76,8 @@ spec:
               OK_VERSION: *ok_version
               GIT_AUTHOR_NAME: *git_name
               GIT_AUTHOR_EMAIL: *git_email
+              OK_GIT_REMOTE: *git_remote
+              OK_GIT_BRANCH: *git_branch
               PATH: *path
               TZ: ${TIMEZONE}
               PORT: &app_port 8080

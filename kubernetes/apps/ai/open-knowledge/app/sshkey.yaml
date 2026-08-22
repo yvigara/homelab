@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/generators.external-secrets.io/sshkey_v1alpha1.json
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: SSHKey
+metadata:
+  name: open-knowledge-deploy-key
+spec:
+  keyType: ed25519
+  comment: open-knowledge deploy key (yvigara/lifeos)
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/external-secrets.io/externalsecret_v1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: open-knowledge-deploy-key
+spec:
+  # Generated once, never refreshed: the public half is registered by hand as a
+  # deploy key on yvigara/lifeos, and rotating it would lock the server out of
+  # the remote until someone re-registered the new one. Deleting this
+  # ExternalSecret (or its Secret) mints a brand new key — which then has to be
+  # re-registered on the repo.
+  refreshInterval: "0"
+  target:
+    name: open-knowledge-deploy-key
+    creationPolicy: Owner
+    template:
+      data:
+        SSH_DEPLOY_KEY: "{{ .privateKey }}"
+        SSH_DEPLOY_KEY_PUB: "{{ .publicKey }}"
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: SSHKey
+          name: open-knowledge-deploy-key
