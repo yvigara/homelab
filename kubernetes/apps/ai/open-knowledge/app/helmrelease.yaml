@@ -89,9 +89,9 @@ spec:
               OK_ALLOW_EXTERNAL: "1"
               # The canonical public origin. It is both the sole Host allowlist
               # entry and the origin the server builds its wss:// and preview
-              # URLs from, so every caller — browsers through oauth2-proxy,
-              # agents through agentgateway, Hermes in-cluster — has to present
-              # this exact Host or get a 403.
+              # URLs from, so every caller — browsers through the Cloudflare
+              # tunnel, agents through agentgateway, Hermes in-cluster — has to
+              # present this exact Host or get a 403.
               OK_EXTERNAL_URL: https://ok.${DOMAIN}
               # The idle timer only counts editor WebSocket clients, so a server
               # busy serving remote agents looks idle and would tear itself down
@@ -135,88 +135,13 @@ spec:
               allowPrivilegeEscalation: false
               capabilities:
                 drop: ["ALL"]
-          # Browser login edge. OpenKnowledge has no user accounts of its own —
-          # everyone who can reach it is the same owner — so the public hostname
-          # is fronted by Dex SSO, the same provider the Hermes dashboard and
-          # RustFS already use. Agents never come through here; /mcp is routed
-          # around this container (see the route block below).
-          oauth2-proxy:
-            image:
-              repository: quay.io/oauth2-proxy/oauth2-proxy
-              # Digest deliberately absent on this first commit: quay.io was not
-              # reachable from the environment this was authored in, so no digest
-              # could be resolved to pin. Renovate pins it on its first run.
-              tag: v7.15.4
-            env:
-              TZ: ${TIMEZONE}
-              OAUTH2_PROXY_PROVIDER: oidc
-              OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Celestio SSO
-              OAUTH2_PROXY_OIDC_ISSUER_URL: https://dex.${DOMAIN}
-              OAUTH2_PROXY_CLIENT_ID: open-knowledge
-              OAUTH2_PROXY_REDIRECT_URL: https://ok.${DOMAIN}/oauth2/callback
-              OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-              OAUTH2_PROXY_UPSTREAMS: http://127.0.0.1:8080/
-              OAUTH2_PROXY_SCOPE: openid profile email groups
-              # Dex already gates login on membership of the celest-io GitHub
-              # org, so any identity that reaches this point is authorized;
-              # there is no second email-domain rule worth enforcing here.
-              OAUTH2_PROXY_EMAIL_DOMAINS: "*"
-              # The post-login redirect is built from the forwarded host, and a
-              # host missing from this list is refused — without it the login
-              # silently loops back to itself.
-              OAUTH2_PROXY_WHITELIST_DOMAINS: ok.${DOMAIN}
-              OAUTH2_PROXY_REVERSE_PROXY: "true"
-              OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
-              OAUTH2_PROXY_COOKIE_SECURE: "true"
-              # Keeps the Host the client dialed, which is what the server
-              # matches against OK_EXTERNAL_URL. Rewriting it to 127.0.0.1:8080
-              # would turn every editor request into a 403.
-              OAUTH2_PROXY_PASS_HOST_HEADER: "true"
-              # Live editing rides a WebSocket this proxy has to pass through.
-              OAUTH2_PROXY_PROXY_WEBSOCKETS: "true"
-              # Never buffer a streamed response, or the collab socket and any
-              # SSE leg behind it stall.
-              OAUTH2_PROXY_FLUSH_INTERVAL: 100ms
-            envFrom:
-              - secretRef:
-                  name: open-knowledge-secret
-            probes:
-              liveness: &proxy_probes
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /ping
-                    port: &proxy_port 4180
-                  initialDelaySeconds: 10
-                  periodSeconds: 30
-                  timeoutSeconds: 5
-                  failureThreshold: 5
-              readiness: *proxy_probes
-              startup:
-                enabled: false
-            resources:
-              requests:
-                cpu: 10m
-                memory: 64Mi
-              limits:
-                memory: 256Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities:
-                drop: ["ALL"]
     service:
       app:
         controller: open-knowledge
         ports:
-          # Public browser traffic enters here, behind the Dex login.
+          # The one listener. Public browser traffic (via Cloudflare Access),
+          # agentgateway's /mcp calls, and Hermes' direct calls all land here.
           http:
-            port: *proxy_port
-            primary: true
-          # The server itself, reached only from inside the cluster: by
-          # agentgateway for the public /mcp edge, and by Hermes directly.
-          server:
             port: *app_port
     route:
       app:
@@ -229,13 +154,14 @@ spec:
             namespace: network
             sectionName: websecure
         rules:
-          # Agents: /mcp and its OAuth discovery documents skip the browser
-          # login and go to agentgateway, which enforces the same Auth0 JWT
-          # policy as the rest of the cluster's MCP surface. A headless agent
-          # cannot complete a cookie login — sent through oauth2-proxy it would
-          # get an HTML login page back instead of a tool list. agentgateway
-          # forwards the caller's original authority upstream, so the server
-          # still sees Host: ok.${DOMAIN} and admits the request.
+          # Agents: /mcp and its OAuth discovery documents go to agentgateway,
+          # which enforces the same Auth0 JWT policy as the rest of the
+          # cluster's MCP surface. A headless agent cannot complete a browser
+          # login, so this path needs a Cloudflare Access **Bypass** policy
+          # scoped to /mcp — otherwise Access answers agents with an HTML login
+          # page instead of a tool list. agentgateway forwards the caller's
+          # original authority upstream, so the server still sees
+          # Host: ok.${DOMAIN} and admits the request.
           - matches:
               - path:
                   type: PathPrefix
@@ -251,7 +177,8 @@ spec:
                 name: agentgateway-proxy-int
                 namespace: agentgateway-system
                 port: 80
-          # Everyone else: the editor, behind Dex.
+          # Everyone else: the editor. Authentication happens at the
+          # Cloudflare edge (Access), not in the cluster — see the README.
           - matches:
               - path:
                   type: PathPrefix

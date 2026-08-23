@@ -46,18 +46,23 @@ So every caller has to present `Host: ok.${DOMAIN}`, and each path below is
 arranged to do that:
 
 ```
-                          ok.${DOMAIN}  (Cloudflare-proxied, traefik-public)
-                                 │
-              ┌──────────────────┴───────────────────┐
-        /mcp, /.well-known/…                   everything else
-              │                                      │
-       agentgateway-proxy                      oauth2-proxy  ──►  Dex ──► GitHub
-   (Auth0 JWT + MCP OAuth)                   (sidecar, :4180)      (celest-io org)
-              │                                      │
-              └──────────────► open-knowledge :8080 ◄┘
-                                       ▲
-                                       │ Host: ok.${DOMAIN}
-                                  Hermes (in-cluster, direct)
+   browser ──► Cloudflare edge ──► Access policy (login)  ─┐
+   agent   ──► Cloudflare edge ──► Access policy (bypass) ─┤
+                                                           │  Host: ok.${DOMAIN}
+                                            cloudflared tunnel
+                                                           │
+                                                    traefik-public
+                                                           │
+                                      ┌────────────────────┴──────────┐
+                                /mcp, /.well-known/…            everything else
+                                      │                              │
+                             agentgateway-proxy                      │
+                          (Auth0 JWT + MCP OAuth)                    │
+                                      │                              │
+                                      └──► open-knowledge :8080 ◄────┘
+                                                    ▲
+                                                    │ Host: ok.${DOMAIN}
+                                             Hermes (in-cluster, direct)
 ```
 
 `/healthz` and `/readyz` are mounted above every admission gate, which is why
@@ -118,20 +123,45 @@ own self-calls at its bound listener so they do not hairpin out through the edge
 and come back as an HTML login page.
 
 So everyone who reaches the server has full read and write access as the same
-owner, and both public paths are gated at the edge, reusing what the cluster
-already runs:
+owner, and the two public paths are gated separately:
 
-- **Editor → Dex.** An `oauth2-proxy` sidecar fronts the app on `:4180` using
-  the `open-knowledge` Dex staticClient, alongside the existing
-  `hermes-dashboard` and `rustfs` clients. Dex gates on membership of the
-  `celest-io` GitHub org, so `OAUTH2_PROXY_EMAIL_DOMAINS` is deliberately `*` —
-  the org check is the authorization boundary, and a second email-domain rule
-  would only add a way to lock yourself out.
+- **Editor → Cloudflare Access.** The browser login lives at the Cloudflare
+  edge, on the `ok.${DOMAIN}` hostname, and is **configured by hand in the Zero
+  Trust dashboard** — Access is not managed in this repo. Nothing in the pod
+  authenticates browser traffic, so *the editor is unprotected until that policy
+  exists*.
 - **`/mcp` → Auth0, via agentgateway.** A headless agent cannot complete a
-  cookie login, so `/mcp` is routed around oauth2-proxy to the agentgateway
-  proxy, which enforces the same Auth0 JWT policy as the rest of the cluster's
-  MCP surface and advertises Protected Resource Metadata so MCP clients can
-  register dynamically and sign in through GitHub.
+  browser login, so `/mcp` goes to the agentgateway proxy, which enforces the
+  same Auth0 JWT policy as the rest of the cluster's MCP surface and advertises
+  Protected Resource Metadata so MCP clients can register dynamically and sign
+  in through GitHub.
+
+### What has to exist in Cloudflare Zero Trust
+
+Two applications on the same hostname — Access matches the most specific path
+first, so the `/mcp` one wins for agents:
+
+| Application | Path | Policy |
+| --- | --- | --- |
+| OpenKnowledge editor | `ok.${DOMAIN}` | Allow — your login rule (email, domain, or GitHub IdP) |
+| OpenKnowledge MCP | `ok.${DOMAIN}/mcp` | **Bypass** — everyone |
+
+The bypass is not a hole: that path is already gated by the Auth0 JWT policy on
+the agentgateway route, and a request without a valid token gets a `401` there.
+Without the bypass, Access answers agents with an HTML login page instead of a
+tool list — the failure upstream's troubleshooting calls out as "an agent gets
+an HTML login page back from `/mcp`". If you would rather Cloudflare own that
+path too, the alternatives are an Access **service token** (a shared secret, no
+OAuth) or **Managed OAuth**; both would replace the agentgateway route rather
+than sit in front of it.
+
+> **Access protects the public path only.** It enforces at the Cloudflare edge,
+> while `traefik-public` also answers on the internal LoadBalancer IP — so
+> anything on the LAN can still reach the editor by sending `Host: ok.${DOMAIN}`
+> straight at it. That matches the posture of the other apps on this gateway
+> (`hermes-code` runs code-server with `--auth none`), but it is worth stating
+> plainly: an in-pod proxy would have authenticated the LAN path too, and
+> putting the login at the edge gives that up.
 
 `/mcp` gets its own hostname-scoped route rather than becoming another target on
 the shared `mcp` backend: agentgateway forwards the caller's *original*
@@ -140,6 +170,14 @@ authority upstream, so a request that arrived as `ok.${DOMAIN}` still reads as
 that host instead and earn a `403` on every call. It reuses the existing
 `https://mcp.${DOMAIN}` audience — this is another route behind the same
 gateway, not a new API — so no Auth0/terraform change is needed.
+
+If agents start getting challenge pages on `/mcp` even with the bypass in place,
+suspect Browser Integrity Check: it blocks non-browser clients, and the zone
+already carries a `cloudflare_ruleset` in `bootstrap/fluxcd/cloudflare.tf`
+disabling it for `dex.${DOMAIN}` for exactly that reason. `mcp.${DOMAIN}` runs
+without such a rule today, so this is a thing to watch rather than a known
+breakage — a zone can hold only one ruleset per phase, so the fix is another
+rule on that existing resource, not a new one.
 
 ## Hermes
 
@@ -157,17 +195,16 @@ bypassed.
 
 ## Before this deploys
 
-Two secrets have to exist in Bitwarden Secrets Manager:
+No Bitwarden secrets are needed — this app has none of its own. Two things are
+configured by hand instead.
 
-| Key | How to generate |
-| --- | --- |
-| `OPEN_KNOWLEDGE_OIDC_CLIENT_SECRET` | `openssl rand -hex 32` — must match the Dex staticClient. |
-| `OPEN_KNOWLEDGE_COOKIE_SECRET` | `openssl rand -hex 16`. Must decode to 16, 24 or 32 bytes; `openssl rand -base64 32` produces 44 characters and oauth2-proxy refuses to start. |
+**1. The Cloudflare Access applications** described above. Do this first: until
+the login policy exists, the public hostname serves the editor to anyone who
+finds it.
 
-The deploy key is *not* one of them — it is generated in-cluster. Once the
-Secret exists, read the public half out and register it on `yvigara/lifeos`
-under **Settings → Deploy keys**, with **Allow write access** ticked (full sync
-pushes):
+**2. The deploy key**, generated in-cluster. Once the Secret exists, read the
+public half out and register it on `yvigara/lifeos` under **Settings → Deploy
+keys**, with **Allow write access** ticked (full sync pushes):
 
 ```sh
 kubectl -n ai get secret open-knowledge-deploy-key -o jsonpath='{.data.SSH_DEPLOY_KEY_PUB}' | base64 -d
