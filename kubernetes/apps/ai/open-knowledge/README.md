@@ -101,9 +101,25 @@ rather than connecting unverified.
 
 ## Auth
 
-OpenKnowledge authenticates nobody. Everyone who reaches the server has full
-read and write access as the same owner, so both public paths are gated at the
-edge, reusing what the cluster already runs:
+**OpenKnowledge has no native auth**, as of 0.61.3 (latest), 0.62.0-beta.19 and
+main. There is no `auth.*` config section — the env layer names it as "deferred
+entirely … until ratified" — no `OK_AUTH_*` variable in either build, and no
+inbound auth anywhere in the server: every `Authorization`, `Bearer` and
+`WWW-Authenticate` in the codebase is outbound (the GitHub API, the embeddings
+provider, and MCP *client* OAuth discovery, which reads `WWW-Authenticate` off a
+response). The "Sign in" strings in the UI are all about signing in *to GitHub*
+for sync. Re-check before assuming otherwise, and do not drop the edges below on
+the strength of a release note alone.
+
+The external proxy is the upstream-intended deployment, not a workaround:
+`boot.ts` reasons explicitly about running "behind an authenticating reverse
+proxy with a public `server.externalUrl`", and deliberately routes the server's
+own self-calls at its bound listener so they do not hairpin out through the edge
+and come back as an HTML login page.
+
+So everyone who reaches the server has full read and write access as the same
+owner, and both public paths are gated at the edge, reusing what the cluster
+already runs:
 
 - **Editor → Dex.** An `oauth2-proxy` sidecar fronts the app on `:4180` using
   the `open-knowledge` Dex staticClient, alongside the existing
