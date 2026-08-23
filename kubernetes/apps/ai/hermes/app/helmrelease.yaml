@@ -96,6 +96,9 @@ spec:
                     name: hermes-secret
                     key: MEMINI_API_KEY
               SEARXNG_URL: http://searxng.ai.svc.cluster.local:8080
+              # Anti-detection browser backend; the bearer token it
+              # authenticates with comes from hermes-secret (CAMOFOX_API_KEY).
+              CAMOFOX_URL: http://camofox.ai.svc.cluster.local:9377
               WHATSAPP_ENABLED: true
               WHATSAPP_MODE: self-chat
               HOME: /opt/data
