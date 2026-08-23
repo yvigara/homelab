@@ -2,9 +2,9 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     ":timezone(Australia/Melbourne)",
-    "github>home-operations/renovate-presets#7.0.0",
-    "github>home-operations/renovate-presets//apps/searxng.json5#7.0.0",
-    "github>home-operations/renovate-presets//apps/cnpg.json5#7.0.0"
+    "github>home-operations/renovate-presets#8.0.0",
+    "github>home-operations/renovate-presets//apps/searxng.json5#8.0.0",
+    "github>home-operations/renovate-presets//apps/cnpg.json5#8.0.0"
   ],
   "customManagers": [
     {
