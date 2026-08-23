@@ -24,6 +24,15 @@ spec:
     # regenerates on every server-side render.
     secrets:
       existingSecret: *name
+    # Device pairing (NIP-AB) runs in a separate ephemeral sidecar relay, not
+    # the main one: the desktop app reads `pairing_relay_url` out of the main
+    # relay's NIP-11 document and stamps it into the QR the phone scans, so it
+    # has to be the public URL. Without it the client falls back to the legacy
+    # same-host `/pair` convention, which 404s unless that path is routed —
+    # httproute.yaml sends it to the buzz-pairing Service either way.
+    pairingRelay:
+      enabled: true
+      url: wss://buzz.${DOMAIN}/pair
     relay:
       requireAuthToken: true
       requireRelayMembership: true

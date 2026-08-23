@@ -16,6 +16,18 @@ spec:
       namespace: network
       sectionName: websecure
   rules:
+    # The NIP-AB pairing handshake is served by the chart's standalone
+    # buzz-pair-relay sidecar, which has no auth, no persistence and a 120s
+    # session TTL. It ignores the request path, so no rewrite is needed; the
+    # longer prefix wins over the catch-all rule below.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /pair
+      backendRefs:
+        - kind: Service
+          name: buzz-pairing
+          port: 5000
     - matches:
         - path:
             type: PathPrefix
