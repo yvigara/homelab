@@ -5,7 +5,6 @@ resources:
   - ./sshkey.yaml
   - ./pvc.yaml
   - ./helmrelease.yaml
-  - ./mcp.yaml
 configMapGenerator:
   - name: open-knowledge-configmap
     files:

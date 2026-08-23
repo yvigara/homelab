@@ -46,23 +46,18 @@ So every caller has to present `Host: ok.${DOMAIN}`, and each path below is
 arranged to do that:
 
 ```
-   browser ──► Cloudflare edge ──► Access policy (login)  ─┐
-   agent   ──► Cloudflare edge ──► Access policy (bypass) ─┤
-                                                           │  Host: ok.${DOMAIN}
-                                            cloudflared tunnel
-                                                           │
-                                                    traefik-public
-                                                           │
-                                      ┌────────────────────┴──────────┐
-                                /mcp, /.well-known/…            everything else
-                                      │                              │
-                             agentgateway-proxy                      │
-                          (Auth0 JWT + MCP OAuth)                    │
-                                      │                              │
-                                      └──► open-knowledge :8080 ◄────┘
-                                                    ▲
-                                                    │ Host: ok.${DOMAIN}
-                                             Hermes (in-cluster, direct)
+   browser ──► Cloudflare edge ──► Access policy (login)
+                                            │
+                                            │  Host: ok.${DOMAIN}
+                                   cloudflared tunnel
+                                            │
+                                     traefik-public
+                                            │
+                                            ▼
+                                 open-knowledge :8080
+                                            ▲
+                                            │  Host: ok.${DOMAIN}
+                                   Hermes (in-cluster, direct)
 ```
 
 `/healthz` and `/readyz` are mounted above every admission gate, which is why
@@ -123,37 +118,38 @@ own self-calls at its bound listener so they do not hairpin out through the edge
 and come back as an HTML login page.
 
 So everyone who reaches the server has full read and write access as the same
-owner, and the two public paths are gated separately:
+owner, and the public hostname is gated in one place:
 
-- **Editor → Cloudflare Access.** The browser login lives at the Cloudflare
-  edge, on the `ok.${DOMAIN}` hostname, and is **configured by hand in the Zero
-  Trust dashboard** — Access is not managed in this repo. Nothing in the pod
-  authenticates browser traffic, so *the editor is unprotected until that policy
-  exists*.
-- **`/mcp` → Auth0, via agentgateway.** A headless agent cannot complete a
-  browser login, so `/mcp` goes to the agentgateway proxy, which enforces the
-  same Auth0 JWT policy as the rest of the cluster's MCP surface and advertises
-  Protected Resource Metadata so MCP clients can register dynamically and sign
-  in through GitHub.
-
-### What has to exist in Cloudflare Zero Trust
-
-Two applications on the same hostname — Access matches the most specific path
-first, so the `/mcp` one wins for agents:
+**Cloudflare Access on `ok.${DOMAIN}`**, configured by hand in the Zero Trust
+dashboard — Access is not managed in this repo. Nothing in the pod
+authenticates anything, so *the editor is unprotected until that policy exists*.
+One application, one login policy, no path carve-outs:
 
 | Application | Path | Policy |
 | --- | --- | --- |
-| OpenKnowledge editor | `ok.${DOMAIN}` | Allow — your login rule (email, domain, or GitHub IdP) |
-| OpenKnowledge MCP | `ok.${DOMAIN}/mcp` | **Bypass** — everyone |
+| OpenKnowledge | `ok.${DOMAIN}` | Allow — your login rule (email, domain, or GitHub IdP) |
 
-The bypass is not a hole: that path is already gated by the Auth0 JWT policy on
-the agentgateway route, and a request without a valid token gets a `401` there.
-Without the bypass, Access answers agents with an HTML login page instead of a
-tool list — the failure upstream's troubleshooting calls out as "an agent gets
-an HTML login page back from `/mcp`". If you would rather Cloudflare own that
-path too, the alternatives are an Access **service token** (a shared secret, no
-OAuth) or **Managed OAuth**; both would replace the agentgateway route rather
-than sit in front of it.
+### There is no public MCP endpoint
+
+The server serves `/mcp` on the same listener, but it is not published. The only
+consumer is Hermes, which reaches the pod directly in-cluster, so the hostname
+carries browser traffic only and a single blanket login policy covers it.
+
+That is a deliberate trade. Publishing it would mean putting OpenKnowledge on
+the cluster's shared `mcp` backend, and two things make that worse than it
+looks: agentgateway forwards the *caller's* authority upstream, so the target
+would receive `Host: mcp.${DOMAIN}` and hit the single-Host `403` above — and
+that backend is **fail-closed**, so one failing target takes the whole aggregate
+down with it, breaking `searxng`, `linkedin` and `memini` too. Giving
+OpenKnowledge its own agentgateway route avoids both, at the cost of a dedicated
+backend, route and policy.
+
+To publish it later, pick one: its own agentgateway route (reusing the existing
+`https://mcp.${DOMAIN}` audience, so no Auth0 change), or a shared target plus
+`failureMode: FailOpen` and agents dialling `https://ok.${DOMAIN}/mcp` — that
+host is what makes the gate pass. Either way `/mcp` also needs a Cloudflare
+Access **Bypass** scoped to that path, or Access hands agents an HTML login page
+instead of a tool list.
 
 > **Access protects the public path only.** It enforces at the Cloudflare edge,
 > while `traefik-public` also answers on the internal LoadBalancer IP — so
@@ -162,22 +158,6 @@ than sit in front of it.
 > (`hermes-code` runs code-server with `--auth none`), but it is worth stating
 > plainly: an in-pod proxy would have authenticated the LAN path too, and
 > putting the login at the edge gives that up.
-
-`/mcp` gets its own hostname-scoped route rather than becoming another target on
-the shared `mcp` backend: agentgateway forwards the caller's *original*
-authority upstream, so a request that arrived as `ok.${DOMAIN}` still reads as
-`ok.${DOMAIN}` at the server. Aggregating it under `mcp.${DOMAIN}` would present
-that host instead and earn a `403` on every call. It reuses the existing
-`https://mcp.${DOMAIN}` audience — this is another route behind the same
-gateway, not a new API — so no Auth0/terraform change is needed.
-
-If agents start getting challenge pages on `/mcp` even with the bypass in place,
-suspect Browser Integrity Check: it blocks non-browser clients, and the zone
-already carries a `cloudflare_ruleset` in `bootstrap/fluxcd/cloudflare.tf`
-disabling it for `dex.${DOMAIN}` for exactly that reason. `mcp.${DOMAIN}` runs
-without such a rule today, so this is a thing to watch rather than a known
-breakage — a zone can hold only one ruleset per phase, so the fix is another
-rule on that existing resource, not a new one.
 
 ## Hermes
 

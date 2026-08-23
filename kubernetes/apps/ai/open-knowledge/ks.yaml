@@ -5,11 +5,6 @@ metadata:
   name: open-knowledge
 spec:
   targetNamespace: ai
-  dependsOn:
-    # The public /mcp edge routes through the agentgateway proxy, which owns the
-    # Auth0 JWT policy and the ReferenceGrant that lets this namespace reach it.
-    - name: agentgateway
-      namespace: agentgateway-system
   path: ./kubernetes/apps/ai/open-knowledge/app
   prune: true
   sourceRef:

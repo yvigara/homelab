@@ -90,8 +90,8 @@ spec:
               # The canonical public origin. It is both the sole Host allowlist
               # entry and the origin the server builds its wss:// and preview
               # URLs from, so every caller — browsers through the Cloudflare
-              # tunnel, agents through agentgateway, Hermes in-cluster — has to
-              # present this exact Host or get a 403.
+              # tunnel, and Hermes in-cluster — has to present this exact Host
+              # or get a 403.
               OK_EXTERNAL_URL: https://ok.${DOMAIN}
               # The idle timer only counts editor WebSocket clients, so a server
               # busy serving remote agents looks idle and would tear itself down
@@ -139,8 +139,8 @@ spec:
       app:
         controller: open-knowledge
         ports:
-          # The one listener. Public browser traffic (via Cloudflare Access),
-          # agentgateway's /mcp calls, and Hermes' direct calls all land here.
+          # The one listener. Public browser traffic (via Cloudflare Access)
+          # and Hermes' direct /mcp calls both land here.
           http:
             port: *app_port
     route:
@@ -154,31 +154,11 @@ spec:
             namespace: network
             sectionName: websecure
         rules:
-          # Agents: /mcp and its OAuth discovery documents go to agentgateway,
-          # which enforces the same Auth0 JWT policy as the rest of the
-          # cluster's MCP surface. A headless agent cannot complete a browser
-          # login, so this path needs a Cloudflare Access **Bypass** policy
-          # scoped to /mcp — otherwise Access answers agents with an HTML login
-          # page instead of a tool list. agentgateway forwards the caller's
-          # original authority upstream, so the server still sees
-          # Host: ok.${DOMAIN} and admits the request.
-          - matches:
-              - path:
-                  type: PathPrefix
-                  value: /mcp
-              - path:
-                  type: PathPrefix
-                  value: /.well-known/oauth-protected-resource
-              - path:
-                  type: PathPrefix
-                  value: /.well-known/oauth-authorization-server
-            backendRefs:
-              - kind: Service
-                name: agentgateway-proxy-int
-                namespace: agentgateway-system
-                port: 80
-          # Everyone else: the editor. Authentication happens at the
-          # Cloudflare edge (Access), not in the cluster — see the README.
+          # The editor, and nothing else worth splitting out. `/mcp` is served
+          # on this listener too but is not published: the only consumer is
+          # Hermes, in-cluster, and there is no public MCP edge for this app.
+          # Authentication happens at the Cloudflare edge (Access), not in the
+          # cluster — see the README.
           - matches:
               - path:
                   type: PathPrefix
