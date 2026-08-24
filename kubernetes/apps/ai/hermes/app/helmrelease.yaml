@@ -40,56 +40,33 @@ spec:
                   name: hermes-signing-key
             command:
               - bash
-              - -c
-              - |
-                set -euo pipefail
-                cp /run/config/config.yaml /opt/data/config.yaml
-                chown hermes:hermes /opt/data/config.yaml
-
-                echo 'export PATH="/opt/data/.local/bin:/opt/data/.local/share/mise/shims:$PATH"' > /opt/data/.profile
-
-                mkdir -p /opt/data/.config/mise /opt/data/.local/bin \
-                  /opt/data/.local/share/mise /opt/data/.local/state/mise /opt/data/.cache/mise
-                cp /run/config/mise.toml /opt/data/.config/mise/config.toml
-
-                # no-ops when $MISE_INSTALL_PATH is already at $MISE_VERSION
-                curl -fsSL https://mise.run | sh
-
-                # real activation for interactive `kubectl exec` shells
-                touch /opt/data/.bashrc
-                grep -qF '/opt/data/.local/bin/mise activate bash' /opt/data/.bashrc \
-                  || echo 'eval "$(/opt/data/.local/bin/mise activate bash)"' >> /opt/data/.bashrc
-
-                mkdir -p /opt/data/.cache/mise
-                chown -R hermes:hermes /opt/data/.bashrc /opt/data/.config \
-                  /opt/data/.local/bin/mise /opt/data/.local/share/mise \
-                  /opt/data/.local/state/mise /opt/data/.cache \
-                  /opt/data/.profile
-                su - hermes -c "$MISE_INSTALL_PATH install"
-
-                # git config + GitHub App credential helper, from hermes-github-app
-                bash /run/config/git-init.sh
+              - /run/config/init.sh
         containers:
           app:
             image: *app_image
             args:
               - "gateway"
               - "run"
+            # Inherited by every process in this container, and Hermes resolves
+            # process env above both config.yaml and .env - so what is set here
+            # is not merely shared, it cannot be overridden further down. Only
+            # values that belong to the container as a whole belong here.
+            # Settings that belong to the agent itself - its gateway port, the
+            # bot tokens it claims, the memory namespace it writes to - live in
+            # its own .env, rendered by the hermes-profile-default
+            # ExternalSecret.
             env:
               TZ: ${TIMEZONE}
-              API_SERVER_ENABLED: true
-              API_SERVER_HOST: 0.0.0.0
-              API_SERVER_PORT: &app_port 8642
-              BUZZ_RELAY_URL: wss://buzz.${DOMAIN}
               HERMES_GID: "1000"
               HERMES_HOME: /opt/data
               HERMES_UID: "1000"
+              # Machine-level rather than agent-level: one dashboard backend
+              # serves every agent co-located in this container.
               HERMES_DASHBOARD: "1"
               HERMES_DASHBOARD_PUBLIC_URL: "https://hermes.${DOMAIN}"
               HERMES_DASHBOARD_OIDC_ISSUER: "https://dex.${DOMAIN}"
               HERMES_DASHBOARD_OIDC_CLIENT_ID: "hermes-dashboard-public"
               MEMINI_BASE_URL: http://memini.ai.svc.cluster.local:8080
-              MEMINI_NAMESPACE: hermes
               MEMINI_API_KEY:
                 valueFrom:
                   secretKeyRef:
@@ -99,8 +76,6 @@ spec:
               # Anti-detection browser backend; the bearer token it
               # authenticates with comes from hermes-secret (CAMOFOX_API_KEY).
               CAMOFOX_URL: http://camofox.ai.svc.cluster.local:9377
-              WHATSAPP_ENABLED: true
-              WHATSAPP_MODE: self-chat
               HOME: /opt/data
               TERM: xterm-256color
               # Author stays hermes[bot] (user.email in the gitconfig); GitHub
@@ -117,7 +92,7 @@ spec:
               - secretRef:
                   name: hermes-github-app
             ports:
-              - containerPort: *app_port
+              - containerPort: &app_port 8642
                 name: gateway
                 protocol: TCP
               - containerPort: &dashboard_port 9119
@@ -235,6 +210,16 @@ spec:
                 subPath: mise.toml
               - path: /run/config/git-init.sh
                 subPath: git-init.sh
+              - path: /run/config/init.sh
+                subPath: init.sh
+      profile-default:
+        type: secret
+        name: hermes-profile-default
+        defaultMode: 0400
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/secrets/hermes-profile-default
       run:
         type: emptyDir
         advancedMounts:
