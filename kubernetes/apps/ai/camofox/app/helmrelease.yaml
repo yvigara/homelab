@@ -42,6 +42,15 @@ spec:
               CAMOFOX_CRASH_REPORT_ENABLED: "false"
               # Node heap only; the Camoufox processes live outside it.
               MAX_OLD_SPACE_SIZE: "1024"
+              # Headed browser on a 1920x1080 Xvfb, with x11vnc on loopback and
+              # noVNC (websockify) in front of it. Interactive login for sites
+              # that will not take an imported cookie jar.
+              ENABLE_VNC: "1"
+              VNC_RESOLUTION: 1920x1080
+              # websockify defaults to 127.0.0.1, which nothing outside the pod
+              # can reach. x11vnc itself stays on loopback (-localhost).
+              VNC_BIND: 0.0.0.0
+              NOVNC_PORT: &vnc_port 6080
             envFrom:
               - secretRef:
                   name: camofox-secret
@@ -71,8 +80,8 @@ spec:
                   failureThreshold: 30
             resources:
               requests:
-                cpu: 50m
-                memory: 512Mi
+                cpu: 100m
+                memory: 1Gi
               limits:
                 memory: 4Gi
             securityContext:
@@ -86,6 +95,43 @@ spec:
         ports:
           http:
             port: *port
+          vnc:
+            port: *vnc_port
+    route:
+      # LAN-only: websockify serves noVNC itself, so CAMOFOX_ACCESS_KEY does not
+      # cover this port - VNC_PASSWORD is what gates the session.
+      vnc:
+        annotations:
+          external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+        hostnames:
+          - "camofox.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+        parentRefs:
+          - name: traefik-private
+            namespace: network
+            sectionName: websecure
+        rules:
+          # noVNC is served as /vnc.html; send the bare hostname there rather
+          # than rewriting every path and breaking the assets and /websockify.
+          - matches:
+              - path:
+                  type: Exact
+                  value: /
+            filters:
+              - type: URLRewrite
+                urlRewrite:
+                  path:
+                    type: ReplaceFullPath
+                    replaceFullPath: /vnc.html
+            backendRefs:
+              - identifier: app
+                port: *vnc_port
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+            backendRefs:
+              - identifier: app
+                port: *vnc_port
     persistence:
       data:
         existingClaim: *app

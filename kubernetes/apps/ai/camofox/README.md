@@ -17,6 +17,7 @@ Playwright and headless Chrome. Hermes talks to it at
 | Backend selection | `browser.cloud_provider: camofox` in `../hermes/app/resources/config.yaml` |
 | Server address | `CAMOFOX_URL` in `../hermes/app/helmrelease.yaml` |
 | Bearer token | `CAMOFOX_API_KEY` in both `camofox-secret` and `hermes-secret` |
+| Interactive browser | noVNC at `camofox.int.<region>.<environment>.<domain>` (`traefik-private`) |
 
 `CAMOFOX_URL` is only the address — Hermes activates the backend from the
 `cloud_provider` selection, not from the env var. Camofox has no CDP endpoint,
@@ -25,14 +26,17 @@ and the `browser` toolset is enabled in `agent.disabled_toolsets`.
 
 ## Secret
 
-One Bitwarden Secrets Manager entry, `CAMOFOX_API_KEY` (any random string,
-`openssl rand -hex 32`). It lands in three places from the one value:
+Two Bitwarden Secrets Manager entries. `CAMOFOX_API_KEY` (any random string,
+`openssl rand -hex 32`) lands in three places from the one value:
 
 - `CAMOFOX_ACCESS_KEY` on the server — gates *every* route except `/health`, so
   the API is not open to anything else that can reach the pod's ClusterIP.
 - `CAMOFOX_API_KEY` on the server — gates cookie import specifically.
 - `CAMOFOX_API_KEY` on Hermes — the bearer token it sends. The server accepts
   the access key as a superkey on the cookie routes, so one token covers both.
+
+`CAMOFOX_VNC_PASSWORD` is the second entry: 8 random characters, because VNC
+auth only uses the first 8 (see [Interactive login](#interactive-login)).
 
 ## Storage
 
@@ -46,11 +50,31 @@ and `/root` is `0700`, so nothing else can reach the browser binary.
 
 ## Interactive login
 
-For sites that need a hands-on login, the image can run headed behind noVNC
-(`ENABLE_VNC=1`, `VNC_BIND=0.0.0.0`, `VNC_PASSWORD`, port 6080). That is off
-here; turning it on means adding those env vars, a second service port and a
-route on `traefik-private`. Cookie import (`POST /sessions/:userId/cookies`,
-Netscape format) covers the same need without exposing a desktop.
+VNC is on, so the browser runs headed on a 1920x1080 Xvfb and is reachable at
+`https://camofox.int.<region>.<environment>.<domain>` — LAN only, through
+`traefik-private`, with no Cloudflare record. The display carries the live
+Camoufox windows, the agent's tabs included — log into a site on one of those
+tabs and the persistence plugin checkpoints the storage state under that
+session's profile, so the agent stays logged in afterwards. (Hermes can also be
+pinned to a fixed session with `CAMOFOX_USER_ID` / `CAMOFOX_SESSION_KEY` if a
+single shared browser identity is ever wanted instead.)
+
+The route sends the bare hostname to `/vnc.html` (an `Exact: /` match with a
+`ReplaceFullPath` rewrite); everything else passes through untouched, because
+noVNC's assets and the `/websockify` socket are served from the same port.
+
+Inside the pod the chain is Camoufox → Xvfb → x11vnc (bound to loopback with
+`-localhost`) → websockify → `:6080`. Only websockify is exposed, and it is
+served *outside* Express, so `CAMOFOX_ACCESS_KEY` does not apply to it —
+`VNC_PASSWORD` from `camofox-secret` is what gates the session. Classic VNC
+auth uses an 8-byte key: only the first 8 characters of the Bitwarden value are
+significant, so make it 8 random characters rather than a long string that only
+looks strong.
+
+Storage state can be exported afterwards via `GET
+/sessions/:userId/storage_state` on the API port (that one *is* behind the
+access key). Cookie import (`POST /sessions/:userId/cookies`, Netscape format)
+remains the non-interactive path.
 
 ## Telemetry
 
