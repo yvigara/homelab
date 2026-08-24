@@ -49,7 +49,7 @@ dotenv document and installed to `/opt/data/.env` by `init.sh`):
 | Setting | Why it is not container-wide |
 | --- | --- |
 | `API_SERVER_*` | The port a gateway binds. Every Hermes gateway defaults to 8642, so this has to be settable per agent. |
-| `SLACK_*`, `WHATSAPP_*`, `BUZZ_*` | Hermes locks a bot token to one agent and refuses any other gateway that claims it. |
+| `SLACK_*`, `BUZZ_*` | Hermes locks a bot token to one agent and refuses any other gateway that claims it. |
 | `MEMINI_NAMESPACE` | The memory namespace this agent reads and writes. |
 
 One consequence worth knowing: `/opt/data/.env` is rewritten on every pod start,
