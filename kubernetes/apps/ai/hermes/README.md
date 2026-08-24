@@ -131,7 +131,7 @@ providers as the default agent, with `reasoning_effort: high`, a longer terminal
 timeout, `terminal.cwd` in its own workspace, and the chat-oriented toolsets
 dropped. It reuses `${HERMES_OMLX_KEY}` and the memini/searxng endpoints from
 the container env and defines nothing of its own beyond
-`MEMINI_NAMESPACE=hermes-coder`.
+`MEMINI_NAMESPACE=hermes/coder`.
 
 It runs **no gateway** — no bot token to lock, no port to collide — and is used
 through the dashboard's profile switcher or from a shell:
