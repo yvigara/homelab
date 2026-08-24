@@ -210,9 +210,9 @@ mcp_servers:
     headers:
       Authorization: ${X_MCP_AUTH_HEADER}
   open-knowledge:
-    # Straight to the pod, skipping both public edges: the browser login the
-    # editor sits behind (Hermes cannot complete a cookie flow) and the Auth0
-    # JWT on the agentgateway route (in-cluster callers hold no token).
+    # Straight to the pod, skipping the public hostname: that one is behind a
+    # Cloudflare Access login Hermes cannot complete, and there is no public MCP
+    # edge for this app — Hermes is the only consumer.
     #
     # The Host header is load-bearing, not decoration. OpenKnowledge admits
     # exactly one non-loopback Host — the one in OK_EXTERNAL_URL — and refuses

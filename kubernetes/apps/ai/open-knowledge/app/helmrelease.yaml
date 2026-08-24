@@ -69,6 +69,16 @@ spec:
           app:
             image: *app_image
             command: ["bash", "/run/config/start.sh"]
+            # OpenKnowledge resolves settings as CLI flags > environment >
+            # project-local config > project config > user config > defaults.
+            # The environment sits above every config file, so an OK_* set here
+            # is not merely a default - it cannot be adjusted anywhere else.
+            # That is the right shape for what belongs to the container: the
+            # port the Service targets, the address it binds, the exposure
+            # consent, and the public origin the ingress answers on. Settings
+            # that belong to this instance rather than to the container - idle
+            # shutdown, the sync mode - live in the project-local config layer
+            # instead, rendered by resources/local-config.yml.
             env:
               HOME: *data_dir
               NPM_CONFIG_PREFIX: *npm_prefix
@@ -93,10 +103,6 @@ spec:
               # tunnel, and Hermes in-cluster — has to present this exact Host
               # or get a 403.
               OK_EXTERNAL_URL: https://ok.${DOMAIN}
-              # The idle timer only counts editor WebSocket clients, so a server
-              # busy serving remote agents looks idle and would tear itself down
-              # mid-session.
-              OK_IDLE_SHUTDOWN: "off"
             probes:
               # /healthz and /readyz are mounted above every admission gate
               # precisely so orchestrator probes — which arrive with an IP Host

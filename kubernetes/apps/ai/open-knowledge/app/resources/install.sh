@@ -117,17 +117,11 @@ else
   echo "[install] ${OK_PROJECT_DIR} already initialized"
 fi
 
-# Full sync: fetch the remote, commit edits made here, push them back. This is
-# per-machine, gitignored config with no environment variable of its own — the
-# recognized OK_* surface covers server settings only — so it is written to the
-# file directly. Left alone once present, so a change made in the editor's Sync
-# settings survives a restart.
-local_config=".ok/local/config.yml"
-if ! grep -qs '^autoSync:' "${local_config}"; then
-  echo "[install] pinning autoSync.mode: full"
-  mkdir -p .ok/local
-  cat >> "${local_config}" <<'EOF'
-autoSync:
-  mode: full
-EOF
-fi
+# The project-local config layer, rendered in git and authoritative on every
+# start — the same contract as the agent .env next door in hermes. It holds the
+# settings that belong to this instance rather than to the container, which is
+# why they are not OK_* variables: the env layer sits above every config file,
+# so a value set there could not be adjusted anywhere else. See README.md.
+echo "[install] installing .ok/local/config.yml"
+mkdir -p .ok/local
+install -m 0644 /run/config/local-config.yml .ok/local/config.yml

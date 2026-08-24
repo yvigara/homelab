@@ -33,6 +33,7 @@ Two consequences worth knowing:
 | `/data/.npm-global` | The `ok` CLI, on `PATH` for the app container. Kept outside the project so `node_modules` never lands in the knowledge base. |
 | `/data/project` | The knowledge base itself — a clone of `yvigara/lifeos`, which the server watches, writes and syncs. |
 | `/data/.ssh` | The deploy key, `known_hosts` and the `github.com` ssh config. |
+| `/data/project/.ok/local/config.yml` | The project-local config layer, rendered from `app/resources/local-config.yml` on every start. |
 
 ## The single-Host constraint
 
@@ -71,11 +72,8 @@ straight to starting the server.
 
 **Sync is `full`**: the server fetches from the remote, commits edits made in
 the editor or by agents, and pushes them back — so automated commits land in
-that repo's history. There is no environment variable for this (the recognized
-`OK_*` surface covers server settings only), so the init script writes
-`autoSync.mode: full` into the gitignored `.ok/local/config.yml`, and leaves it
-alone once present so a change made in the editor's Sync settings survives a
-restart.
+that repo's history. It is set in the project-local config layer rather than the
+environment; see below.
 
 ### The deploy key
 
@@ -159,6 +157,41 @@ instead of a tool list.
 > plainly: an in-pod proxy would have authenticated the LAN path too, and
 > putting the login at the edge gives that up.
 
+## Container environment vs. the project's own settings
+
+OpenKnowledge resolves settings in this order:
+
+    CLI flags  >  environment  >  project-local config  >  project config  >  user config  >  defaults
+
+The environment sits *above* every config file, so an `OK_*` set in the pod spec
+is not merely a default — it cannot be adjusted anywhere else. That is the right
+shape for what belongs to the container and the wrong shape for what belongs to
+the instance running in it. Same split as the agent `.env` next door in
+[hermes](../hermes/README.md).
+
+**In the container env** (`app/helmrelease.yaml`): `PORT`, `OK_BIND`,
+`OK_ALLOW_EXTERNAL` and `OK_EXTERNAL_URL` — the port the Service targets, the
+address it binds, the exposure consent interlock, and the public origin the
+ingress answers on. Editing any of these from inside the app would either break
+ingress or stop the server booting, so they are deliberately out of reach. The
+same block carries the bootstrap inputs `install.sh` reads (`OK_VERSION`,
+`OK_GIT_REMOTE`, `OK_GIT_BRANCH`, `OK_PROJECT_DIR`, the git identity), which are
+not OpenKnowledge settings at all.
+
+**In the project-local config layer** (`app/resources/local-config.yml` →
+`<project>/.ok/local/config.yml`, installed by `install.sh`):
+
+| Setting | Why it is not container-wide |
+| --- | --- |
+| `server.idleShutdown` | Belongs to this server instance, not to the pod; in the env it could not be changed without a redeploy. |
+| `autoSync.mode` | The sync posture of this checkout — the editor's own Sync settings write to the same key. |
+
+That file is rewritten from git on every pod start, so what is in the repo wins
+over what is on the volume. The consequence worth knowing: the editor keeps its
+semantic-search, hidden-file and link-preview toggles in the same file, so a
+change made in the Settings pane is lost on the next restart unless it is added
+to `local-config.yml` as well.
+
 ## Hermes
 
 Hermes reaches the knowledge base directly at
@@ -199,9 +232,10 @@ in init — which is the intended failure mode, not a silent read-only start.
   process per project volume. Two replicas silently run two writers against the
   same data and nothing inside the container enforces the exclusion. The
   controller is `Recreate` for the same reason.
-- **`OK_IDLE_SHUTDOWN=off`** is required, not tuning. The idle timer only counts
-  editor WebSocket clients, so a server busy serving remote agents looks idle
-  and tears itself down mid-session.
+- **`server.idleShutdown: "off"`** is required, not tuning. The idle timer only
+  counts editor WebSocket clients, so a server busy serving MCP calls looks idle
+  and tears itself down mid-session, handing Kubernetes a pod that exits for no
+  visible reason.
 - **Nothing in front may buffer `/mcp`** (server-sent events) and everything
   must preserve `Host` and forward `X-Forwarded-Proto: https` — without the
   latter the server hands the editor a `ws://` socket that browsers block as
