@@ -6,6 +6,7 @@ resources:
   - ./namespace.yaml
   - ./cluster-vars.yaml
   - ./agentgateway/ks.yaml
+  - ./camofox/ks.yaml
   - ./hermes/ks.yaml
   - ./llmkube/ks.yaml
   - ./memini/ks.yaml

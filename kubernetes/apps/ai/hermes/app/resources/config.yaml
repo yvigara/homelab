@@ -140,9 +140,18 @@ agent:
     - homeassistant
     - spotify
     - computer_use
-    - browser
     - tts
     - stt
+# Camofox (anti-detection Camoufox server) is the browser backend. Selecting it
+# here is what activates it - CAMOFOX_URL alone only supplies the address.
+# It has no CDP endpoint, so Hermes keeps its built-in browser tools rather than
+# the browser-use harness.
+browser:
+  cloud_provider: camofox
+  camofox:
+    # Stable per-profile user id, so the server maps sessions onto its
+    # persistent profile directory and logins survive agent restarts.
+    managed_persistence: true
 terminal:
   backend: local
   cwd: /opt/data/workspace
