@@ -1,0 +1,103 @@
+# Example profile: a coding agent, isolated from the default agent's memory,
+# sessions and chat platforms but sharing the pod's model providers and tools.
+#
+# Rendered to $HERMES_HOME/profiles/coder/config.yaml by profiles-init.sh.
+#
+# Profiles do not inherit the default profile's config.yaml, so every setting
+# this agent needs is repeated here. What they *do* inherit is the container
+# environment, which is why the ${...} references below resolve without any of
+# these values being restated in the pod spec - see helmrelease.yaml and
+# ../../../../cluster-vars.yaml for where each one comes from.
+model:
+  default: deepseek-v4-flash:cloud
+  provider: custom:k8s-ollamacloud
+custom_providers:
+  - name: k8s-ollamacloud
+    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-cloud
+    api_key: "${HERMES_OMLX_KEY}"
+    default_model: deepseek-v4-flash:cloud
+  - name: k8s-omlx
+    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
+    api_key: "${HERMES_OMLX_KEY}"
+    default_model: Qwen3.5-9B-MLX-4bit
+    models:
+      Qwen3.5-9B-MLX-4bit:
+        context_length: 77824
+      gemma-4-e4b-it-qat-OptiQ-4bit:
+        context_length: 110592
+fallback_providers:
+  - provider: custom:k8s-omlx
+    model: Qwen3.5-9B-MLX-4bit
+auxiliary:
+  compression:
+    provider: custom:k8s-omlx
+    model: gemma-4-e4b-it-qat-OptiQ-4bit
+  session_search:
+    provider: custom:k8s-omlx
+    model: Qwen3.5-9B-MLX-4bit
+  title_generation:
+    provider: custom:k8s-omlx
+    model: Qwen3.5-9B-MLX-4bit
+toolsets:
+  - hermes-cli
+platform_toolsets:
+  cli:
+    - clarify
+    - code_execution
+    - file
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - web
+agent:
+  max_turns: 120
+  reasoning_effort: high
+  tool_use_enforcement: auto
+  disabled_toolsets:
+    - homeassistant
+    - spotify
+    - computer_use
+    - browser
+    - tts
+    - stt
+terminal:
+  backend: local
+  # Created by profiles-init.sh. A profile is not a sandbox - this only sets
+  # where commands start, it does not stop the agent reaching the rest of the
+  # volume.
+  cwd: /opt/data/profiles/coder/workspace
+  timeout: 300
+  persistent_shell: true
+compression:
+  enabled: true
+  threshold: 0.5
+  target_ratio: 0.2
+  protect_last_n: 20
+memory:
+  memory_enabled: true
+  user_profile_enabled: false
+  write_approval: false
+  provider: memini
+  flush_min_turns: 6
+plugins:
+  enabled:
+    - memini
+web:
+  search_backend: searxng
+security:
+  allow_private_urls: false
+  redact_secrets: true
+privacy:
+  redact_pii: true
+approvals:
+  mode: smart
+  timeout: 60
+  cron_mode: deny
+# No gateway platforms. This agent is reached through the machine dashboard's
+# profile switcher and `hermes -p coder chat`; giving it a chat platform would
+# mean its own bot credentials, since two gateways sharing one token are refused
+# by Hermes' token lock. See ../../../README.md.
+gateway:
+  platforms: {}

@@ -41,3 +41,6 @@ default_env=/run/secrets/hermes-profile-default/default.env
 if [[ -f ${default_env} ]]; then
   install -m 0600 -o hermes -g hermes "${default_env}" /opt/data/.env
 fi
+
+# Any additional agents declared in resources/profiles/
+bash /run/config/profiles-init.sh

@@ -26,6 +26,7 @@ spec:
               tag: v2026.8.31@sha256:64923faeae267792bf9bf87fe3b4c4869e35004e360c7df01730ad801b74d524
             env:
               HOME: /opt/data
+              HERMES_HOME: /opt/data
               # renovate: datasource=github-releases depName=jdx/mise
               MISE_VERSION: v2026.9.1
               MISE_INSTALL_PATH: /opt/data/.local/bin/mise
@@ -212,6 +213,18 @@ spec:
                 subPath: git-init.sh
               - path: /run/config/init.sh
                 subPath: init.sh
+              - path: /run/config/profiles-init.sh
+                subPath: profiles-init.sh
+              # One profile per directory under /run/config/profiles; ConfigMap
+              # keys cannot contain "/", so each file is put in place by subPath.
+              # Adding a profile means three keys in kustomization.yaml and three
+              # mounts here.
+              - path: /run/config/profiles/coder/config.yaml
+                subPath: profiles-coder-config.yaml
+              - path: /run/config/profiles/coder/SOUL.md
+                subPath: profiles-coder-SOUL.md
+              - path: /run/config/profiles/coder/profile.env
+                subPath: profiles-coder-profile.env
       profile-default:
         type: secret
         name: hermes-profile-default

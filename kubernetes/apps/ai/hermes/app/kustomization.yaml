@@ -13,6 +13,13 @@ configMapGenerator:
       - mise.toml=./resources/mise.toml
       - init.sh=./resources/init.sh
       - git-init.sh=./resources/git-init.sh
+      - profiles-init.sh=./resources/profiles-init.sh
+      # ConfigMap keys cannot contain "/", so each profile's files are flattened
+      # here and put back into a per-profile directory by the subPath mounts in
+      # helmrelease.yaml.
+      - profiles-coder-config.yaml=./resources/profiles/coder/config.yaml
+      - profiles-coder-SOUL.md=./resources/profiles/coder/SOUL.md
+      - profiles-coder-profile.env=./resources/profiles/coder/profile.env
 generatorOptions:
   disableNameSuffixHash: true
   annotations:
