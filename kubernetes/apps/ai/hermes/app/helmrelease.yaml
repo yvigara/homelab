@@ -27,7 +27,7 @@ spec:
             env:
               HOME: /opt/data
               # renovate: datasource=github-releases depName=jdx/mise
-              MISE_VERSION: v2026.8.10
+              MISE_VERSION: v2026.8.12
               MISE_INSTALL_PATH: /opt/data/.local/bin/mise
               MISE_INSTALL_SKIP_IF_EXISTS: "1"
               MISE_YES: "1"
