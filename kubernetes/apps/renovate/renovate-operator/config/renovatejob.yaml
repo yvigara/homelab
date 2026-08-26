@@ -61,15 +61,27 @@ spec:
         secretKeyRef:
           name: docker-hub-token
           key: DOCKERHUB_TOKEN
+    - name: GHCR_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: ghcr-token
+          key: GHCR_TOKEN
     - name: RENOVATE_HOST_RULES
       value: >-
         [
+
 
           {
             "hostType": "docker",
             "matchHost": "docker.io",
             "username": "$(DOCKERHUB_USERNAME)",
             "password": "$(DOCKERHUB_TOKEN)"
+          },
+          {
+            "hostType": "docker",
+            "matchHost": "ghcr.io",
+            "username": "x-access-token",
+            "password": "$(GHCR_TOKEN)"
           }
         ]
     - name: RENOVATE_CACHE_DIR
