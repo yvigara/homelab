@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/generators.external-secrets.io/clustergenerator_v1alpha1.json
+#
+# Mints a GitHub App installation access token scoped to packages:read.
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: ClusterGenerator
+metadata:
+  name: ghcr-token
+spec:
+  kind: GithubAccessToken
+  generator:
+    githubAccessTokenSpec:
+      appID: "4603538"
+      installID: "153924028"
+      permissions:
+        packages: read
+      auth:
+        privateKey:
+          secretRef:
+            name: ghcr-github-app
+            key: privateKey
+            namespace: external-secrets
