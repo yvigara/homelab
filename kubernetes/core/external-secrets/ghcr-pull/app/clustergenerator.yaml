@@ -1,6 +1,10 @@
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/generators.external-secrets.io/clustergenerator_v1alpha1.json
 #
-# Mints a GitHub App installation access token scoped to packages:read.
+# Mints a GitHub App installation access token scoped to packages:read. GitHub expires
+# it after 60 minutes, which is the whole reason for a generator rather than a PAT.
+#
+# IMPORTANT: this generator can only be consumed from an ExternalSecret in the
+# external-secrets namespace.
 apiVersion: generators.external-secrets.io/v1alpha1
 kind: ClusterGenerator
 metadata:
@@ -18,4 +22,3 @@ spec:
           secretRef:
             name: ghcr-github-app
             key: privateKey
-            namespace: external-secrets
