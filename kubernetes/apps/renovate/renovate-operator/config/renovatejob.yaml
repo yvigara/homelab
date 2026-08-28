@@ -7,7 +7,7 @@ spec:
   # Hourly discovery. Renovate itself only opens PRs when something actually
   # changed, and the per-repo schedule in renovate.json narrows when it may do so.
   schedule: "0 * * * *"
-  image: ghcr.io/renovatebot/renovate:44.33.2
+  image: ghcr.io/renovatebot/renovate:44.48.3
   parallelism: 4
   provider:
     name: github
