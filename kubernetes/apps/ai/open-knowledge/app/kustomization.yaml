@@ -2,15 +2,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./sshkey.yaml
   - ./pvc.yaml
   - ./helmrelease.yaml
-configMapGenerator:
-  - name: open-knowledge-configmap
-    files:
-      - install.sh=./resources/install.sh
-      - local-config.yml=./resources/local-config.yml
-generatorOptions:
-  disableNameSuffixHash: true
-  annotations:
-    kustomize.toolkit.fluxcd.io/substitute: disabled

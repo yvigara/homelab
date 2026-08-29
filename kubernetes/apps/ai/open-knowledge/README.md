@@ -35,16 +35,18 @@ Two things about the tags, worth knowing before a bump:
 - **They are all `test-`-prefixed** (`test-0.66.2`, `test-latest`), which is not
   a shape Renovate's semver versioning matches. Until a plain `0.66.2`/`v0.66.2`
   tag exists, expect to bump this by hand.
-- **It is alpine, so there is no `bash` and no `curl`.** `install.sh` is POSIX
-  `sh`, and fetches over `node`'s built-in `fetch` rather than curl.
+- **It is alpine**, so `kubectl exec` gets you BusyBox `sh`, not `bash`.
 
 ## Layout
 
-| Path | What it holds |
-| --- | --- |
-| `/opt/data` | The PVC, and the image's `OK_HOME`/`WORKDIR`: the knowledge base itself — a clone of `yvigara/lifeos` that the server watches, writes and syncs. |
-| `/opt/data/.ok/local/config.yml` | The project-local config layer, rendered from `app/resources/local-config.yml` on every start. |
-| `/home/ok` | `$HOME`, an emptyDir: the deploy key, `known_hosts`, the ssh config and the gitconfig. Deliberately *not* on the project volume — see below. |
+One claim, mounted twice as siblings under its root. They cannot nest: `$HOME`
+holds the GitHub credential, and anything inside the project is committed and
+pushed by sync.
+
+| Path | subPath | What it holds |
+| --- | --- | --- |
+| `/opt/data` | `project` | The knowledge base, and the image's `OK_HOME`/`WORKDIR`. |
+| `/home/ok` | `home` | `$HOME` — `.ok/auth.yml` (the GitHub credential), `.ok/global.yml`, and any `git config --global` identity. |
 
 ## The single-Host constraint
 
@@ -75,44 +77,36 @@ arranged to do that:
 `/healthz` and `/readyz` are mounted above every admission gate, which is why
 kubelet probes — arriving with an IP `Host` — are not refused.
 
-## The knowledge base repo
+## GitHub
 
-The content lives in its own repository, `yvigara/lifeos`, cloned over SSH on
-first boot and kept in sync from then on. Later boots find the clone and skip
-straight to starting the server.
+Nothing about GitHub is configured here. The pod starts with an empty project —
+the image's entrypoint runs `ok init` on a fresh volume — and everything else is
+done from the editor once it is up:
 
-**Sync is `full`**: the server fetches from the remote, commits edits made in
-the editor or by agents, and pushes them back — so automated commits land in
-that repo's history. It is set in the project-local config layer rather than the
-environment; see below.
+1. **Connect GitHub** (Settings → Account) runs the device flow: the app shows a
+   code, you enter it at `github.com/login/device`. No key to mint, register or
+   rotate, and the grant is your own account's.
+2. **Clone from GitHub**, or **Publish to GitHub** to push the project up as a
+   new repo.
+3. Pick a sync mode when the editor asks — `full` (pull and push) or `follow`
+   (pull only).
 
-### The deploy key
+The credential lands in `$HOME/.ok/auth.yml`, which is why `$HOME` is on the
+volume rather than an emptyDir: on an emptyDir it would be gone on every
+restart and the device flow would have to be repeated each time. `$HOME` is a
+sibling of the project, not a corner of it, because sync commits everything the
+knowledge base is not ignoring — a credential *inside* the project would be
+pushed to the remote.
 
-Generated in-cluster by the external-secrets `SSHKey` generator, the same way
-`hermes-signing-key` is: the private half never leaves the cluster, and
-`refreshInterval: "0"` keeps it from being regenerated out from under the
-registered public half. Deleting the ExternalSecret or its Secret mints a brand
-new key, which then has to be re-registered on the repo.
+Two things worth knowing:
 
-**The key must be configured under `$HOME`, not in the environment.** The server
-replaces — not merges — the environment of every git it spawns, preserving only
-a fixed allowlist. `GIT_SSH_COMMAND` is not on that allowlist, so a git-over-SSH
-setting passed that way is silently dropped mid-sync. `HOME` *is* on it, which
-is exactly how ssh is meant to find its own config, so the init script writes
-`~/.ssh/{id_ed25519,config,known_hosts}` instead.
-
-`$HOME` is an emptyDir rather than a corner of the project volume, and that is
-not tidiness: full sync commits everything the knowledge base is not ignoring,
-so a private key under `/opt/data` would be pushed to `yvigara/lifeos`. Nothing
-under `$HOME` needs to outlive the pod — `install.sh` rewrites all of it on
-every start.
-
-`known_hosts` is fetched from `api.github.com/meta` over TLS rather than
-discovered by connecting on port 22. The trust root is then GitHub's
-certificate instead of whatever answered first, and it self-heals when GitHub
-rotates a host key (as they did in 2023). `StrictHostKeyChecking` stays at
-`yes`; if the fetch fails and no cached file exists, the init container fails
-rather than connecting unverified.
+- **Commit identity.** With none set, OpenKnowledge commits under a default
+  "OpenKnowledge" author and the sync indicator nags about it. `kubectl exec`
+  into the pod and `git config --global user.name`/`user.email` once — `$HOME`
+  is persistent, so it sticks.
+- **Nothing in this repo rewrites `.ok/`.** The editor owns
+  `.ok/local/config.yml` — the sync mode, the semantic-search, hidden-file and
+  link-preview toggles — and no init container overwrites it on restart.
 
 ## Auth
 
@@ -190,34 +184,28 @@ the instance running in it. Same split as the agent `.env` next door in
 **Baked into the image**: `PORT`, `OK_BIND` and `OK_HOME`. Correct as they are,
 so this deployment inherits them rather than restating them in the pod spec.
 
-**In the container env** (`app/helmrelease.yaml`): `OK_ALLOW_EXTERNAL` and
-`OK_EXTERNAL_URL` — the exposure consent interlock the image deliberately leaves
-unset, and the public origin the ingress answers on. Editing either from inside
-the app would stop the server booting or break every request with a `403`, so
-they are deliberately out of reach. `HOME` sits here too, because git has to
-find `~/.ssh` during sync and the image sets none. The init container carries
-the bootstrap inputs `install.sh` reads (`OK_GIT_REMOTE`, `OK_GIT_BRANCH`, the
-git identity), which are not OpenKnowledge settings at all.
+**In the container env** (`app/helmrelease.yaml`), four values and no more:
 
-**In the project-local config layer** (`app/resources/local-config.yml` →
-`<project>/.ok/local/config.yml`, installed by `install.sh`):
-
-| Setting | Why it is not container-wide |
+| Variable | Why it belongs to the container |
 | --- | --- |
-| `server.idleShutdown` | Belongs to this server instance, not to the pod; in the env it could not be changed without a redeploy. |
-| `autoSync.mode` | The sync posture of this checkout — the editor's own Sync settings write to the same key. |
+| `OK_ALLOW_EXTERNAL` | The exposure consent interlock, which the image deliberately leaves unset so an unconsented run refuses to boot. |
+| `OK_EXTERNAL_URL` | The public origin the ingress answers on. Changing it from inside the app would `403` every request. |
+| `HOME` | `$HOME/.ok` is the user-global directory holding the GitHub credential; the image sets no `HOME` of its own. |
+| `OK_IDLE_SHUTDOWN` | A server that exits on its own hands Kubernetes a pod that dies for no visible reason. Already the derived default for a non-loopback bind; pinned because it is load-bearing. |
 
-That file is rewritten from git on every pod start, so what is in the repo wins
-over what is on the volume. The consequence worth knowing: the editor keeps its
-semantic-search, hidden-file and link-preview toggles in the same file, so a
-change made in the Settings pane is lost on the next restart unless it is added
-to `local-config.yml` as well.
+**Nothing in the project-local config layer.** `.ok/local/config.yml` is left
+entirely to the editor, which keeps the sync mode and the search/preview toggles
+there. An earlier revision rendered that file from git and reinstalled it on
+every start — the same contract as the agent `.env` next door in
+[hermes](../hermes/README.md) — which was right while this deployment owned the
+git setup, and is wrong now that the editor owns it: rewriting the file would
+discard the sync mode chosen after signing in, on every restart.
 
 ## Hermes
 
 Hermes reaches the knowledge base directly at
-`http://open-knowledge.ai.svc.cluster.local:8080/mcp`, skipping both edges: it
-cannot complete the browser login, and it holds no Auth0 token. Its
+`http://open-knowledge.ai.svc.cluster.local:8080/mcp`, skipping the public
+hostname — that one is behind a Cloudflare Access login it cannot complete. Its
 `mcp_servers` entry therefore carries an explicit `Host: ok.${DOMAIN}` header —
 that header is load-bearing, and without it every call is a `403`.
 
@@ -229,23 +217,11 @@ bypassed.
 
 ## Before this deploys
 
-No Bitwarden secrets are needed — this app has none of its own. Two things are
-configured by hand instead.
+No secrets, no Bitwarden keys, no deploy key. One manual step:
 
-**1. The Cloudflare Access applications** described above. Do this first: until
-the login policy exists, the public hostname serves the editor to anyone who
-finds it.
-
-**2. The deploy key**, generated in-cluster. Once the Secret exists, read the
-public half out and register it on `yvigara/lifeos` under **Settings → Deploy
-keys**, with **Allow write access** ticked (full sync pushes):
-
-```sh
-kubectl -n ai get secret open-knowledge-deploy-key -o jsonpath='{.data.SSH_DEPLOY_KEY_PUB}' | base64 -d
-```
-
-Until that key is registered the init container's clone fails and the pod stays
-in init — which is the intended failure mode, not a silent read-only start.
+**Create the Cloudflare Access application** for `ok.${DOMAIN}` with your login
+policy. Do this first — until the login policy exists, the public hostname
+serves the editor to anyone who finds it, with full read and write access.
 
 ## Operational notes
 
@@ -261,9 +237,9 @@ in init — which is the intended failure mode, not a silent read-only start.
   must preserve `Host` and forward `X-Forwarded-Proto: https` — without the
   latter the server hands the editor a `ws://` socket that browsers block as
   mixed content on an `https` page.
-- **The repo is the durable copy.** With full sync on, content is pushed to
-  `yvigara/lifeos`; the volume holds the working clone and per-machine config.
-  Losing it costs the local state, not the knowledge base.
-- **Back up `/opt/data` before bumping the image tag.** An upgrade is a new
-  image against the existing volume; the project, its history and its settings
-  stay on it.
+- **With sync on, the remote is the durable copy** and the volume holds the
+  working clone. With sync off — or before GitHub is connected at all — the
+  volume is the *only* copy, so back it up.
+- **Back up the volume before bumping the image tag.** An upgrade is a new image
+  against the existing volume; the project, its history, its settings and the
+  GitHub credential all stay on it.
