@@ -7,33 +7,44 @@ API, the `/mcp` endpoint and the live-collaboration WebSocket.
 This deploys the **web app** (`ok start`) as its own pod and wires its MCP
 endpoint into the Hermes agent.
 
-## Why there is no upstream image
+## The image
 
-There is no OpenKnowledge image on any registry — upstream's own Docker guide
-says so and hands you a Dockerfile to build yourself. Rather than take on an
-image-build pipeline this repo does not otherwise have, the pod runs the
-official `node:24-bookworm` image and installs the CLI onto the PVC from an init
-container, the same shape the Hermes pod already uses to put `mise` on its
-volume.
+`ghcr.io/yvigara/open-knowledge`, built from
+[yvigara/open-knowledge](https://github.com/yvigara/open-knowledge) — inkeep's
+repo plus a `Dockerfile` and a release workflow. There is still no image from
+inkeep themselves; their Docker guide hands you a Dockerfile to build yourself,
+and this is that, built and published once rather than reassembled in an init
+container on every pod start.
 
-Two consequences worth knowing:
+What the image settles, so this deployment does not have to:
 
-- **`node:24-bookworm`, not `-slim`.** `git` is a hard boot requirement — the
-  server runs a git preflight, and timeline/recovery shell out to the binary —
-  and only the full Debian variant already carries it.
-- **`OK_VERSION` is the version knob**, tracked by Renovate against the npm
-  package. The init container reinstalls only when it changes; an unchanged
-  restart skips the download.
+- **`node:26-alpine` with `git`** — a hard boot requirement, since the server
+  runs a git preflight and timeline/recovery shell out to the binary.
+- **The CLI is baked** (`npm i -g @inkeep/open-knowledge@<version>`, pinned by CI
+  from the release tag), so the image tag *is* the version knob.
+- **`PORT=8080`, `OK_BIND=0.0.0.0`, `OK_HOME=/opt/data`** are baked and correct
+  for us, so this deployment inherits rather than restates them.
+- **An entrypoint** that runs `ok init --no-mcp --no-skills` on an uninitialized
+  volume and then `ok start`.
+
+`OK_ALLOW_EXTERNAL` is deliberately *not* baked — a run without it refuses to
+boot and names the fix, which is the secure default — so this deployment sets it.
+
+Two things about the tags, worth knowing before a bump:
+
+- **They are all `test-`-prefixed** (`test-0.66.2`, `test-latest`), which is not
+  a shape Renovate's semver versioning matches. Until a plain `0.66.2`/`v0.66.2`
+  tag exists, expect to bump this by hand.
+- **It is alpine, so there is no `bash` and no `curl`.** `install.sh` is POSIX
+  `sh`, and fetches over `node`'s built-in `fetch` rather than curl.
 
 ## Layout
 
 | Path | What it holds |
 | --- | --- |
-| `/data` | The PVC. `HOME`, the npm global prefix, and the project all live here. |
-| `/data/.npm-global` | The `ok` CLI, on `PATH` for the app container. Kept outside the project so `node_modules` never lands in the knowledge base. |
-| `/data/project` | The knowledge base itself — a clone of `yvigara/lifeos`, which the server watches, writes and syncs. |
-| `/data/.ssh` | The deploy key, `known_hosts` and the `github.com` ssh config. |
-| `/data/project/.ok/local/config.yml` | The project-local config layer, rendered from `app/resources/local-config.yml` on every start. |
+| `/opt/data` | The PVC, and the image's `OK_HOME`/`WORKDIR`: the knowledge base itself — a clone of `yvigara/lifeos` that the server watches, writes and syncs. |
+| `/opt/data/.ok/local/config.yml` | The project-local config layer, rendered from `app/resources/local-config.yml` on every start. |
+| `/home/ok` | `$HOME`, an emptyDir: the deploy key, `known_hosts`, the ssh config and the gitconfig. Deliberately *not* on the project volume — see below. |
 
 ## The single-Host constraint
 
@@ -90,6 +101,12 @@ setting passed that way is silently dropped mid-sync. `HOME` *is* on it, which
 is exactly how ssh is meant to find its own config, so the init script writes
 `~/.ssh/{id_ed25519,config,known_hosts}` instead.
 
+`$HOME` is an emptyDir rather than a corner of the project volume, and that is
+not tidiness: full sync commits everything the knowledge base is not ignoring,
+so a private key under `/opt/data` would be pushed to `yvigara/lifeos`. Nothing
+under `$HOME` needs to outlive the pod — `install.sh` rewrites all of it on
+every start.
+
 `known_hosts` is fetched from `api.github.com/meta` over TLS rather than
 discovered by connecting on port 22. The trust root is then GitHub's
 certificate instead of whatever answered first, and it self-heals when GitHub
@@ -99,9 +116,10 @@ rather than connecting unverified.
 
 ## Auth
 
-**OpenKnowledge has no native auth**, as of 0.61.3 (latest), 0.62.0-beta.19 and
-main. There is no `auth.*` config section — the env layer names it as "deferred
-entirely … until ratified" — no `OK_AUTH_*` variable in either build, and no
+**OpenKnowledge has no native auth**, re-checked against 0.66.2 (the version
+this image ships) as well as 0.61.3 and main. There is no `auth.*` config
+section — the env layer names it as "deferred entirely … until ratified" — no
+`OK_AUTH_*` variable in any build, and no
 inbound auth anywhere in the server: every `Authorization`, `Bearer` and
 `WWW-Authenticate` in the codebase is outbound (the GitHub API, the embeddings
 provider, and MCP *client* OAuth discovery, which reads `WWW-Authenticate` off a
@@ -169,14 +187,17 @@ shape for what belongs to the container and the wrong shape for what belongs to
 the instance running in it. Same split as the agent `.env` next door in
 [hermes](../hermes/README.md).
 
-**In the container env** (`app/helmrelease.yaml`): `PORT`, `OK_BIND`,
-`OK_ALLOW_EXTERNAL` and `OK_EXTERNAL_URL` — the port the Service targets, the
-address it binds, the exposure consent interlock, and the public origin the
-ingress answers on. Editing any of these from inside the app would either break
-ingress or stop the server booting, so they are deliberately out of reach. The
-same block carries the bootstrap inputs `install.sh` reads (`OK_VERSION`,
-`OK_GIT_REMOTE`, `OK_GIT_BRANCH`, `OK_PROJECT_DIR`, the git identity), which are
-not OpenKnowledge settings at all.
+**Baked into the image**: `PORT`, `OK_BIND` and `OK_HOME`. Correct as they are,
+so this deployment inherits them rather than restating them in the pod spec.
+
+**In the container env** (`app/helmrelease.yaml`): `OK_ALLOW_EXTERNAL` and
+`OK_EXTERNAL_URL` — the exposure consent interlock the image deliberately leaves
+unset, and the public origin the ingress answers on. Editing either from inside
+the app would stop the server booting or break every request with a `403`, so
+they are deliberately out of reach. `HOME` sits here too, because git has to
+find `~/.ssh` during sync and the image sets none. The init container carries
+the bootstrap inputs `install.sh` reads (`OK_GIT_REMOTE`, `OK_GIT_BRANCH`, the
+git identity), which are not OpenKnowledge settings at all.
 
 **In the project-local config layer** (`app/resources/local-config.yml` →
 `<project>/.ok/local/config.yml`, installed by `install.sh`):
@@ -240,6 +261,9 @@ in init — which is the intended failure mode, not a silent read-only start.
   must preserve `Host` and forward `X-Forwarded-Proto: https` — without the
   latter the server hands the editor a `ws://` socket that browsers block as
   mixed content on an `https` page.
-- **The repo is the durable copy.** With full sync on, content is pushed to `yvigara/lifeos`; the PVC holds the working clone, the CLI and per-machine config. Losing the volume costs the local state, not the knowledge base.
-- **Back up `/data` before bumping `OK_VERSION`.** Upgrades run against the
-  existing volume; the project, history and settings stay on it.
+- **The repo is the durable copy.** With full sync on, content is pushed to
+  `yvigara/lifeos`; the volume holds the working clone and per-machine config.
+  Losing it costs the local state, not the knowledge base.
+- **Back up `/opt/data` before bumping the image tag.** An upgrade is a new
+  image against the existing volume; the project, its history and its settings
+  stay on it.

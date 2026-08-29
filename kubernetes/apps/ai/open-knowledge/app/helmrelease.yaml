@@ -12,9 +12,11 @@ spec:
   values:
     defaultPodOptions:
       securityContext:
+        # The image declares no USER and would otherwise run as root. The alpine
+        # base carries `node` at 1000:1000, and the CLI is a world-readable
+        # global npm install, so it runs fine unprivileged; fsGroup hands it
+        # both the project volume and the home emptyDir.
         runAsNonRoot: true
-        # The node images ship a `node` user at 1000:1000; the PVC is handed to
-        # it via fsGroup so the CLI install and the git tree are both writable.
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
@@ -30,31 +32,29 @@ spec:
         replicas: 1
         strategy: Recreate
         initContainers:
+          # Everything the image's own entrypoint does not: the deploy key, the
+          # git identity, and the clone of the knowledge base. Same image, so
+          # `ok` and `git` are both already on PATH.
           install:
             image: &app_image
-              repository: docker.io/library/node
-              # The full Debian variant, not -slim: git is a hard boot
-              # requirement (the server runs a git preflight, and the timeline
-              # and recovery subsystems shell out to the binary), and only this
-              # variant already carries it.
-              tag: 24-bookworm@sha256:934240a162082fd8b8a2f90cd5114446443f1eba1c5378f6687167ca405e6584
-            command: ["bash", "/run/config/install.sh"]
+              repository: ghcr.io/yvigara/open-knowledge
+              tag: test-0.66.2@sha256:c0953469bf4229163f7fab854a800a48bed71505f276483765f7e05c8a4fac45
+            # `sh`, not `bash`: the image is alpine and carries only BusyBox.
+            # Naming a command also bypasses the image's ENTRYPOINT, which is
+            # what we want here — that one starts the server.
+            command: ["sh", "/run/config/install.sh"]
             env:
-              HOME: &data_dir /data
-              # Global npm prefix on the volume, deliberately outside the
-              # project dir so node_modules never lands in the knowledge base.
-              NPM_CONFIG_PREFIX: &npm_prefix /data/.npm-global
-              OK_PROJECT_DIR: &project_dir /data/project
-              # renovate: datasource=npm depName=@inkeep/open-knowledge
-              OK_VERSION: &ok_version 0.61.3
-              GIT_AUTHOR_NAME: &git_name open-knowledge
-              GIT_AUTHOR_EMAIL: &git_email open-knowledge@${DOMAIN}
-              # The knowledge base lives in its own repo, cloned over SSH with
-              # the generated deploy key. Full sync means the server commits and
-              # pushes back, so that key needs write access.
-              OK_GIT_REMOTE: &git_remote git@github.com:yvigara/lifeos.git
-              OK_GIT_BRANCH: &git_branch main
-              PATH: &path /data/.npm-global/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              # Not an OpenKnowledge setting — the image's own entrypoint reads
+              # it to pick the project directory, and install.sh follows it.
+              OK_HOME: &data_dir /opt/data
+              # Deliberately outside the project: $HOME/.ssh holds the deploy
+              # key, and full sync commits everything the knowledge base is not
+              # ignoring. A key under /opt/data would be pushed to the remote.
+              HOME: &home_dir /home/ok
+              OK_GIT_REMOTE: git@github.com:yvigara/lifeos.git
+              OK_GIT_BRANCH: main
+              GIT_AUTHOR_NAME: open-knowledge
+              GIT_AUTHOR_EMAIL: open-knowledge@${DOMAIN}
               TZ: ${TIMEZONE}
             envFrom:
               - secretRef:
@@ -62,40 +62,33 @@ spec:
             resources:
               requests:
                 cpu: 50m
-                memory: 256Mi
+                memory: 128Mi
               limits:
-                memory: 1Gi
+                memory: 512Mi
         containers:
           app:
             image: *app_image
-            command: ["bash", "/run/config/start.sh"]
+            # No command: the image's entrypoint runs `ok init` on an
+            # uninitialized volume and then `ok start`. install.sh has already
+            # initialized it, so in practice it goes straight to the server.
+            #
             # OpenKnowledge resolves settings as CLI flags > environment >
             # project-local config > project config > user config > defaults.
-            # The environment sits above every config file, so an OK_* set here
-            # is not merely a default - it cannot be adjusted anywhere else.
-            # That is the right shape for what belongs to the container: the
-            # port the Service targets, the address it binds, the exposure
-            # consent, and the public origin the ingress answers on. Settings
-            # that belong to this instance rather than to the container - idle
-            # shutdown, the sync mode - live in the project-local config layer
-            # instead, rendered by resources/local-config.yml.
+            # The environment sits above every config file, so what is set here
+            # cannot be adjusted anywhere else — right for what belongs to the
+            # container, wrong for what belongs to the instance. PORT, OK_BIND
+            # and OK_HOME are already baked into the image and correct as they
+            # are, so they are inherited rather than restated; idle shutdown and
+            # the sync mode live in the project-local config layer that
+            # install.sh renders. Only the two exposure declarations, which the
+            # image deliberately does not bake, are set here.
             env:
-              HOME: *data_dir
-              NPM_CONFIG_PREFIX: *npm_prefix
-              OK_PROJECT_DIR: *project_dir
-              OK_VERSION: *ok_version
-              GIT_AUTHOR_NAME: *git_name
-              GIT_AUTHOR_EMAIL: *git_email
-              OK_GIT_REMOTE: *git_remote
-              OK_GIT_BRANCH: *git_branch
-              PATH: *path
               TZ: ${TIMEZONE}
-              PORT: &app_port 8080
-              # Reachable from the pod network. A wildcard bind contributes no
-              # admitted Host name of its own, which is why OK_EXTERNAL_URL
-              # below is the only non-loopback host the server answers to.
-              OK_BIND: 0.0.0.0
-              # Exposure consent interlock — without it the server refuses to boot.
+              # Git needs to find ~/.ssh and ~/.gitconfig during sync, and the
+              # image sets no HOME of its own.
+              HOME: *home_dir
+              # Exposure consent interlock. The image leaves it unset on
+              # purpose: a run without it refuses to boot and names the fix.
               OK_ALLOW_EXTERNAL: "1"
               # The canonical public origin. It is both the sole Host allowlist
               # entry and the origin the server builds its wss:// and preview
@@ -113,7 +106,7 @@ spec:
                 spec:
                   httpGet:
                     path: /healthz
-                    port: *app_port
+                    port: &app_port 8080
                   initialDelaySeconds: 30
                   periodSeconds: 30
                   timeoutSeconds: 5
@@ -145,8 +138,9 @@ spec:
       app:
         controller: open-knowledge
         ports:
-          # The one listener. Public browser traffic (via Cloudflare Access)
-          # and Hermes' direct /mcp calls both land here.
+          # The one listener, matching the image's baked PORT. Public browser
+          # traffic (via Cloudflare Access) and Hermes' direct /mcp calls both
+          # land here.
           http:
             port: *app_port
     route:
@@ -173,10 +167,19 @@ spec:
               - identifier: app
                 port: http
     persistence:
+      # The knowledge base itself: a live git repo the server watches, writes
+      # and syncs. This is the image's OK_HOME and WORKDIR.
       data:
         existingClaim: open-knowledge
         globalMounts:
           - path: *data_dir
+      # $HOME, kept off the project volume so the deploy key never lands inside
+      # the synced tree. Nothing here needs to outlive the pod: install.sh
+      # rewrites the key, known_hosts and the gitconfig on every start.
+      home:
+        type: emptyDir
+        globalMounts:
+          - path: *home_dir
       config:
         type: configMap
         name: open-knowledge-configmap
@@ -184,8 +187,6 @@ spec:
         advancedMounts:
           open-knowledge:
             install:
-              - path: /run/config
-            app:
               - path: /run/config
       tmp:
         type: emptyDir

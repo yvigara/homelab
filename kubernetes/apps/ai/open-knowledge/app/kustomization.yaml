@@ -10,7 +10,6 @@ configMapGenerator:
     files:
       - install.sh=./resources/install.sh
       - local-config.yml=./resources/local-config.yml
-      - start.sh=./resources/start.sh
 generatorOptions:
   disableNameSuffixHash: true
   annotations:
