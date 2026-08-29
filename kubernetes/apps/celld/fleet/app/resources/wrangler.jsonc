@@ -1,0 +1,17 @@
+{
+  // The fleet's first deployment. celld reads `deploy/current.json` at boot
+  // and exits when it is missing, so the fleet needs an application before it
+  // can start at all — see the README.
+  //
+  // `no_bundle` uploads `index.js` as written. `celld deploy` otherwise shells
+  // out to esbuild, which the release image does not carry, so the entry has
+  // to stay a single file with no imports.
+  "name": "bootstrap",
+  "main": "index.js",
+  "no_bundle": true,
+  "compatibility_date": "2026-01-01",
+  "durable_objects": {
+    "bindings": [{ "name": "COUNTER", "class_name": "Counter" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Counter"] }]
+}
