@@ -1,0 +1,15 @@
+# $HOME/.ok/global.yml - the user-global config layer, mounted read-only from
+# the ConfigMap in ./kustomization.yaml. Git owns this file; the editor cannot
+# write it.
+appearance:
+  colorThemeLight: default
+  colorThemeDark: gruvbox
+slides:
+  enabled: true
+contentRules:
+  markdownlint:
+    enabled: true
+  frontmatter:
+    enabled: true
+  okf:
+    enabled: true

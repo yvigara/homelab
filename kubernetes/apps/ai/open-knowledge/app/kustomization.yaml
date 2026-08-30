@@ -4,3 +4,12 @@ kind: Kustomization
 resources:
   - ./pvc.yaml
   - ./helmrelease.yaml
+configMapGenerator:
+  - name: open-knowledge-configmap
+    files:
+      - global.yml=./resources/global.yml
+      - init.sh=./resources/init.sh
+generatorOptions:
+  disableNameSuffixHash: true
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled

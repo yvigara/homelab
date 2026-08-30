@@ -104,9 +104,45 @@ Two things worth knowing:
   "OpenKnowledge" author and the sync indicator nags about it. `kubectl exec`
   into the pod and `git config --global user.name`/`user.email` once — `$HOME`
   is persistent, so it sticks.
-- **Nothing in this repo rewrites `.ok/`.** The editor owns
-  `.ok/local/config.yml` — the sync mode, the semantic-search, hidden-file and
-  link-preview toggles — and no init container overwrites it on restart.
+- **This repo owns exactly one file under `.ok/`.** An init container installs
+  `$HOME/.ok/global.yml` from `open-knowledge-configmap` on every pod start —
+  see below. Everything else is the editor's: it owns `.ok/local/config.yml` —
+  the sync mode, the semantic-search, hidden-file and link-preview toggles — and
+  the project's `.ok/config.yml`, and the init container touches neither.
+
+### The OAuth App
+
+The device flow runs against **our own GitHub OAuth App**, not the one inkeep
+bakes into the binary, pinned by `OPEN_KNOWLEDGE_GITHUB_CLIENT_ID` in the pod
+env (`Ov23liVh4Rps3SSkS1m7`). Verified against the 0.66.2 source, the version
+this image ships:
+
+- **It is an OAuth App, not a GitHub App.** `packages/cli/src/auth/device-flow.ts`
+  passes `clientType: 'oauth-app'`; a GitHub App's client ID will not work here,
+  and there are no installation tokens or per-repo installation scoping.
+- **The env var is the only route.** The former config key
+  `github.oauthAppClientId` was removed, and its migration note points at this
+  variable (`packages/core/src/config/removed-keys.ts`).
+- **It covers the editor too.** The server does not implement the flow itself —
+  it spawns `ok auth login --json` and the child inherits `process.env`
+  (`packages/server/src/local-ops/{auth-flow,subprocess}.ts`), so the pod env
+  reaches the browser-driven **Connect GitHub**.
+- **The client ID is not a secret.** Upstream's own default is a committed
+  constant, and the device flow uses no client secret — hence plain env rather
+  than Bitwarden.
+
+Registering it: **Enable Device Flow must be ticked**, or GitHub answers
+`device_flow_disabled` and sign-in fails. The *Authorization callback URL* the
+form demands is never read — the device flow has no redirect — so it holds
+`https://ok.${DOMAIN}/` as an inert placeholder.
+
+**Scopes are hardcoded** and not configurable: `repo`, `read:user`,
+`user:email`. `repo` is full read/write across all private repos; narrowing that
+means a fine-grained PAT via `ok auth pat` instead of the device flow.
+
+Changing the client ID **invalidates the token already in `$HOME/.ok/auth.yml`**
+— it was issued to the old app. Reconnect from Settings → Account after a
+change; nothing prompts, sync just starts failing.
 
 ## Auth
 
@@ -184,7 +220,7 @@ the instance running in it. Same split as the agent `.env` next door in
 **Baked into the image**: `PORT`, `OK_BIND` and `OK_HOME`. Correct as they are,
 so this deployment inherits them rather than restating them in the pod spec.
 
-**In the container env** (`app/helmrelease.yaml`), four values and no more:
+**In the container env** (`app/helmrelease.yaml`), five values and no more:
 
 | Variable | Why it belongs to the container |
 | --- | --- |
@@ -192,6 +228,7 @@ so this deployment inherits them rather than restating them in the pod spec.
 | `OK_EXTERNAL_URL` | The public origin the ingress answers on. Changing it from inside the app would `403` every request. |
 | `HOME` | `$HOME/.ok` is the user-global directory holding the GitHub credential; the image sets no `HOME` of its own. |
 | `OK_IDLE_SHUTDOWN` | A server that exits on its own hands Kubernetes a pod that dies for no visible reason. Already the derived default for a non-loopback bind; pinned because it is load-bearing. |
+| `OPEN_KNOWLEDGE_GITHUB_CLIENT_ID` | Our own GitHub OAuth App, and the only supported way to set one — see below. |
 
 **Nothing in the project-local config layer.** `.ok/local/config.yml` is left
 entirely to the editor, which keeps the sync mode and the search/preview toggles
@@ -200,6 +237,39 @@ every start — the same contract as the agent `.env` next door in
 [hermes](../hermes/README.md) — which was right while this deployment owned the
 git setup, and is wrong now that the editor owns it: rewriting the file would
 discard the sync mode chosen after signing in, on every restart.
+
+**In the user config layer** (`app/resources/global.yml`, rendered into
+`open-knowledge-configmap` by `app/kustomization.yaml`), the content-rule
+plugins:
+
+```yaml
+contentRules:
+  markdownlint: { enabled: true }
+  frontmatter: { enabled: true }
+  okf: { enabled: true }
+```
+
+An **init container** installs it, out of the same ConfigMap
+(`app/resources/init.sh`): the ConfigMap is staged at `/run/config` for the init
+container only, and the script copies `global.yml` into `$HOME/.ok/` on the
+volume. Same contract as the agent `.env` next door in
+[hermes](../hermes/README.md) — **git is authoritative on every pod start**, so
+the installed file is writable but a copy edited in the pod is replaced on the
+next restart. The `reloader.stakater.com/auto` annotation restarts the pod when
+the ConfigMap changes, which is what makes an edit here take effect.
+
+It runs as uid 1000 like the app container, reaching the volume through
+`fsGroup`, so it needs neither root nor a `chown` — and `mkdir -p` is what
+creates `.ok/` on a volume that has never been signed in.
+
+> **Scope caveat.** Upstream documents `contentRules` as **project**-scoped —
+> `.ok/config.yml`, the file *Settings ▸ This project ▸ Plugins* writes — and
+> says a key set outside its scope is ignored, which would make this a no-op on
+> a build that enforces the scope. It sits in the user layer deliberately: the
+> project config is git-synced and editor-owned, and installing it there would
+> revert the plugin toggles on every restart. If the three linters do not come
+> up enabled, this is why — check *Settings ▸ Plugins* and move the block into
+> the project config if you want it enforced.
 
 ## Hermes
 

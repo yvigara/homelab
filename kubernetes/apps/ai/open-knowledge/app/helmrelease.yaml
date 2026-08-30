@@ -31,11 +31,26 @@ spec:
         # attaching to the volume while the old one still holds it.
         replicas: 1
         strategy: Recreate
-        containers:
-          app:
-            image:
+        initContainers:
+          # Installs $HOME/.ok/global.yml on the volume - see resources/init.sh.
+          # The app image, because it is already pulled and BusyBox `sh` is all
+          # the script needs.
+          init:
+            image: &app_image
               repository: ghcr.io/yvigara/open-knowledge
               tag: test-0.66.2@sha256:c0953469bf4229163f7fab854a800a48bed71505f276483765f7e05c8a4fac45
+            env:
+              HOME: &home_dir /home/ok
+            command:
+              - sh
+              - /run/config/init.sh
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+        containers:
+          app:
+            image: *app_image
             # No command: the image's entrypoint runs `ok init --no-mcp
             # --no-skills` on an empty volume and then `ok start`. Everything
             # about GitHub - signing in, cloning, choosing a sync mode - is done
@@ -56,7 +71,7 @@ spec:
               # skills/, and auth.yml - where the GitHub device-flow credential
               # is stored. The image sets no HOME of its own, and this one has
               # to be persistent or every restart means signing in again.
-              HOME: &home_dir /home/ok
+              HOME: *home_dir
               # Exposure consent interlock. The image leaves it unset on
               # purpose: a run without it refuses to boot and names the fix.
               OK_ALLOW_EXTERNAL: "1"
@@ -72,6 +87,13 @@ spec:
               # looks idle, and a server that exits on its own hands Kubernetes
               # a pod that dies for no visible reason.
               OK_IDLE_SHUTDOWN: "off"
+              # Our own GitHub OAuth App, replacing the client ID inkeep bakes
+              # into the binary. Public by nature - an OAuth App client ID is
+              # not a secret, and the device flow has no client secret - so it
+              # sits here rather than in Bitwarden. The editor's "Connect
+              # GitHub" reaches it too: the server shells out to `ok auth login`
+              # and the child inherits this environment.
+              OPEN_KNOWLEDGE_GITHUB_CLIENT_ID: Ov23liVh4Rps3SSkS1m7
             probes:
               # /healthz and /readyz are mounted above every admission gate
               # precisely so orchestrator probes - which arrive with an IP Host
@@ -105,7 +127,7 @@ spec:
                 cpu: 100m
                 memory: 512Mi
               limits:
-                memory: 2Gi
+                memory: 1Gi
             securityContext:
               allowPrivilegeEscalation: false
               capabilities:
@@ -160,6 +182,18 @@ spec:
           # survive a restart.
           - path: *home_dir
             subPath: home
+      # global.yml and the script that installs it, staged for the init
+      # container only - the app container has no business reading either. The
+      # installed copy on the volume is writable; the init container rewrites it
+      # from here on every start, so git stays authoritative.
+      config:
+        type: configMap
+        name: open-knowledge-configmap
+        defaultMode: 0644
+        advancedMounts:
+          open-knowledge:
+            init:
+              - path: /run/config
       tmp:
         type: emptyDir
         globalMounts:
