@@ -1,0 +1,166 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: open-knowledge
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  values:
+    defaultPodOptions:
+      securityContext:
+        # The image declares no USER and would otherwise run as root. The alpine
+        # base carries `node` at 1000:1000, and the CLI is a world-readable
+        # global npm install, so it runs fine unprivileged; fsGroup hands it the
+        # volume.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    controllers:
+      open-knowledge:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        # The collaboration server is single-writer: exactly one process per
+        # project volume. Recreate (not RollingUpdate) keeps a new pod from
+        # attaching to the volume while the old one still holds it.
+        replicas: 1
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/yvigara/open-knowledge
+              tag: test-0.66.2@sha256:c0953469bf4229163f7fab854a800a48bed71505f276483765f7e05c8a4fac45
+            # No command: the image's entrypoint runs `ok init --no-mcp
+            # --no-skills` on an empty volume and then `ok start`. Everything
+            # about GitHub - signing in, cloning, choosing a sync mode - is done
+            # from the editor afterwards, so there is nothing to bootstrap here.
+            #
+            # OpenKnowledge resolves settings as CLI flags > environment >
+            # project-local config > project config > user config > defaults.
+            # The environment sits above every config file, so what is set here
+            # cannot be adjusted anywhere else - right for what belongs to the
+            # container, wrong for what belongs to the instance. PORT, OK_BIND
+            # and OK_HOME are already baked into the image and correct as they
+            # are, so they are inherited rather than restated. Nothing else is
+            # pinned: `.ok/local/config.yml` is left entirely to the editor,
+            # which keeps the sync mode and the search/preview toggles there.
+            env:
+              TZ: ${TIMEZONE}
+              # $HOME/.ok is OpenKnowledge's user-global directory: global.yml,
+              # skills/, and auth.yml - where the GitHub device-flow credential
+              # is stored. The image sets no HOME of its own, and this one has
+              # to be persistent or every restart means signing in again.
+              HOME: &home_dir /home/ok
+              # Exposure consent interlock. The image leaves it unset on
+              # purpose: a run without it refuses to boot and names the fix.
+              OK_ALLOW_EXTERNAL: "1"
+              # The canonical public origin. It is both the sole Host allowlist
+              # entry and the origin the server builds its wss:// and preview
+              # URLs from, so every caller - browsers through the Cloudflare
+              # tunnel, and Hermes in-cluster - has to present this exact Host
+              # or get a 403.
+              OK_EXTERNAL_URL: https://ok.${DOMAIN}
+              # Already the derived default for a non-loopback bind, pinned
+              # anyway because it is load-bearing: the idle timer counts only
+              # editor WebSocket clients, so a server busy serving MCP calls
+              # looks idle, and a server that exits on its own hands Kubernetes
+              # a pod that dies for no visible reason.
+              OK_IDLE_SHUTDOWN: "off"
+            probes:
+              # /healthz and /readyz are mounted above every admission gate
+              # precisely so orchestrator probes - which arrive with an IP Host
+              # header - are not refused.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: &app_port 8080
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *app_port
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 6
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+    service:
+      app:
+        controller: open-knowledge
+        ports:
+          # The one listener, matching the image's baked PORT. Public browser
+          # traffic (via Cloudflare Access) and Hermes' direct /mcp calls both
+          # land here.
+          http:
+            port: *app_port
+    route:
+      app:
+        annotations:
+          external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+        hostnames:
+          - ok.${DOMAIN}
+        parentRefs:
+          - name: traefik-public
+            namespace: network
+            sectionName: websecure
+        rules:
+          # The editor, and nothing else worth splitting out. `/mcp` is served
+          # on this listener too but is not published: the only consumer is
+          # Hermes, in-cluster, and there is no public MCP edge for this app.
+          # Authentication happens at the Cloudflare edge (Access), not in the
+          # cluster - see the README.
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+            backendRefs:
+              - identifier: app
+                port: http
+    # One claim, mounted twice as siblings under its root. They cannot nest:
+    # $HOME holds the GitHub credential, and anything inside the project is
+    # committed and pushed by sync.
+    persistence:
+      project:
+        existingClaim: open-knowledge
+        globalMounts:
+          # The knowledge base, and the image's OK_HOME/WORKDIR.
+          - path: /opt/data
+            subPath: project
+      home:
+        existingClaim: open-knowledge
+        globalMounts:
+          # $HOME. Persistent so the GitHub device-flow credential in
+          # .ok/auth.yml, and any git identity set with `git config --global`,
+          # survive a restart.
+          - path: *home_dir
+            subPath: home
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
