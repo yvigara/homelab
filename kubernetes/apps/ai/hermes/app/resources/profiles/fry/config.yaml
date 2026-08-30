@@ -1,13 +1,11 @@
-# Example profile: a coding agent, isolated from the default agent's memory,
-# sessions and chat platforms but sharing the pod's model providers and tools.
+# Fry - writer.
 #
-# Rendered to $HERMES_HOME/profiles/coder/config.yaml by profiles-init.sh.
+# Voice-bound. The writing procedure is the `yann-article-writer` skill, which
+# this profile wraps rather than restates: the skill owns the interview, the
+# voice profile and the drafting rules. Install it into
+# /opt/data/profiles/fry/skills/ - see ../../../README.md.
 #
-# Profiles do not inherit the default profile's config.yaml, so every setting
-# this agent needs is repeated here. What they *do* inherit is the container
-# environment, which is why the ${...} references below resolve without any of
-# these values being restated in the pod spec - see helmrelease.yaml and
-# ../../../../cluster-vars.yaml for where each one comes from.
+# Public-content profile, so a remote model is allowed here.
 model:
   default: deepseek-v4-flash:cloud
   provider: custom:k8s-ollamacloud
@@ -28,6 +26,9 @@ custom_providers:
 fallback_providers:
   - provider: custom:k8s-omlx
     model: Qwen3.5-9B-MLX-4bit
+# Auxiliary work stays local whatever the main model is: compression and
+# titling see the whole conversation, so they are the widest exposure a
+# profile has.
 auxiliary:
   compression:
     provider: custom:k8s-omlx
@@ -43,12 +44,10 @@ toolsets:
 platform_toolsets:
   cli:
     - clarify
-    - code_execution
     - file
     - memory
     - session_search
     - skills
-    - terminal
     - todo
     - web
 agent:
@@ -62,13 +61,12 @@ agent:
     - browser
     - tts
     - stt
+    - cronjob
+    - delegation
 terminal:
   backend: local
-  # Created by profiles-init.sh. A profile is not a sandbox - this only sets
-  # where commands start, it does not stop the agent reaching the rest of the
-  # volume.
-  cwd: /opt/data/profiles/coder/workspace
-  timeout: 300
+  cwd: /opt/data/profiles/fry/workspace
+  timeout: 180
   persistent_shell: true
 compression:
   enabled: true
@@ -95,9 +93,12 @@ approvals:
   mode: smart
   timeout: 60
   cron_mode: deny
-# No gateway platforms. This agent is reached through the machine dashboard's
-# profile switcher and `hermes -p coder chat`; giving it a chat platform would
-# mean its own bot credentials, since two gateways sharing one token are refused
-# by Hermes' token lock. See ../../../README.md.
+mcp_servers:
+  obsidian:
+    url: http://${OLLAMA_SRV1_IP}:27124/mcp
+    headers:
+      Authorization: ${OBSIDIAN_AUTH_HEADER}
+# No gateway platform. This profile is reached through the dashboard's
+# profile switcher, `hermes -p fry chat`, and the vault.
 gateway:
   platforms: {}

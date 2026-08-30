@@ -8,7 +8,7 @@ running the gateway, the web dashboard and a code-server sidecar off a single
 | --- | --- |
 | Agent + dashboard | `app/helmrelease.yaml`, image `nousresearch/hermes-agent` |
 | Agent config | `app/resources/config.yaml` → `/opt/data/config.yaml` |
-| Extra agents | `app/resources/profiles/<name>/` → `/opt/data/profiles/<name>/` |
+| Agent profiles | `app/resources/profiles/<name>/` → `/opt/data/profiles/<name>/` |
 | Volume bootstrap | `app/resources/init.sh`, run by the init container |
 | Container credentials | `hermes-secret`, via `envFrom` |
 | The default agent's own settings | `hermes-profile-default`, mounted as a file |
@@ -63,8 +63,8 @@ A Hermes *profile* is a second agent living in the same install: its own
 `config.yaml`, `.env`, `SOUL.md`, memory, sessions, skills, cron jobs and state
 database. The default profile is `$HERMES_HOME` itself — here `/opt/data` — and
 every named profile is a directory under `$HERMES_HOME/profiles/<name>`. That is
-the whole mechanism; `hermes -p coder chat` is just
-`HERMES_HOME=/opt/data/profiles/coder hermes chat`.
+the whole mechanism; `hermes -p fry chat` is just
+`HERMES_HOME=/opt/data/profiles/fry hermes chat`.
 
 Profiles are not sandboxes. They separate Hermes' own state, nothing else — on
 the `local` terminal backend every profile still has the same filesystem access
@@ -76,16 +76,18 @@ The image runs s6-overlay as PID 1, and its boot reconciler walks
 `$HERMES_HOME/profiles/` on every start, registering a supervised gateway slot
 for each profile it finds. So profiles are added by putting a directory on the
 volume — which is what `app/resources/profiles-init.sh` does from the init
-container, out of the generated ConfigMap. Like the rest of `init.sh`, it is
-authoritative: rewritten from git on every pod start.
+container. Like the rest of `init.sh` it is authoritative: rewritten from git on
+every pod start.
 
-The alternative — one Deployment per profile, each with its own PVC — buys
-resource isolation and independent image pinning at the cost of a second copy of
-the whole manifest, a second volume and a second dashboard. Upstream recommends
-the single container, and so does the fact that the dashboard here is already
-machine-level: it serves *every* co-located profile through the profile switcher
-in its sidebar, so a new profile is reachable at `hermes.<domain>` the moment it
-exists, with no new route, service or hostname.
+Each profile is one ConfigMap, mounted as a whole directory at
+`/run/config/profiles/<name>/`. Adding a profile is one `configMapGenerator`
+entry and one `persistence` block — no per-file mounts.
+
+The alternative — one Deployment per profile — buys resource isolation at the
+cost of eleven copies of the manifest, eleven volumes and eleven dashboards.
+Upstream recommends the single container, and the dashboard here is already
+machine-level: it serves *every* co-located profile through the switcher in its
+sidebar, so a new profile is reachable at `hermes.<domain>` the moment it exists.
 
 ### What profiles share
 
@@ -93,28 +95,163 @@ The container environment, and only that. It is where the reuse lives: the model
 provider key, the memini/searxng/camofox endpoints, the MCP credentials, the git
 identity and the `cluster-vars` values are defined once in `helmrelease.yaml` and
 resolve in every profile's `config.yaml` through `${...}` interpolation. A
-profile's `config.yaml` restates only what that agent actually needs; it does
-**not** inherit the default profile's config.yaml.
+profile's `config.yaml` restates only what that agent needs; it does **not**
+inherit the default profile's.
 
-The split described above is what makes this safe. Everything scoped to a single
-agent — gateway port, bot tokens, memory namespace — is already out of the
-container env and in a per-agent `.env`, so a second profile can hold its own
-values rather than inheriting the default agent's and colliding with them.
+Everything scoped to a single agent — gateway port, bot tokens, memory namespace
+— is out of the container env and in that profile's own `.env`, so profiles hold
+their own values rather than inheriting one another's.
 
-### Adding a profile
+## The agent system
 
-1. Create `app/resources/profiles/<name>/` with `config.yaml`, `SOUL.md` and, if
-   anything needs to differ per agent, `profile.env`.
-2. Add the three files to the `configMapGenerator` in `app/kustomization.yaml`
-   as flat `profiles-<name>-*` keys — ConfigMap keys cannot contain `/`.
-3. Mount them back into `/run/config/profiles/<name>/` with `subPath` in
+Eleven profiles. The architecture is deliberately thin, and the constraints
+below are load-bearing rather than stylistic — most of them are enforced by
+configuration, and the ones that cannot be are stated as rules in the profile's
+`SOUL.md`.
+
+| Profile | Role | Model | Memory |
+| --- | --- | --- | --- |
+| **Farnsworth** | Orchestrator — routes and runs cron | local Qwen3.5-9B | none |
+| **Fry** | Writer, voice-bound | remote deepseek-v4-flash | voice corpus, transcripts, past work |
+| **Morbo** | Editorial critic | local Qwen3.5-9B | none |
+| **Mom** | Marketing, brand, distribution | remote deepseek-v4-flash | channels, audience, assets |
+| **Amy** | Community — meetup, Tech Drinks | local Qwen3.5-9B | people, venues, sponsors, dates |
+| **Conrad** | Ledger — finance, invoicing, tax | local Qwen3.5-9B | transactions, entities, obligations |
+| **Leela** | Life — health, household, personal | local Qwen3.5-9B | personal admin |
+| **Bender** | Forge — dispatches into Claude Code | local Qwen3.5-9B | none |
+| **Nixon** | Operata tenant, broker | local Qwen3.5-9B (**no cloud provider**) | Operata work |
+| **Nibbler** | Celestio tenant — consulting pipeline | local Qwen3.5-9B (**no cloud provider**) | pipeline (empty until first contract) |
+| **Wernstrom** | Business strategy, advisory | local Qwen3.5-9B | frameworks, prior advice |
+
+### The orchestrator is stateless
+
+Farnsworth routes a request to exactly one profile and runs the scheduled jobs.
+It is not a task queue, it does not synthesise other profiles' output, and it
+runs no approval workflow. Its `memory_enabled` is `false`, so it cannot hold
+state between invocations even by accident.
+
+### The vault is the handoff mechanism
+
+Profiles pass work through files at agreed paths in the Obsidian vault, reached
+through the `obsidian` MCP server that every profile has. No orchestrator-held
+state sits between two profiles.
+
+```
+Agents/<Profile>/Inbox/       work handed to this profile
+Agents/<Profile>/Outbox/      artefacts this profile produced
+Agents/Nibbler/Pipeline/      one note per opportunity (schema in nibbler/SOUL.md)
+Agents/Broker/allowlist.yaml  default-deny allowlist for cross-tenant requests
+Agents/Broker/Requests/       that a request was made and answered or refused —
+                              never the content of the answer
+Agents/Runs/lock.md           the serialisation lock
+Agents/Runs/<UTC date>.md     cron run log
+```
+
+### One profile active at a time
+
+Farnsworth is the only profile with the `cronjob` and `delegation` toolsets;
+every other profile lists both in `agent.disabled_toolsets`. There is one
+dispatcher, it dispatches one profile at a time, and it takes `Agents/Runs/lock.md`
+before doing so. Cron runs go through the same lock as interactive work.
+
+### Profile boundary is memory boundary
+
+Every profile sets `MEMINI_NAMESPACE=hermes/<name>` in its own `.env`. Nothing
+is shared. The namespace is set even on the profiles whose memory is disabled,
+so that turning memory on later cannot land writes in someone else's namespace.
+
+### Tenancy and the broker
+
+Three tenants — Operata, Celestio, Life. Calendars are already separate at
+source, and Operata exposes free/busy only.
+
+Nixon is the sole holder of Operata credentials and the broker for all employer
+data. Cross-tenant access starts **default-deny**: a request is refused unless
+`Agents/Broker/allowlist.yaml` explicitly permits that profile to receive that
+kind of data. The initial allowlist is one entry:
+
+```yaml
+# Agents/Broker/allowlist.yaml — default-deny. Absence is refusal.
+- requester: leela
+  data: operata-calendar-freebusy
+  grain: interval and busy/free only; never subject, attendee, location or notes
+```
+
+Brokered content is in-context only for the request that asked for it. The
+requesting profile must never write it to memory — stated in both Nixon's and
+the requester's `SOUL.md`, since no configuration can enforce it.
+
+Wernstrom receives only anonymised pipeline shape from Nibbler — stages and deal
+sizes, never client names. Nibbler produces the anonymised view itself rather
+than granting Wernstrom access and trusting it to look away.
+
+### Remote inference
+
+Nixon and Nibbler are local-only, enforced by construction: their `config.yaml`
+defines no cloud provider at all, and their fallback and auxiliary models are
+the same local one. There is no remote endpoint in those profiles for a request
+to reach.
+
+Fry and Mom are the public-content profiles and may use remote models. Everything
+else defaults to local — the spec only mandates local for the two tenants, but
+local is the conservative default for profiles holding personal or financial
+data. Auxiliary work (compression, titling, session search) stays local in
+*every* profile, including Fry and Mom: those models see the whole conversation,
+so they are the widest exposure a profile has.
+
+### Editorial independence
+
+Morbo gates social, blog and marketing output. Development artefacts —
+documentation, ADRs, commit messages — are exempt.
+
+Independence is structural, not requested:
+
+- **Different model.** Morbo runs local Qwen3.5-9B; Fry runs remote
+  deepseek-v4-flash. Different model and different provider, so the reviewer
+  cannot share the writer's blind spots.
+- **Fresh context.** Morbo's `memory_enabled` is `false`, so no drafts history
+  or prior review accumulates.
+- **Artefact and criteria only.** Fry hands over the piece and what to judge it
+  against. Not the interview notes, not the discarded drafts, not the reasoning.
+  Morbo has no `delegation` toolset, so it cannot ask.
+
+Morbo returns **findings, never a verdict** — no pass, fail, score or "ready to
+ship". Human approval is the only gate in the system, and a verdict from Morbo
+would quietly become that gate.
+
+### Ingest is per-profile
+
+Each profile reads its own sources. There is no central triage agent, and
+Farnsworth is not one — it routes what it is given, it does not go looking.
+
+### Fry wraps the writing skill
+
+Fry's `SOUL.md` does not restate the article-writing procedure; that is the
+`yann-article-writer` skill, and Fry defers to it entirely. The skill is not
+vendored into this repository — it carries a 47 KB personal voice corpus that
+does not belong in a GitOps repo. Install it into Fry's profile:
+
+```console
+$ kubectl -n ai cp ./yann-article-writer \
+    ai/$(kubectl -n ai get pod -l app.kubernetes.io/name=hermes -o name | cut -d/ -f2):/opt/data/profiles/fry/skills/yann-article-writer -c app
+```
+
+Fry is told to stop rather than write without it.
+
+## Adding a profile
+
+1. Create `app/resources/profiles/<name>/` with `config.yaml`, `SOUL.md` and
+   `profile.env`.
+2. Add one `configMapGenerator` entry for `hermes-profile-<name>` in
+   `app/kustomization.yaml`.
+3. Add one `persistence` block mounting it at `/run/config/profiles/<name>` in
    `app/helmrelease.yaml`.
 
-`profiles-init.sh` picks the directory up generically from there and creates
-`workspace/` for the profile's `terminal.cwd`.
+`profiles-init.sh` picks the directory up generically and creates `workspace/`
+for the profile's `terminal.cwd`.
 
-To give a profile its own chat platform or API server, it needs credentials of
-its own — a second ExternalSecret rendering a dotenv document, exactly like
+To give a profile its own chat platform or API server it needs credentials of
+its own — an ExternalSecret rendering a dotenv document, like
 `hermes-profile-default`, plus a distinct `API_SERVER_PORT`, a container port
 and a route. Do not hand it the default agent's tokens; the token lock will
 reject it.
@@ -124,22 +261,23 @@ each loads the other's writes into its system prompt, so two writers on one home
 compound each other's state indefinitely. `strategy: Recreate` on the controller
 is what keeps that from happening across a rollout.
 
-### The `coder` example
+## Not wired yet
 
-`app/resources/profiles/coder/` is a worked example: a coding agent on the same
-providers as the default agent, with `reasoning_effort: high`, a longer terminal
-timeout, `terminal.cwd` in its own workspace, and the chat-oriented toolsets
-dropped. It reuses `${HERMES_OMLX_KEY}` and the memini/searxng endpoints from
-the container env and defines nothing of its own beyond
-`MEMINI_NAMESPACE=hermes/coder`.
+The profiles are in place; four things they depend on are not, and are called
+out here rather than stubbed with manifests that would fail to reconcile.
 
-It runs **no gateway** — no bot token to lock, no port to collide — and is used
-through the dashboard's profile switcher or from a shell:
-
-```console
-$ kubectl -n ai exec -it deploy/hermes -c app -- hermes profile list
-$ kubectl -n ai exec -it deploy/hermes -c app -- hermes -p coder chat
-```
-
-Its memory, sessions and skills are its own; nothing it learns reaches the
-default agent.
+- **Operata credentials.** Nixon is declared as the sole holder of Slack, work
+  mail and work calendar access, but only the `jira` MCP server (OAuth, no
+  stored secret) is configured. The rest needs Bitwarden entries and an
+  ExternalSecret rendering Nixon's `.env` — deliberately not created here,
+  because an ExternalSecret pointing at keys that do not exist blocks the volume
+  mount and the pod with it.
+- **Calendars.** Leela is specified to read the personal and Celestio calendars
+  directly and see Operata as free/busy only. No calendar MCP server exists in
+  this repo yet, so today that constraint lives in `SOUL.md` alone.
+- **Farnsworth's cron.** Hermes' scheduler runs inside a gateway process. A
+  profile with no chat platform still needs its gateway started once —
+  `hermes -p farnsworth gateway start` — after which the boot reconciler
+  auto-starts it on subsequent restarts. Until then Farnsworth routes
+  interactively but runs nothing on a schedule.
+- **The `yann-article-writer` skill**, per the section above.

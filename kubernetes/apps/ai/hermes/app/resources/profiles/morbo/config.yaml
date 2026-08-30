@@ -1,0 +1,91 @@
+# Morbo - editorial.
+#
+# Adversarial critic. Editorial independence is structural, not asked for:
+#
+#   * a different model and provider from Fry (local Qwen vs Fry's remote
+#     deepseek), so the reviewer cannot share the writer's blind spots;
+#   * memory off, so every review starts from a fresh context and no drafts
+#     history or reasoning from the writer can accumulate here;
+#   * no delegation, so it cannot ask Fry what Fry meant.
+#
+# It receives the artefact and the criteria. Nothing else.
+model:
+  default: Qwen3.5-9B-MLX-4bit
+  provider: custom:k8s-omlx
+custom_providers:
+  - name: k8s-omlx
+    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
+    api_key: "${HERMES_OMLX_KEY}"
+    default_model: Qwen3.5-9B-MLX-4bit
+    models:
+      Qwen3.5-9B-MLX-4bit:
+        context_length: 77824
+      gemma-4-e4b-it-qat-OptiQ-4bit:
+        context_length: 110592
+# Auxiliary work stays local whatever the main model is: compression and
+# titling see the whole conversation, so they are the widest exposure a
+# profile has.
+auxiliary:
+  compression:
+    provider: custom:k8s-omlx
+    model: gemma-4-e4b-it-qat-OptiQ-4bit
+  session_search:
+    provider: custom:k8s-omlx
+    model: Qwen3.5-9B-MLX-4bit
+  title_generation:
+    provider: custom:k8s-omlx
+    model: Qwen3.5-9B-MLX-4bit
+toolsets:
+  - hermes-cli
+platform_toolsets:
+  cli:
+    - clarify
+    - file
+    - web
+agent:
+  max_turns: 60
+  reasoning_effort: high
+  tool_use_enforcement: auto
+  disabled_toolsets:
+    - homeassistant
+    - spotify
+    - computer_use
+    - browser
+    - tts
+    - stt
+    - cronjob
+    - delegation
+terminal:
+  backend: local
+  cwd: /opt/data/profiles/morbo/workspace
+  timeout: 180
+  persistent_shell: true
+compression:
+  enabled: true
+  threshold: 0.5
+  target_ratio: 0.2
+  protect_last_n: 20
+# No memory. See SOUL.md for why this profile is required to be
+# stateless between invocations.
+memory:
+  memory_enabled: false
+web:
+  search_backend: searxng
+security:
+  allow_private_urls: false
+  redact_secrets: true
+privacy:
+  redact_pii: true
+approvals:
+  mode: smart
+  timeout: 60
+  cron_mode: deny
+mcp_servers:
+  obsidian:
+    url: http://${OLLAMA_SRV1_IP}:27124/mcp
+    headers:
+      Authorization: ${OBSIDIAN_AUTH_HEADER}
+# No gateway platform. This profile is reached through the dashboard's
+# profile switcher, `hermes -p morbo chat`, and the vault.
+gateway:
+  platforms: {}

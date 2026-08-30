@@ -215,16 +215,97 @@ spec:
                 subPath: init.sh
               - path: /run/config/profiles-init.sh
                 subPath: profiles-init.sh
-              # One profile per directory under /run/config/profiles; ConfigMap
-              # keys cannot contain "/", so each file is put in place by subPath.
-              # Adding a profile means three keys in kustomization.yaml and three
-              # mounts here.
-              - path: /run/config/profiles/coder/config.yaml
-                subPath: profiles-coder-config.yaml
-              - path: /run/config/profiles/coder/SOUL.md
-                subPath: profiles-coder-SOUL.md
-              - path: /run/config/profiles/coder/profile.env
-                subPath: profiles-coder-profile.env
+      # Each profile's directory, picked up generically by
+      # profiles-init.sh. Adding a profile is one block here and one
+      # configMapGenerator entry - no per-file mounts.
+      profile-amy:
+        type: configMap
+        name: hermes-profile-amy
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/amy
+      profile-bender:
+        type: configMap
+        name: hermes-profile-bender
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/bender
+      profile-conrad:
+        type: configMap
+        name: hermes-profile-conrad
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/conrad
+      profile-farnsworth:
+        type: configMap
+        name: hermes-profile-farnsworth
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/farnsworth
+      profile-fry:
+        type: configMap
+        name: hermes-profile-fry
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/fry
+      profile-leela:
+        type: configMap
+        name: hermes-profile-leela
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/leela
+      profile-mom:
+        type: configMap
+        name: hermes-profile-mom
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/mom
+      profile-morbo:
+        type: configMap
+        name: hermes-profile-morbo
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/morbo
+      profile-nibbler:
+        type: configMap
+        name: hermes-profile-nibbler
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/nibbler
+      profile-nixon:
+        type: configMap
+        name: hermes-profile-nixon
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/nixon
+      profile-wernstrom:
+        type: configMap
+        name: hermes-profile-wernstrom
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/wernstrom
       profile-default:
         type: secret
         name: hermes-profile-default
