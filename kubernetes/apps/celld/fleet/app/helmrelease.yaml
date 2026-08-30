@@ -86,7 +86,10 @@ spec:
                 memory: 64Mi
           # celld loads deploy/current.json at boot and exits when it is
           # missing, so an empty bucket is a crash loop until something
-          # deploys. Publish the bootstrap worker once, and never again.
+          # deploys. That is observed of 0.4.0, not documented upstream:
+          # a node against an empty bucket exits 1 with "read
+          # s3://<bucket>/deploy/current.json: no such key".
+          # Publish the bootstrap worker once, and never again.
           deploy:
             dependsOn: bucket
             image: &image

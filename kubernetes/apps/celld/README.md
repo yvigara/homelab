@@ -106,9 +106,23 @@ would SIGKILL a node in the middle of handing its cells off.
 
 A fleet runs one application, and **celld loads `deploy/current.json` at boot
 and exits when it is missing** — an empty bucket is a crash loop, not an idle
-fleet. So this directory ships a minimal application in
-`fleet/app/resources/`, published by an init container the first time the fleet
-comes up:
+fleet.
+
+That last part is observed, not documented. Upstream says only that "every node
+loads its latest successfully committed deployment from `deploy/current.json`",
+and implies the ordering by putting *Deploy an application* before *Start a
+node*; it never says what a node does when the pointer is absent. Pointing
+celld 0.4.0 at an empty bucket answers it:
+
+```console
+$ celld --bucket s3://emptyfleet --endpoint ... --listen 0.0.0.0:8080 ...
+Error: read s3://emptyfleet/deploy/current.json: no such key
+$ echo $?
+1
+```
+
+So this directory ships a minimal application in `fleet/app/resources/`,
+published by an init container the first time the fleet comes up:
 
 - `GET /` reports that the fleet is serving.
 - `GET /count?name=<cell>` increments a per-cell counter, which exercises a

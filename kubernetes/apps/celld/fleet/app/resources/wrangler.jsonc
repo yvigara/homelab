@@ -1,7 +1,8 @@
 {
   // The fleet's first deployment. celld reads `deploy/current.json` at boot
   // and exits when it is missing, so the fleet needs an application before it
-  // can start at all — see the README.
+  // can start at all. That behaviour is observed of 0.4.0 rather than
+  // documented upstream — see the README for the check.
   //
   // `no_bundle` uploads `index.js` as written. `celld deploy` otherwise shells
   // out to esbuild, which the release image does not carry, so the entry has
