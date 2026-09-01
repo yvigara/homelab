@@ -69,6 +69,21 @@ spec:
             # https://github.com/coreos/dex/blob/master/Documentation/connectors/github.md
             orgs:
               - name: celest-io
+        # Google configure an OAuth 2.0 Client ID (type "Web application") at
+        # https://console.cloud.google.com/apis/credentials in a project inside
+        # the Workspace org, and add the callback URL below as an authorized
+        # redirect URI.
+        - type: google
+          id: google
+          name: Google
+          config:
+            clientID: ${DEX_GOOGLE_CLIENT_ID}
+            clientSecret: ${DEX_GOOGLE_CLIENT_SECRET}
+            redirectURI: "https://dex.${DOMAIN}/callback"
+            # Restrict logins to the Workspace domain. Without this any Google
+            # account can authenticate.
+            hostedDomains:
+              - ${DEX_GOOGLE_HOSTED_DOMAIN}
       staticClients:
         - id: hermes-dashboard
           redirectURIs:

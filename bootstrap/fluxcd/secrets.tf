@@ -35,6 +35,18 @@ data "bitwarden-secrets_secret" "dex_gh_client_secret" {
   id = local.bw_secrets["DEX_GITHUB_CLIENT_SECRET"]
 }
 
+data "bitwarden-secrets_secret" "dex_google_client_id" {
+  id = local.bw_secrets["DEX_GOOGLE_CLIENT_ID"]
+}
+
+data "bitwarden-secrets_secret" "dex_google_client_secret" {
+  id = local.bw_secrets["DEX_GOOGLE_CLIENT_SECRET"]
+}
+
+data "bitwarden-secrets_secret" "dex_google_hosted_domain" {
+  id = local.bw_secrets["DEX_GOOGLE_HOSTED_DOMAIN"]
+}
+
 data "bitwarden-secrets_secret" "dex_hermes_dashboard_secret" {
   id = local.bw_secrets["HERMES_DASHBOARD_CLIENT_SECRET"]
 }
@@ -90,6 +102,9 @@ resource "kubernetes_secret_v1" "cluster-secrets" {
     CF_TUNNEL_ID                   = cloudflare_zero_trust_tunnel_cloudflared.cluster.id
     DEX_GITHUB_CLIENT_ID           = data.bitwarden-secrets_secret.dex_gh_client_id.value
     DEX_GITHUB_CLIENT_SECRET       = data.bitwarden-secrets_secret.dex_gh_client_secret.value
+    DEX_GOOGLE_CLIENT_ID           = data.bitwarden-secrets_secret.dex_google_client_id.value
+    DEX_GOOGLE_CLIENT_SECRET       = data.bitwarden-secrets_secret.dex_google_client_secret.value
+    DEX_GOOGLE_HOSTED_DOMAIN       = data.bitwarden-secrets_secret.dex_google_hosted_domain.value
     HERMES_DASHBOARD_CLIENT_SECRET = data.bitwarden-secrets_secret.dex_hermes_dashboard_secret.value
     RUSTFS_OIDC_CLIENT_SECRET      = data.bitwarden-secrets_secret.dex_rustfs_client_secret.value
     BUZZ_OWNER_PUBKEY              = data.bitwarden-secrets_secret.buzz_owner_pubkey_secret.value
