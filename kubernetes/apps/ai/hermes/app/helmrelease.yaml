@@ -99,12 +99,17 @@ spec:
               - containerPort: &dashboard_port 9119
                 name: dashboard
                 protocol: TCP
+            # Sized for twelve supervised gateways, not one: the default agent
+            # plus a Buzz gateway per profile, each its own process. Memory
+            # tracks how many are handling a conversation at once rather than
+            # how many are running, so the limit is headroom for a few active
+            # at once - revisit against node capacity if that changes.
             resources:
               requests:
-                cpu: 100m
-                memory: 1Gi
-              limits:
+                cpu: 250m
                 memory: 2Gi
+              limits:
+                memory: 8Gi
           codeserver:
             image:
               repository: ghcr.io/coder/code-server

@@ -300,32 +300,62 @@ rather than as a separate Secret with its own volume: app-template 5.1.0 has no
 way to mark a volume optional, so a Secret that does not exist yet would fail
 the mount and take the pod down. Sharing the Secret that is already mounted
 means a missing key degrades — ESO leaves the last good Secret in place, the
-profile syncs without a Buzz identity — instead of breaking.
+profile syncs without a Buzz identity and logs `no-secret` — instead of
+breaking.
 
-Two steps remain per key, and neither is in this repo:
+Buzz is enabled in all eleven profiles: `require_mention: true` and
+`allow_all_users: false`, with the permitted pubkey coming from
+`BUZZ_ALLOWED_USERS` in the profile's own `.env` rather than `allowed_users` in
+`config.yaml`, since process env outranks config and listing it in both would
+leave a value in git that never takes effect.
 
-1. **Relay membership.** The pubkey has to be admitted to the relay before the
-   agent can use it — `requireRelayMembership` is on. See
-   `kubernetes/apps/buzz/README.md`.
-2. **Enabling the platform.** A key alone does nothing; the profile also needs
-   a Buzz platform block in its `config.yaml` and its own gateway process:
+Each profile also declares `platform_toolsets.buzz` identical to its
+`platform_toolsets.cli`. Without it a Buzz session falls back to Hermes'
+default toolset rather than the one the profile was given.
 
-   ```yaml
-   gateway:
-     platforms:
-       buzz:
-         enabled: true
-         extra:
-           transport: auto
-           require_mention: true
-           allow_all_users: false
-           allowed_users:
-             - ${BUZZ_OWNER_PUBKEY}
-   ```
+### Bringing the gateways up
 
-   That is left switched off. Turning it on for all eleven means eleven
-   supervised gateway processes, each started once by hand, which is a bigger
-   operational change than plumbing the keys.
+Each profile's gateway is a supervised s6 service, and the boot reconciler
+auto-starts only the profiles whose last recorded state was `running`. A
+brand-new profile has no such state, so the first start is manual — once, ever:
+
+```console
+$ kubectl -n ai exec deploy/hermes -c app -- sh -c \
+    'for p in amy bender conrad farnsworth fry leela mom morbo nibbler nixon wernstrom; do
+       hermes -p "$p" gateway start
+     done'
+```
+
+From then on the reconciler brings them back after every restart, and
+`docker restart` semantics apply: the previously-running set is preserved.
+
+`hermes -p <name> gateway status` reports `Manager: s6 (container supervisor)`
+inside the container; `/command/s6-svstat /run/service/gateway-<name>` gives the
+raw supervisor state.
+
+This is deliberately a documented command rather than a `postStart` lifecycle
+hook. app-template's values schema does not describe container-level
+`lifecycle`, and an unsupported key there is silently dropped — a hook that
+never runs and never says so is worse than a command you ran once and can see
+the result of.
+
+### This is twelve gateways in one pod
+
+Enabling Buzz everywhere means twelve supervised gateway processes: the default
+agent plus one per profile. Two consequences:
+
+- **Memory.** Requests are 2 Gi and the limit 8 Gi, up from 1 Gi / 2 Gi. Usage
+  tracks how many gateways are *handling a conversation*, not how many are
+  running, so the limit is headroom for several active at once. Worth checking
+  against node capacity.
+- **Serialisation.** Farnsworth's lock serialises what Farnsworth dispatches. It
+  does not serialise a direct Buzz message to an agent — with eleven addressable
+  agents, two can be working at the same time if you message both.
+  `allow_all_users: false` keeps that to the owner rather than opening it to the
+  relay, but the "one profile active at a time" rule now holds for dispatched
+  work rather than for the system as a whole. If it should hold absolutely,
+  enable Buzz on Farnsworth only and reach the rest through delegation.
+
 
 ## Adding a profile
 
@@ -371,10 +401,11 @@ out here rather than stubbed with manifests that would fail to reconcile.
   auto-starts it on subsequent restarts. Until then Farnsworth routes
   interactively but runs nothing on a schedule.
 - **The `yann-article-writer` skill**, per the section above.
-- **Buzz keys and relay membership.** The eleven `HERMES_BUZZ_PRIVATE_KEY_*`
-  entries above, then admitting each pubkey to the relay, then the per-profile
-  platform block. Until the keys exist the profiles sync without a Buzz identity
-  and log `no-secret`; nothing breaks.
+- **Relay membership.** `requireRelayMembership` is on, so each agent's pubkey
+  has to be admitted before that agent can use the relay — see
+  `kubernetes/apps/buzz/README.md`. The keys themselves and the platform config
+  are done.
+- **The first `gateway start`**, per the section above. One command, once.
 - **SOUL.md for each profile**, placed on the volume at
   `/opt/data/profiles/<name>/SOUL.md`. A profile with no `SOUL.md` runs on
   Hermes' default persona, which for these eleven is not the intent.

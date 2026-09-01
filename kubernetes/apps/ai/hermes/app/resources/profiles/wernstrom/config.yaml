@@ -41,6 +41,13 @@ platform_toolsets:
     - session_search
     - todo
     - web
+  buzz:
+    - clarify
+    - file
+    - memory
+    - session_search
+    - todo
+    - web
 agent:
   max_turns: 90
   reasoning_effort: high
@@ -89,7 +96,26 @@ mcp_servers:
     url: http://${OLLAMA_SRV1_IP}:27124/mcp
     headers:
       Authorization: ${OBSIDIAN_AUTH_HEADER}
-# No gateway platform. This profile is reached through the dashboard's
-# profile switcher, `hermes -p wernstrom chat`, and the vault.
+# Buzz is this agent's only platform. Its identity comes from the
+# BUZZ_PRIVATE_KEY in its own .env, so each agent is addressable in its own
+# right rather than sharing the default agent's keypair.
+#
+# `allowed_users` is deliberately not set here: BUZZ_ALLOWED_USERS in the
+# profile's .env carries it, and process env outranks config.yaml, so listing
+# it in both would leave a value in git that never takes effect.
+display:
+  platforms:
+    buzz:
+      interim_assistant_messages: false
+      tool_progress: "off"
 gateway:
-  platforms: {}
+  message_timestamps:
+    enabled: true
+  platforms:
+    buzz:
+      enabled: true
+      extra:
+        transport: auto
+        require_mention: true
+        poll_interval: 4
+        allow_all_users: false

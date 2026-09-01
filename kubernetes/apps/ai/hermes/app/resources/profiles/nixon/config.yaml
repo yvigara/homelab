@@ -42,6 +42,12 @@ platform_toolsets:
     - memory
     - session_search
     - web
+  buzz:
+    - clarify
+    - file
+    - memory
+    - session_search
+    - web
 agent:
   max_turns: 90
   reasoning_effort: medium
@@ -93,7 +99,26 @@ mcp_servers:
   jira:
     url: https://mcp.atlassian.com/v1/mcp/authv2
     auth: oauth
-# No gateway platform. This profile is reached through the dashboard's
-# profile switcher, `hermes -p nixon chat`, and the vault.
+# Buzz is this agent's only platform. Its identity comes from the
+# BUZZ_PRIVATE_KEY in its own .env, so each agent is addressable in its own
+# right rather than sharing the default agent's keypair.
+#
+# `allowed_users` is deliberately not set here: BUZZ_ALLOWED_USERS in the
+# profile's .env carries it, and process env outranks config.yaml, so listing
+# it in both would leave a value in git that never takes effect.
+display:
+  platforms:
+    buzz:
+      interim_assistant_messages: false
+      tool_progress: "off"
 gateway:
-  platforms: {}
+  message_timestamps:
+    enabled: true
+  platforms:
+    buzz:
+      enabled: true
+      extra:
+        transport: auto
+        require_mention: true
+        poll_interval: 4
+        allow_all_users: false
