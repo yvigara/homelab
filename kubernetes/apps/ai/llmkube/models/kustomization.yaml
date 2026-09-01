@@ -3,8 +3,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./jina-reranker-v3.5-0.6b.yaml
-  - ./lfm2.5-2.6b.yaml
   - ./lfm2.5-embedding-350m.yaml
-  - ./qwen3-embedding-0.6b.yaml
-  - ./qwen3-reranker-0.6b.yaml
   - ./servicemonitor.yaml
