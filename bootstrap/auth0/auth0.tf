@@ -1,7 +1,8 @@
 locals {
-  auth_domain     = "auth.${var.domain}"        # custom-domain issuer host
-  mcp_audience    = "https://mcp.${var.domain}" # MCP API identifier (token aud)
-  hermes_dash_url = "https://hermes.int.${var.cluster_region}.${var.cluster_env}.${var.domain}"
+  auth_domain       = "auth.${var.domain}"        # custom-domain issuer host
+  mcp_audience      = "https://mcp.${var.domain}" # MCP API identifier (token aud)
+  hermes_dash_url   = "https://hermes.int.${var.cluster_region}.${var.cluster_env}.${var.domain}"
+  hermes_public_url = "https://hermes.${var.domain}"
 }
 
 # --- Tenant ------------------------------------------------------------------
@@ -117,6 +118,23 @@ resource "auth0_connection" "github" {
   }
 }
 
+# --- Google Workspace connection --------------------------------------------
+# Social (google-oauth2) rather than the enterprise `google-apps` strategy, so it
+# stays a button on Universal Login and remains usable by DCR clients via
+# is_domain_connection. Domain restriction is enforced by the post-login Action
+# below (Auth0's google-oauth2 options have no hosted-domain setting).
+resource "auth0_connection" "google" {
+  name                 = "google"
+  strategy             = "google-oauth2"
+  is_domain_connection = true
+
+  options {
+    client_id     = data.bitwarden-secrets_secret.google_client_id.value
+    client_secret = data.bitwarden-secrets_secret.google_client_secret.value
+    scopes        = ["email", "profile"]
+  }
+}
+
 # --- MCP API (resource server) -----------------------------------------------
 resource "auth0_resource_server" "mcp" {
   name        = "MCP Gateway API"
@@ -145,9 +163,18 @@ resource "auth0_client" "hermes_dashboard" {
   oidc_conformant = true
   is_first_party  = true
 
-  callbacks           = ["${local.hermes_dash_url}/auth/callback"]
-  allowed_logout_urls = [local.hermes_dash_url]
-  web_origins         = [local.hermes_dash_url]
+  callbacks = [
+    "${local.hermes_dash_url}/auth/callback",
+    "${local.hermes_public_url}/auth/callback"
+  ]
+  allowed_logout_urls = [
+    local.hermes_dash_url,
+    local.hermes_public_url
+  ]
+  web_origins = [
+    local.hermes_dash_url,
+    local.hermes_public_url
+  ]
 
   grant_types = ["authorization_code", "refresh_token"]
 }
@@ -171,6 +198,12 @@ resource "auth0_client_credentials" "mcp" {
 # Enable the GitHub connection for the dashboard app.
 resource "auth0_connection_clients" "github" {
   connection_id   = auth0_connection.github.id
+  enabled_clients = [auth0_client.hermes_dashboard.id]
+}
+
+# Enable the Google connection for the dashboard app.
+resource "auth0_connection_clients" "google" {
+  connection_id   = auth0_connection.google.id
   enabled_clients = [auth0_client.hermes_dashboard.id]
 }
 
@@ -199,11 +232,33 @@ resource "auth0_action" "github_org_gate" {
   }
 }
 
+resource "auth0_action" "google_workspace_gate" {
+  name    = "Google Workspace Gate"
+  runtime = "node22"
+  deploy  = true
+  code    = file("${path.module}/actions/google-workspace-gate.js")
+
+  secrets {
+    name  = "WORKSPACE_DOMAIN"
+    value = data.bitwarden-secrets_secret.google_workspace_domain.value
+  }
+
+  supported_triggers {
+    id      = "post-login"
+    version = "v3"
+  }
+}
+
 resource "auth0_trigger_actions" "post_login" {
   trigger = "post-login"
 
   actions {
     id           = auth0_action.github_org_gate.id
     display_name = auth0_action.github_org_gate.name
+  }
+
+  actions {
+    id           = auth0_action.google_workspace_gate.id
+    display_name = auth0_action.google_workspace_gate.name
   }
 }

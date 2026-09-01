@@ -83,7 +83,7 @@ spec:
             # Restrict logins to the Workspace domain. Without this any Google
             # account can authenticate.
             hostedDomains:
-              - ${DEX_GOOGLE_HOSTED_DOMAIN}
+              - ${GOOGLE_WORKSPACE_DOMAIN}
       staticClients:
         - id: hermes-dashboard
           redirectURIs:

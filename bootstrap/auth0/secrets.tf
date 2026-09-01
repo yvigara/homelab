@@ -14,6 +14,20 @@ data "bitwarden-secrets_secret" "github_client_secret" {
   id = local.bw_secrets["AUTH0_GITHUB_CLIENT_SECRET"]
 }
 
+# Google Workspace OAuth client (Google Cloud console, type "Web application").
+data "bitwarden-secrets_secret" "google_client_id" {
+  id = local.bw_secrets["AUTH0_GOOGLE_CLIENT_ID"]
+}
+
+data "bitwarden-secrets_secret" "google_client_secret" {
+  id = local.bw_secrets["AUTH0_GOOGLE_CLIENT_SECRET"]
+}
+
+# Bare Workspace domain (e.g. celest.io). Shared with the Dex google connector.
+data "bitwarden-secrets_secret" "google_workspace_domain" {
+  id = local.bw_secrets["GOOGLE_WORKSPACE_DOMAIN"]
+}
+
 # Publish the Auth0 application credentials back to Bitwarden so External Secrets
 # Operator can serve them to the cluster (Hermes dashboard OIDC login + the Hermes
 # MCP client_credentials app). Consumed later via ExternalSecrets by remoteRef.key.

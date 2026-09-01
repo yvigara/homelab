@@ -16,15 +16,29 @@ exports.onExecutePostLogin = async (event, api) => {
   }
 
   const org = event.secrets.GITHUB_ORG;
-  const identity = (event.user.identities || []).find((i) => i.provider === "github");
+  const identity = (event.user.identities || []).find(
+    (i) => i.provider === "github",
+  );
   const token = identity && identity.access_token;
-  const login = event.user.nickname; // GitHub username for the github strategy
-
-  if (!org || !token || !login) {
-    api.access.deny("Unable to verify GitHub organization membership.");
+  const login = identity && identity.user_id; // GitHub username for the github strategy
+  if (!org) {
+    api.access.deny(
+      "Unable to verify GitHub organization membership (org missing).",
+    );
     return;
   }
-
+  if (!login) {
+    api.access.deny(
+      "Unable to verify GitHub organization membership (login missing).",
+    );
+    return;
+  }
+  if (!token) {
+    api.access.deny(
+      "Unable to verify GitHub organization membership (token missing).",
+    );
+    return;
+  }
   const resp = await fetch(
     "https://api.github.com/orgs/" + org + "/memberships/" + login,
     {
@@ -33,16 +47,20 @@ exports.onExecutePostLogin = async (event, api) => {
         Accept: "application/vnd.github+json",
         "User-Agent": "auth0-org-gate",
       },
-    }
+    },
   );
 
   if (resp.status !== 200) {
-    api.access.deny("You must be a member of the " + org + " GitHub organization.");
+    api.access.deny(
+      "You must be a member of the " + org + " GitHub organization.",
+    );
     return;
   }
 
   const body = await resp.json();
   if (body.state !== "active") {
-    api.access.deny("Your " + org + " GitHub organization membership is not active.");
+    api.access.deny(
+      "Your " + org + " GitHub organization membership is not active.",
+    );
   }
 };
