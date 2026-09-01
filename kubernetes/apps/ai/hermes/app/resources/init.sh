@@ -34,10 +34,11 @@ su - hermes -c "$MISE_INSTALL_PATH install"
 # git config + GitHub App credential helper, from hermes-github-app
 bash /run/config/git-init.sh
 
-# The agent's own .env, rendered whole by the hermes-profile-default
+# The default agent's own .env, rendered whole by the hermes-profile-env
 # ExternalSecret. It holds the settings that belong to this one agent rather
-# than to the container - see README.md.
-default_env=/run/secrets/hermes-profile-default/default.env
+# than to the container - see README.md. The same Secret carries the secret
+# half of every other profile's .env, keyed <profile>.env.
+default_env=/run/secrets/hermes-profiles/default.env
 if [[ -f ${default_env} ]]; then
   install -m 0600 -o hermes -g hermes "${default_env}" /opt/data/.env
 fi

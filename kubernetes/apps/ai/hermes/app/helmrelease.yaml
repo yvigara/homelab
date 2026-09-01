@@ -54,7 +54,7 @@ spec:
             # values that belong to the container as a whole belong here.
             # Settings that belong to the agent itself - its gateway port, the
             # bot tokens it claims, the memory namespace it writes to - live in
-            # its own .env, rendered by the hermes-profile-default
+            # its own .env, rendered by the hermes-profile-env
             # ExternalSecret.
             env:
               TZ: ${TIMEZONE}
@@ -306,14 +306,14 @@ spec:
           hermes:
             init:
               - path: /run/config/profiles/wernstrom
-      profile-default:
+      profiles-env:
         type: secret
-        name: hermes-profile-default
+        name: hermes-profile-env
         defaultMode: 0400
         advancedMounts:
           hermes:
             init:
-              - path: /run/secrets/hermes-profile-default
+              - path: /run/secrets/hermes-profiles
       run:
         type: emptyDir
         advancedMounts:

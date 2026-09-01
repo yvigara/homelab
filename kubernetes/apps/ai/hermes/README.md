@@ -8,10 +8,10 @@ running the gateway, the web dashboard and a code-server sidecar off a single
 | --- | --- |
 | Agent + dashboard | `app/helmrelease.yaml`, image `nousresearch/hermes-agent` |
 | Agent config | `app/resources/config.yaml` → `/opt/data/config.yaml` |
-| Agent profiles | `app/resources/profiles/<name>/` → `/opt/data/profiles/<name>/` |
+| Agent profiles | `app/resources/profiles/<name>/` → `/opt/data/profiles/<name>/` (config + env only) |
 | Volume bootstrap | `app/resources/init.sh`, run by the init container |
 | Container credentials | `hermes-secret`, via `envFrom` |
-| The default agent's own settings | `hermes-profile-default`, mounted as a file |
+| Per-agent secrets | `hermes-profile-env`, one dotenv fragment per profile, mounted as files |
 | Git identity | `hermes-github-app` + `hermes-signing-key`, rendered by `git-init.sh` |
 | Toolchain | `app/resources/mise.toml`, installed into the volume by `init.sh` |
 
@@ -44,8 +44,8 @@ the MCP credentials, the git identity, `HERMES_HOME`, `HERMES_UID`/`GID`, and
 the dashboard, which is a machine-level surface rather than an agent-level one.
 These are defined once and interpolate into `config.yaml` as `${...}`.
 
-**In the agent's own `.env`** (`hermes-profile-default`, rendered whole as a
-dotenv document and installed to `/opt/data/.env` by `init.sh`):
+**In the agent's own `.env`** (`hermes-profile-env`, key `default.env`, rendered
+whole as a dotenv document and installed to `/opt/data/.env` by `init.sh`):
 
 | Setting | Why it is not container-wide |
 | --- | --- |
@@ -83,6 +83,20 @@ Each profile is one ConfigMap, mounted as a whole directory at
 `/run/config/profiles/<name>/`. Adding a profile is one `configMapGenerator`
 entry and one `persistence` block — no per-file mounts.
 
+### What this repo manages, and what it does not
+
+Of the three files that make a profile, this repo owns two:
+
+| File | Managed by |
+| --- | --- |
+| `config.yaml` | this repo — rewritten from the ConfigMap on every pod start |
+| `.env` | this repo — assembled on every pod start from the ConfigMap's `profile.env` plus the profile's fragment in `hermes-profile-env` |
+| `SOUL.md` | **outside this repo** — lives only on the volume |
+
+`profiles-init.sh` never reads, writes or removes `SOUL.md`. A persona edited on
+the volume survives every restart and every Flux reconcile; nothing here will
+overwrite it, and nothing here will recreate it if it is deleted.
+
 The alternative — one Deployment per profile — buys resource isolation at the
 cost of eleven copies of the manifest, eleven volumes and eleven dashboards.
 Upstream recommends the single container, and the dashboard here is already
@@ -101,6 +115,19 @@ inherit the default profile's.
 Everything scoped to a single agent — gateway port, bot tokens, memory namespace
 — is out of the container env and in that profile's own `.env`, so profiles hold
 their own values rather than inheriting one another's.
+
+Each `.env` is assembled from two halves, because half of it is not secret and
+belongs in git:
+
+- **the ConfigMap half**, `app/resources/profiles/<name>/profile.env` — memory
+  namespace, gateway flags, anything reviewable in a diff;
+- **the Secret half**, key `<name>.env` in `hermes-profile-env` — the agent's own
+  Buzz identity, and anywhere else a profile eventually needs credentials of its
+  own.
+
+`profiles-init.sh` concatenates them into `<profile>/.env`. The secret half is
+optional: a profile whose key is not in Bitwarden yet is synced without it and
+logged as `no-secret` rather than failing the pod.
 
 ## The agent system
 
@@ -238,23 +265,86 @@ $ kubectl -n ai cp ./yann-article-writer \
 
 Fry is told to stop rather than write without it.
 
+### One Buzz identity per agent
+
+Every profile gets its own Nostr keypair on the Buzz relay, so agents are
+individually addressable rather than sharing the default agent's identity. The
+private key is a secret, so it comes from Bitwarden through `hermes-profile-env`
+and is appended to that profile's `.env`:
+
+```
+BUZZ_RELAY_URL="wss://buzz.<domain>"
+BUZZ_PRIVATE_KEY="<the profile's own nsec or 64 hex>"
+BUZZ_ALLOWED_USERS="<owner pubkey>"
+```
+
+The Bitwarden keys are one per profile, named after it:
+
+```
+HERMES_BUZZ_PRIVATE_KEY            # the default agent (already exists)
+HERMES_BUZZ_PRIVATE_KEY_AMY
+HERMES_BUZZ_PRIVATE_KEY_BENDER
+HERMES_BUZZ_PRIVATE_KEY_CONRAD
+HERMES_BUZZ_PRIVATE_KEY_FARNSWORTH
+HERMES_BUZZ_PRIVATE_KEY_FRY
+HERMES_BUZZ_PRIVATE_KEY_LEELA
+HERMES_BUZZ_PRIVATE_KEY_MOM
+HERMES_BUZZ_PRIVATE_KEY_MORBO
+HERMES_BUZZ_PRIVATE_KEY_NIBBLER
+HERMES_BUZZ_PRIVATE_KEY_NIXON
+HERMES_BUZZ_PRIVATE_KEY_WERNSTROM
+```
+
+They are fetched as one ExternalSecret alongside `default.env`, deliberately
+rather than as a separate Secret with its own volume: app-template 5.1.0 has no
+way to mark a volume optional, so a Secret that does not exist yet would fail
+the mount and take the pod down. Sharing the Secret that is already mounted
+means a missing key degrades — ESO leaves the last good Secret in place, the
+profile syncs without a Buzz identity — instead of breaking.
+
+Two steps remain per key, and neither is in this repo:
+
+1. **Relay membership.** The pubkey has to be admitted to the relay before the
+   agent can use it — `requireRelayMembership` is on. See
+   `kubernetes/apps/buzz/README.md`.
+2. **Enabling the platform.** A key alone does nothing; the profile also needs
+   a Buzz platform block in its `config.yaml` and its own gateway process:
+
+   ```yaml
+   gateway:
+     platforms:
+       buzz:
+         enabled: true
+         extra:
+           transport: auto
+           require_mention: true
+           allow_all_users: false
+           allowed_users:
+             - ${BUZZ_OWNER_PUBKEY}
+   ```
+
+   That is left switched off. Turning it on for all eleven means eleven
+   supervised gateway processes, each started once by hand, which is a bigger
+   operational change than plumbing the keys.
+
 ## Adding a profile
 
-1. Create `app/resources/profiles/<name>/` with `config.yaml`, `SOUL.md` and
-   `profile.env`.
+1. Create `app/resources/profiles/<name>/` with `config.yaml` and
+   `profile.env`. `SOUL.md` is written straight onto the volume — see above.
 2. Add one `configMapGenerator` entry for `hermes-profile-<name>` in
    `app/kustomization.yaml`.
 3. Add one `persistence` block mounting it at `/run/config/profiles/<name>` in
    `app/helmrelease.yaml`.
+4. If it needs a Buzz identity or any other credential of its own, add a
+   `<name>.env` fragment to `hermes-profile-env` in `app/externalsecret.yaml`.
 
 `profiles-init.sh` picks the directory up generically and creates `workspace/`
 for the profile's `terminal.cwd`.
 
-To give a profile its own chat platform or API server it needs credentials of
-its own — an ExternalSecret rendering a dotenv document, like
-`hermes-profile-default`, plus a distinct `API_SERVER_PORT`, a container port
-and a route. Do not hand it the default agent's tokens; the token lock will
-reject it.
+To give a profile its own API server it also needs a distinct `API_SERVER_PORT`,
+a container port and a route. Do not hand a profile the default agent's tokens;
+Hermes locks a bot token to one agent and refuses the second gateway claiming
+it.
 
 Never point two processes at one profile. Both write memory automatically and
 each loads the other's writes into its system prompt, so two writers on one home
@@ -281,3 +371,10 @@ out here rather than stubbed with manifests that would fail to reconcile.
   auto-starts it on subsequent restarts. Until then Farnsworth routes
   interactively but runs nothing on a schedule.
 - **The `yann-article-writer` skill**, per the section above.
+- **Buzz keys and relay membership.** The eleven `HERMES_BUZZ_PRIVATE_KEY_*`
+  entries above, then admitting each pubkey to the relay, then the per-profile
+  platform block. Until the keys exist the profiles sync without a Buzz identity
+  and log `no-secret`; nothing breaks.
+- **SOUL.md for each profile**, placed on the volume at
+  `/opt/data/profiles/<name>/SOUL.md`. A profile with no `SOUL.md` runs on
+  Hermes' default persona, which for these eleven is not the intent.
