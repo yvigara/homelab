@@ -1,8 +1,8 @@
 [tools]
-aube = "2.2.0"
+aube = "2.2.4"
 fd = "10.5.0"
-gh = "2.98.0"
-hk = "1.56.1"
+gh = "2.100.0"
+hk = "1.57.0"
 jq = "1.8.2"
 rg = "15.2.0"
 "github:bdellegrazie/git-credential-github-app" = "0.4.5"
