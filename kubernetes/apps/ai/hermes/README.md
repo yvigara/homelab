@@ -281,7 +281,8 @@ BUZZ_ALLOWED_USERS="<owner pubkey>"
 The Bitwarden keys are one per profile, named after it:
 
 ```
-HERMES_BUZZ_PRIVATE_KEY            # the default agent (already exists)
+HERMES_BUZZ_HOME_CHANNEL           # the default channel, shared by every agent
+HERMES_BUZZ_PRIVATE_KEY            # the default agent's key, and the fallback
 HERMES_BUZZ_PRIVATE_KEY_AMY
 HERMES_BUZZ_PRIVATE_KEY_BENDER
 HERMES_BUZZ_PRIVATE_KEY_CONRAD
@@ -302,6 +303,13 @@ the mount and take the pod down. Sharing the Secret that is already mounted
 means a missing key degrades — ESO leaves the last good Secret in place, the
 profile syncs without a Buzz identity and logs `no-secret` — instead of
 breaking.
+
+Every agent's fragment sets `BUZZ_HOME_CHANNEL` to the same default channel —
+where cron output and notifications land — and takes its own
+`HERMES_BUZZ_PRIVATE_KEY_<NAME>`, falling back to the shared
+`HERMES_BUZZ_PRIVATE_KEY` when that entry exists but is still empty. The
+fallback covers a blank value, not an absent Bitwarden entry: ESO fails the
+whole fetch on a key that does not exist at all.
 
 Buzz is enabled in all eleven profiles: `require_mention: true` and
 `allow_all_users: false`, with the permitted pubkey coming from
@@ -403,8 +411,8 @@ out here rather than stubbed with manifests that would fail to reconcile.
 - **The `yann-article-writer` skill**, per the section above.
 - **Relay membership.** `requireRelayMembership` is on, so each agent's pubkey
   has to be admitted before that agent can use the relay — see
-  `kubernetes/apps/buzz/README.md`. The keys themselves and the platform config
-  are done.
+  `kubernetes/apps/buzz/README.md`. The keys, the channel and the platform
+  config are done.
 - **The first `gateway start`**, per the section above. One command, once.
 - **SOUL.md for each profile**, placed on the volume at
   `/opt/data/profiles/<name>/SOUL.md`. A profile with no `SOUL.md` runs on

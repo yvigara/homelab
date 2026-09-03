@@ -14,10 +14,9 @@ configMapGenerator:
       - init.sh=./resources/init.sh
       - git-init.sh=./resources/git-init.sh
       - profiles-init.sh=./resources/profiles-init.sh
-  # One ConfigMap per profile, mounted as a whole directory - see
-  # helmrelease.yaml. Config and non-secret env only: SOUL.md is managed
-  # outside this repository, and the secret half of each profile's .env comes
-  # from the hermes-profile-env Secret.
+  # One ConfigMap per profile, mounted as a whole directory. SOUL.md is managed
+  # outside this repository; the secret half of each .env comes from the
+  # hermes-profile-env Secret.
   - name: hermes-profile-amy
     files:
       - config.yaml=./resources/profiles/amy/config.yaml

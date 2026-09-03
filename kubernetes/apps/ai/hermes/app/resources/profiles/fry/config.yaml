@@ -1,11 +1,4 @@
 # Fry - writer.
-#
-# Voice-bound. The writing procedure is the `yann-article-writer` skill, which
-# this profile wraps rather than restates: the skill owns the interview, the
-# voice profile and the drafting rules. Install it into
-# /opt/data/profiles/fry/skills/ - see ../../../README.md.
-#
-# Public-content profile, so a remote model is allowed here.
 model:
   default: deepseek-v4-flash:cloud
   provider: custom:k8s-ollamacloud
@@ -26,9 +19,6 @@ custom_providers:
 fallback_providers:
   - provider: custom:k8s-omlx
     model: Qwen3.5-9B-MLX-4bit
-# Auxiliary work stays local whatever the main model is: compression and
-# titling see the whole conversation, so they are the widest exposure a
-# profile has.
 auxiliary:
   compression:
     provider: custom:k8s-omlx
@@ -105,19 +95,12 @@ mcp_servers:
   obsidian:
     url: http://${OLLAMA_SRV1_IP}:27124/mcp
     headers:
-      Authorization: ${OBSIDIAN_AUTH_HEADER}
-# Buzz is this agent's only platform. Its identity comes from the
-# BUZZ_PRIVATE_KEY in its own .env, so each agent is addressable in its own
-# right rather than sharing the default agent's keypair.
-#
-# `allowed_users` is deliberately not set here: BUZZ_ALLOWED_USERS in the
-# profile's .env carries it, and process env outranks config.yaml, so listing
-# it in both would leave a value in git that never takes effect.
+      Authorization: "${OBSIDIAN_AUTH_HEADER}"
 display:
   platforms:
     buzz:
       interim_assistant_messages: false
-      tool_progress: "off"
+      tool_progress: 'off'
 gateway:
   message_timestamps:
     enabled: true

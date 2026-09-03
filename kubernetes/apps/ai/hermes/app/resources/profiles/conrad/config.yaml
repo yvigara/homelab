@@ -1,10 +1,4 @@
 # Conrad - ledger.
-#
-# Personal and business finance, invoicing, tax, admin. Local-only in practice:
-# the memory is transactions, entities and obligations.
-#
-# `code_execution` is here for arithmetic on figures rather than trusting a
-# language model to add up.
 model:
   default: Qwen3.5-9B-MLX-4bit
   provider: custom:k8s-omlx
@@ -18,9 +12,6 @@ custom_providers:
         context_length: 77824
       gemma-4-e4b-it-qat-OptiQ-4bit:
         context_length: 110592
-# Auxiliary work stays local whatever the main model is: compression and
-# titling see the whole conversation, so they are the widest exposure a
-# profile has.
 auxiliary:
   compression:
     provider: custom:k8s-omlx
@@ -95,19 +86,12 @@ mcp_servers:
   obsidian:
     url: http://${OLLAMA_SRV1_IP}:27124/mcp
     headers:
-      Authorization: ${OBSIDIAN_AUTH_HEADER}
-# Buzz is this agent's only platform. Its identity comes from the
-# BUZZ_PRIVATE_KEY in its own .env, so each agent is addressable in its own
-# right rather than sharing the default agent's keypair.
-#
-# `allowed_users` is deliberately not set here: BUZZ_ALLOWED_USERS in the
-# profile's .env carries it, and process env outranks config.yaml, so listing
-# it in both would leave a value in git that never takes effect.
+      Authorization: "${OBSIDIAN_AUTH_HEADER}"
 display:
   platforms:
     buzz:
       interim_assistant_messages: false
-      tool_progress: "off"
+      tool_progress: 'off'
 gateway:
   message_timestamps:
     enabled: true

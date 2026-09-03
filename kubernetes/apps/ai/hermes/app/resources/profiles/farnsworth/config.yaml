@@ -1,13 +1,4 @@
 # Farnsworth - orchestrator.
-#
-# Routes a request to exactly one profile and runs the cron jobs. It holds no
-# state of its own: memory is off, and anything that has to survive an
-# invocation goes to the vault. Everything it knows about a request it learned
-# in that request.
-#
-# It is the only profile with `cronjob` and `delegation`. That is what
-# serialises the system - one profile active at a time, because there is only
-# one dispatcher and it dispatches one at a time.
 model:
   default: Qwen3.5-9B-MLX-4bit
   provider: custom:k8s-omlx
@@ -21,9 +12,6 @@ custom_providers:
         context_length: 77824
       gemma-4-e4b-it-qat-OptiQ-4bit:
         context_length: 110592
-# Auxiliary work stays local whatever the main model is: compression and
-# titling see the whole conversation, so they are the widest exposure a
-# profile has.
 auxiliary:
   compression:
     provider: custom:k8s-omlx
@@ -70,8 +58,6 @@ compression:
   threshold: 0.5
   target_ratio: 0.2
   protect_last_n: 20
-# No memory. See SOUL.md for why this profile is required to be
-# stateless between invocations.
 memory:
   memory_enabled: false
 web:
@@ -89,19 +75,12 @@ mcp_servers:
   obsidian:
     url: http://${OLLAMA_SRV1_IP}:27124/mcp
     headers:
-      Authorization: ${OBSIDIAN_AUTH_HEADER}
-# Buzz is this agent's only platform. Its identity comes from the
-# BUZZ_PRIVATE_KEY in its own .env, so each agent is addressable in its own
-# right rather than sharing the default agent's keypair.
-#
-# `allowed_users` is deliberately not set here: BUZZ_ALLOWED_USERS in the
-# profile's .env carries it, and process env outranks config.yaml, so listing
-# it in both would leave a value in git that never takes effect.
+      Authorization: "${OBSIDIAN_AUTH_HEADER}"
 display:
   platforms:
     buzz:
       interim_assistant_messages: false
-      tool_progress: "off"
+      tool_progress: 'off'
 gateway:
   message_timestamps:
     enabled: true

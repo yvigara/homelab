@@ -48,21 +48,15 @@ spec:
             args:
               - "gateway"
               - "run"
-            # Inherited by every process in this container, and Hermes resolves
-            # process env above both config.yaml and .env - so what is set here
-            # is not merely shared, it cannot be overridden further down. Only
-            # values that belong to the container as a whole belong here.
-            # Settings that belong to the agent itself - its gateway port, the
-            # bot tokens it claims, the memory namespace it writes to - live in
-            # its own .env, rendered by the hermes-profile-env
-            # ExternalSecret.
+            # Process env outranks config.yaml and .env, so anything set here
+            # cannot be overridden per agent. Per-agent settings live in that
+            # profile's own .env - see externalsecret.yaml.
             env:
               TZ: ${TIMEZONE}
               HERMES_GID: "1000"
               HERMES_HOME: /opt/data
               HERMES_UID: "1000"
-              # Machine-level rather than agent-level: one dashboard backend
-              # serves every agent co-located in this container.
+              # One dashboard backend serves every agent in this container.
               HERMES_DASHBOARD: "1"
               HERMES_DASHBOARD_PUBLIC_URL: "https://hermes.${DOMAIN}"
               HERMES_DASHBOARD_OIDC_ISSUER: "https://dex.${DOMAIN}"
@@ -99,11 +93,9 @@ spec:
               - containerPort: &dashboard_port 9119
                 name: dashboard
                 protocol: TCP
-            # Sized for twelve supervised gateways, not one: the default agent
-            # plus a Buzz gateway per profile, each its own process. Memory
-            # tracks how many are handling a conversation at once rather than
-            # how many are running, so the limit is headroom for a few active
-            # at once - revisit against node capacity if that changes.
+            # Twelve supervised gateways: the default agent plus one per
+            # profile. Memory tracks how many are handling a conversation at
+            # once, not how many are running.
             resources:
               requests:
                 cpu: 250m
@@ -220,9 +212,6 @@ spec:
                 subPath: init.sh
               - path: /run/config/profiles-init.sh
                 subPath: profiles-init.sh
-      # Each profile's directory, picked up generically by
-      # profiles-init.sh. Adding a profile is one block here and one
-      # configMapGenerator entry - no per-file mounts.
       profile-amy:
         type: configMap
         name: hermes-profile-amy
