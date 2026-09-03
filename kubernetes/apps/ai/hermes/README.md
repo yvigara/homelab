@@ -112,6 +112,16 @@ resolve in every profile's `config.yaml` through `${...}` interpolation. A
 profile's `config.yaml` restates only what that agent needs; it does **not**
 inherit the default profile's.
 
+The provider block is the exception: every profile carries the same one as the
+default agent's `config.yaml` — `k8s-omlx`, `k8s-ollama-local`,
+`k8s-lfm2.5-2.6b`, plus `k8s-ollamacloud` for the two public-content profiles —
+kept in step with it rather than trimmed per profile, so a model added to the
+cluster reaches every agent that could use it.
+
+`k8s-ollama-local` reaches the Ollama server behind `agentgateway`'s
+`/ollama-local` route. It carries no `default_model`, so nothing routes to it
+until a model tag is named; reach it explicitly with a `model_aliases` entry.
+
 Everything scoped to a single agent — gateway port, bot tokens, memory namespace
 — is out of the container env and in that profile's own `.env`, so profiles hold
 their own values rather than inheriting one another's.
@@ -282,7 +292,7 @@ The Bitwarden keys are one per profile, named after it:
 
 ```
 HERMES_BUZZ_HOME_CHANNEL           # the default channel, shared by every agent
-HERMES_BUZZ_PRIVATE_KEY            # the default agent's key, and the fallback
+HERMES_BUZZ_PRIVATE_KEY            # the default agent
 HERMES_BUZZ_PRIVATE_KEY_AMY
 HERMES_BUZZ_PRIVATE_KEY_BENDER
 HERMES_BUZZ_PRIVATE_KEY_CONRAD
@@ -306,10 +316,8 @@ breaking.
 
 Every agent's fragment sets `BUZZ_HOME_CHANNEL` to the same default channel —
 where cron output and notifications land — and takes its own
-`HERMES_BUZZ_PRIVATE_KEY_<NAME>`, falling back to the shared
-`HERMES_BUZZ_PRIVATE_KEY` when that entry exists but is still empty. The
-fallback covers a blank value, not an absent Bitwarden entry: ESO fails the
-whole fetch on a key that does not exist at all.
+`HERMES_BUZZ_PRIVATE_KEY_<NAME>`. All twelve entries have to exist in Bitwarden
+before this reconciles; ESO fails the whole fetch on a key that is missing.
 
 Buzz is enabled in all eleven profiles: `require_mention: true` and
 `allow_all_users: false`, with the permitted pubkey coming from
