@@ -92,6 +92,17 @@
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-\\d+-(?<compatibility>\\d+-\\w+)$"
     },
     {
+      "description": "The agentgateway chart registry carries v2.2.x tags that predate its whole 1.x line (v2.2.1 was pushed 2026-02-17, v1.5.0 on 2026-08-27) because the project restarted its numbering at 1.0.0 in March 2026, so a docker lookup proposes v2.2.1 as an upgrade. The OCIRepositories carry a '# renovate: datasource=github-tags depName=agentgateway/agentgateway' annotation instead, and the GitHub repo has no v2 tag at all. Disable the flux manager's own lookup so the same tag: line is not proposed twice.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "cr.agentgateway.dev/charts/agentgateway",
+        "cr.agentgateway.dev/charts/agentgateway-crds"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Major bumps get their own PR and a visible label",
       "matchUpdateTypes": [
         "major"
@@ -99,16 +110,7 @@
       "labels": [
         "renovate",
         "major"
-      ],
-      "minimumReleaseAge": "3 days"
-    },
-    {
-      "description": "Let a release settle before proposing it",
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
-      "minimumReleaseAge": "1 day"
+      ]
     }
   ]
 }
