@@ -1,5 +1,5 @@
 [tools]
-aube = "2.2.9"
+aube = "2.2.4"
 fd = "10.5.0"
 gh = "2.100.0"
 hk = "1.57.0"
@@ -9,5 +9,5 @@ rg = "15.2.0"
 rust = "latest"
 
 [tools."cargo:https://github.com/block/buzz"]
-version = "tag:desktop-v0.5.17"
+version = "tag:desktop-v0.5.20"
 crate = "buzz-cli"
