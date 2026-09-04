@@ -9,8 +9,6 @@ spec:
     name: *name
   interval: 1h
   values:
-    image:
-      tag: "sha-c6e3fe7"
     # Public WebSocket URL. Also drives NIP-42 auth challenges and, through the
     # chart, BUZZ_MEDIA_BASE_URL (https://<host>/media).
     relayUrl: wss://buzz.${DOMAIN}
