@@ -1,43 +1,50 @@
 #!/usr/bin/env bash
-# Prepares the data volume before the agent starts: the agent's config, the mise
-# toolchain it shells out to, the git identity it commits with, and its own .env.
-#
-# Runs as root in the init container, out of the same ConfigMap as the files it
-# installs. Everything here is authoritative on every pod start - what is in git
-# wins over what is on the volume.
+# Prepares the data volume before the agent starts. Authoritative on every pod
+# start: what is in git wins over what is on the volume.
 set -euo pipefail
 
-cp /run/config/config.yaml /opt/data/config.yaml
-chown hermes:hermes /opt/data/config.yaml
+readonly CONFIG_DIR=/run/config
+readonly SECRET_DIR=/run/secrets/hermes-profiles
+readonly DATA_DIR=/opt/data
 
-echo 'export PATH="/opt/data/.local/bin:/opt/data/.local/share/mise/shims:$PATH"' > /opt/data/.profile
+install_config() {
+  install -m 0644 -o hermes -g hermes "${CONFIG_DIR}/config.yaml" "${DATA_DIR}/config.yaml"
+}
 
-mkdir -p /opt/data/.config/mise /opt/data/.local/bin \
-  /opt/data/.local/share/mise /opt/data/.local/state/mise /opt/data/.cache/mise
-cp /run/config/mise.toml /opt/data/.config/mise/config.toml
+install_mise() {
+  mkdir -p "${DATA_DIR}"/.config/mise "${DATA_DIR}"/.local/{bin,share/mise,state/mise} \
+    "${DATA_DIR}"/.cache/mise
+  cp "${CONFIG_DIR}/mise.toml" "${DATA_DIR}/.config/mise/config.toml"
 
-# no-ops when $MISE_INSTALL_PATH is already at $MISE_VERSION
-curl -fsSL https://mise.run | sh
+  # no-ops when $MISE_INSTALL_PATH is already at $MISE_VERSION
+  curl -fsSL https://mise.run | sh
 
-# real activation for interactive `kubectl exec` shells
-touch /opt/data/.bashrc
-grep -qF '/opt/data/.local/bin/mise activate bash' /opt/data/.bashrc \
-  || echo 'eval "$(/opt/data/.local/bin/mise activate bash)"' >> /opt/data/.bashrc
+  printf 'export PATH="%s/.local/bin:%s/.local/share/mise/shims:$PATH"\n' \
+    "${DATA_DIR}" "${DATA_DIR}" >"${DATA_DIR}/.profile"
 
-mkdir -p /opt/data/.cache/mise
-chown -R hermes:hermes /opt/data/.bashrc /opt/data/.config \
-  /opt/data/.local/bin/mise /opt/data/.local/share/mise \
-  /opt/data/.local/state/mise /opt/data/.cache \
-  /opt/data/.profile
-su - hermes -c "$MISE_INSTALL_PATH install"
+  # real activation for interactive `kubectl exec` shells
+  touch "${DATA_DIR}/.bashrc"
+  grep -qF "${DATA_DIR}/.local/bin/mise activate bash" "${DATA_DIR}/.bashrc" \
+    || echo "eval \"\$(${DATA_DIR}/.local/bin/mise activate bash)\"" >>"${DATA_DIR}/.bashrc"
 
-# git config + GitHub App credential helper, from hermes-github-app
-bash /run/config/git-init.sh
+  chown -R hermes:hermes "${DATA_DIR}"/.bashrc "${DATA_DIR}"/.config \
+    "${DATA_DIR}"/.local/bin/mise "${DATA_DIR}"/.local/share/mise \
+    "${DATA_DIR}"/.local/state/mise "${DATA_DIR}"/.cache "${DATA_DIR}"/.profile
+  su - hermes -c "$MISE_INSTALL_PATH install"
+}
 
-# The agent's own .env, rendered whole by the hermes-profile-default
-# ExternalSecret. It holds the settings that belong to this one agent rather
-# than to the container - see README.md.
-default_env=/run/secrets/hermes-profile-default/default.env
-if [[ -f ${default_env} ]]; then
-  install -m 0600 -o hermes -g hermes "${default_env}" /opt/data/.env
-fi
+install_default_env() {
+  local src="${SECRET_DIR}/default.env"
+  [[ -f ${src} ]] || return 0
+  install -m 0600 -o hermes -g hermes "${src}" "${DATA_DIR}/.env"
+}
+
+main() {
+  install_config
+  install_mise
+  bash "${CONFIG_DIR}/git-init.sh"
+  install_default_env
+  bash "${CONFIG_DIR}/profiles-init.sh"
+}
+
+main "$@"

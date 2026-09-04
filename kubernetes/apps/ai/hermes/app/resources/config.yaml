@@ -23,6 +23,8 @@ custom_providers:
         context_length: 65536
       Ornith-1.5-9B-MLX-4bit:
         context_length: 86016
+  - name: k8s-ollama-local
+    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-local
   - name: k8s-lfm2.5-2.6b
     base_url: http://lfm2-5-2-6b.ai.svc.cluster.local:8080
     default_model: lfm2.5-2.6b

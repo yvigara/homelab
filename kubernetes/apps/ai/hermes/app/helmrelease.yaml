@@ -26,6 +26,7 @@ spec:
               tag: v2026.8.31@sha256:64923faeae267792bf9bf87fe3b4c4869e35004e360c7df01730ad801b74d524
             env:
               HOME: /opt/data
+              HERMES_HOME: /opt/data
               # renovate: datasource=github-releases depName=jdx/mise
               MISE_VERSION: v2026.9.1
               MISE_INSTALL_PATH: /opt/data/.local/bin/mise
@@ -47,21 +48,15 @@ spec:
             args:
               - "gateway"
               - "run"
-            # Inherited by every process in this container, and Hermes resolves
-            # process env above both config.yaml and .env - so what is set here
-            # is not merely shared, it cannot be overridden further down. Only
-            # values that belong to the container as a whole belong here.
-            # Settings that belong to the agent itself - its gateway port, the
-            # bot tokens it claims, the memory namespace it writes to - live in
-            # its own .env, rendered by the hermes-profile-default
-            # ExternalSecret.
+            # Process env outranks config.yaml and .env, so anything set here
+            # cannot be overridden per agent. Per-agent settings live in that
+            # profile's own .env - see externalsecret.yaml.
             env:
               TZ: ${TIMEZONE}
               HERMES_GID: "1000"
               HERMES_HOME: /opt/data
               HERMES_UID: "1000"
-              # Machine-level rather than agent-level: one dashboard backend
-              # serves every agent co-located in this container.
+              # One dashboard backend serves every agent in this container.
               HERMES_DASHBOARD: "1"
               HERMES_DASHBOARD_PUBLIC_URL: "https://hermes.${DOMAIN}"
               HERMES_DASHBOARD_OIDC_ISSUER: "https://dex.${DOMAIN}"
@@ -98,12 +93,15 @@ spec:
               - containerPort: &dashboard_port 9119
                 name: dashboard
                 protocol: TCP
+            # Twelve supervised gateways: the default agent plus one per
+            # profile. Memory tracks how many are handling a conversation at
+            # once, not how many are running.
             resources:
               requests:
-                cpu: 100m
-                memory: 1Gi
-              limits:
+                cpu: 250m
                 memory: 2Gi
+              limits:
+                memory: 8Gi
           codeserver:
             image:
               repository: ghcr.io/coder/code-server
@@ -212,14 +210,104 @@ spec:
                 subPath: git-init.sh
               - path: /run/config/init.sh
                 subPath: init.sh
-      profile-default:
+              - path: /run/config/profiles-init.sh
+                subPath: profiles-init.sh
+      profile-amy:
+        type: configMap
+        name: hermes-profile-amy
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/amy
+      profile-bender:
+        type: configMap
+        name: hermes-profile-bender
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/bender
+      profile-conrad:
+        type: configMap
+        name: hermes-profile-conrad
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/conrad
+      profile-farnsworth:
+        type: configMap
+        name: hermes-profile-farnsworth
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/farnsworth
+      profile-fry:
+        type: configMap
+        name: hermes-profile-fry
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/fry
+      profile-leela:
+        type: configMap
+        name: hermes-profile-leela
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/leela
+      profile-mom:
+        type: configMap
+        name: hermes-profile-mom
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/mom
+      profile-morbo:
+        type: configMap
+        name: hermes-profile-morbo
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/morbo
+      profile-nibbler:
+        type: configMap
+        name: hermes-profile-nibbler
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/nibbler
+      profile-nixon:
+        type: configMap
+        name: hermes-profile-nixon
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/nixon
+      profile-wernstrom:
+        type: configMap
+        name: hermes-profile-wernstrom
+        defaultMode: 0644
+        advancedMounts:
+          hermes:
+            init:
+              - path: /run/config/profiles/wernstrom
+      profiles-env:
         type: secret
-        name: hermes-profile-default
+        name: hermes-profile-env
         defaultMode: 0400
         advancedMounts:
           hermes:
             init:
-              - path: /run/secrets/hermes-profile-default
+              - path: /run/secrets/hermes-profiles
       run:
         type: emptyDir
         advancedMounts:

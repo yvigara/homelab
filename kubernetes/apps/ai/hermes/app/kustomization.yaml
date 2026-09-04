@@ -13,6 +13,54 @@ configMapGenerator:
       - mise.toml=./resources/mise.toml
       - init.sh=./resources/init.sh
       - git-init.sh=./resources/git-init.sh
+      - profiles-init.sh=./resources/profiles-init.sh
+  # One ConfigMap per profile, mounted as a whole directory. SOUL.md is managed
+  # outside this repository; the secret half of each .env comes from the
+  # hermes-profile-env Secret.
+  - name: hermes-profile-amy
+    files:
+      - config.yaml=./resources/profiles/amy/config.yaml
+      - profile.env=./resources/profiles/amy/profile.env
+  - name: hermes-profile-bender
+    files:
+      - config.yaml=./resources/profiles/bender/config.yaml
+      - profile.env=./resources/profiles/bender/profile.env
+  - name: hermes-profile-conrad
+    files:
+      - config.yaml=./resources/profiles/conrad/config.yaml
+      - profile.env=./resources/profiles/conrad/profile.env
+  - name: hermes-profile-farnsworth
+    files:
+      - config.yaml=./resources/profiles/farnsworth/config.yaml
+      - profile.env=./resources/profiles/farnsworth/profile.env
+  - name: hermes-profile-fry
+    files:
+      - config.yaml=./resources/profiles/fry/config.yaml
+      - profile.env=./resources/profiles/fry/profile.env
+  - name: hermes-profile-leela
+    files:
+      - config.yaml=./resources/profiles/leela/config.yaml
+      - profile.env=./resources/profiles/leela/profile.env
+  - name: hermes-profile-mom
+    files:
+      - config.yaml=./resources/profiles/mom/config.yaml
+      - profile.env=./resources/profiles/mom/profile.env
+  - name: hermes-profile-morbo
+    files:
+      - config.yaml=./resources/profiles/morbo/config.yaml
+      - profile.env=./resources/profiles/morbo/profile.env
+  - name: hermes-profile-nibbler
+    files:
+      - config.yaml=./resources/profiles/nibbler/config.yaml
+      - profile.env=./resources/profiles/nibbler/profile.env
+  - name: hermes-profile-nixon
+    files:
+      - config.yaml=./resources/profiles/nixon/config.yaml
+      - profile.env=./resources/profiles/nixon/profile.env
+  - name: hermes-profile-wernstrom
+    files:
+      - config.yaml=./resources/profiles/wernstrom/config.yaml
+      - profile.env=./resources/profiles/wernstrom/profile.env
 generatorOptions:
   disableNameSuffixHash: true
   annotations:
