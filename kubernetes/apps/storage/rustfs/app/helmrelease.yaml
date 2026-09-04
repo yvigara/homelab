@@ -27,7 +27,7 @@ spec:
               RUSTFS_CONSOLE_ADDRESS: ":9001"
               RUSTFS_CONSOLE_ENABLE: "true"
               RUSTFS_BROWSER_REDIRECT_URL: "https://rustfs.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
-              RUSTFS_SERVER_DOMAINS: "s3.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+              RUSTFS_SERVER_DOMAINS: "s3.int.${REGION}.${ENVIRONMENT}.${DOMAIN}:9000"
               # OIDC discovery/JWKS/token calls go through an outbound egress
               # policy (rustfs#5159) that rejects private origins by default
               RUSTFS_OUTBOUND_ALLOW_ORIGINS: "https://dex.${DOMAIN}"
