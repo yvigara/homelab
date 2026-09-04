@@ -2,15 +2,16 @@
 model:
   default: deepseek-v4-flash:cloud
   provider: custom:k8s-ollamacloud
-custom_providers:
-  - name: k8s-ollamacloud
-    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-cloud
+providers:
+  k8s-ollamacloud:
+    api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-cloud
+    name: k8s-ollamacloud
     api_key: "${HERMES_OMLX_KEY}"
     default_model: deepseek-v4-flash:cloud
-  - name: k8s-omlx
-    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
+  k8s-omlx:
+    api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
+    name: k8s-omlx
     api_key: "${HERMES_OMLX_KEY}"
-    default_model: Qwen3.5-9B-MLX-4bit
     models:
       Qwen3.5-9B-MLX-4bit:
         context_length: 77824
@@ -24,11 +25,21 @@ custom_providers:
         context_length: 65536
       Ornith-1.5-9B-MLX-4bit:
         context_length: 86016
-  - name: k8s-ollama-local
-    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-local
-  - name: k8s-lfm2.5-2.6b
-    base_url: http://lfm2-5-2-6b.ai.svc.cluster.local:8080
+    default_model: Qwen3.5-9B-MLX-4bit
+  k8s-ollama-local:
+    api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-local
+    name: k8s-ollama-local
+  k8s-lfm2.5-2.6b:
+    api: http://lfm2-5-2-6b.ai.svc.cluster.local:8080
+    name: k8s-lfm2.5-2.6b
     default_model: lfm2.5-2.6b
+model_aliases:
+  qwen35:
+    model: Qwen3.5-9B-MLX-4bit
+    provider: custom:k8s-omlx
+  gemma4-e4b:
+    model: gemma-4-e4b-it-qat-OptiQ-4bit
+    provider: custom:k8s-omlx
 fallback_providers:
   - provider: custom:k8s-omlx
     model: Qwen3.5-9B-MLX-4bit
@@ -72,6 +83,10 @@ agent:
     - stt
     - cronjob
     - delegation
+browser:
+  cloud_provider: camofox
+  camofox:
+    managed_persistence: true
 terminal:
   backend: local
   cwd: /opt/data/profiles/mom/workspace
@@ -98,6 +113,8 @@ security:
   redact_secrets: true
 privacy:
   redact_pii: true
+streaming:
+  enabled: false
 approvals:
   mode: smart
   timeout: 60
@@ -134,3 +151,4 @@ gateway:
         require_mention: true
         poll_interval: 4
         allow_all_users: false
+_config_version: 39

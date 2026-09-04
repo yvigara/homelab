@@ -9,5 +9,5 @@ rg = "15.2.0"
 rust = "latest"
 
 [tools."cargo:https://github.com/block/buzz"]
-version = "tag:desktop-v0.5.20"
+version = "tag:desktop-v0.5.22"
 crate = "buzz-cli"
