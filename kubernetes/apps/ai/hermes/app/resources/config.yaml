@@ -1,15 +1,16 @@
 model:
   default: deepseek-v4-flash:cloud
   provider: custom:k8s-ollamacloud
-custom_providers:
-  - name: k8s-ollamacloud
-    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-cloud
-    api_key: "${HERMES_OMLX_KEY}"
+providers:
+  k8s-ollamacloud:
+    api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-cloud
+    name: k8s-ollamacloud
+    api_key: ${HERMES_OMLX_KEY}
     default_model: deepseek-v4-flash:cloud
-  - name: k8s-omlx
-    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
-    api_key: "${HERMES_OMLX_KEY}"
-    default_model: Qwen3.5-9B-MLX-4bit
+  k8s-omlx:
+    api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
+    name: k8s-omlx
+    api_key: ${HERMES_OMLX_KEY}
     models:
       Qwen3.5-9B-MLX-4bit:
         context_length: 77824
@@ -23,11 +24,7 @@ custom_providers:
         context_length: 65536
       Ornith-1.5-9B-MLX-4bit:
         context_length: 86016
-  - name: k8s-ollama-local
-    base_url: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-local
-  - name: k8s-lfm2.5-2.6b
-    base_url: http://lfm2-5-2-6b.ai.svc.cluster.local:8080
-    default_model: lfm2.5-2.6b
+    default_model: Qwen3.5-9B-MLX-4bit
 model_aliases:
   qwen35:
     model: Qwen3.5-9B-MLX-4bit
@@ -141,15 +138,9 @@ agent:
     - computer_use
     - tts
     - stt
-# Camofox (anti-detection Camoufox server) is the browser backend. Selecting it
-# here is what activates it - CAMOFOX_URL alone only supplies the address.
-# It has no CDP endpoint, so Hermes keeps its built-in browser tools rather than
-# the browser-use harness.
 browser:
   cloud_provider: camofox
   camofox:
-    # Stable per-profile user id, so the server maps sessions onto its
-    # persistent profile directory and logins survive agent restarts.
     managed_persistence: true
 terminal:
   backend: local
@@ -165,7 +156,7 @@ display:
   platforms:
     buzz:
       interim_assistant_messages: false
-      tool_progress: "off"
+      tool_progress: 'off'
 plugins:
   enabled:
     - memini
@@ -196,26 +187,20 @@ mcp_servers:
   jira:
     url: https://mcp.atlassian.com/v1/mcp/authv2
     auth: oauth
-    # meeting-notes:
-    # url: ${MEETING_NOTES_MCP_URL}
-    # auth: oauth
   obsidian:
     url: http://${OLLAMA_SRV1_IP}:27124/mcp
     headers:
       Authorization: ${OBSIDIAN_AUTH_HEADER}
   x:
     command: npx
-    args: ["-y", "@xdevplatform/xurl", "mcp", "https://api.x.com/mcp"]
+    args:
+      - -y
+      - '@xdevplatform/xurl'
+      - mcp
+      - https://api.x.com/mcp
     headers:
       Authorization: ${X_MCP_AUTH_HEADER}
   open-knowledge:
-    # Straight to the pod, skipping the public hostname: that one is behind a
-    # Cloudflare Access login Hermes cannot complete, and there is no public MCP
-    # edge for this app — Hermes is the only consumer.
-    #
-    # The Host header is load-bearing, not decoration. OpenKnowledge admits
-    # exactly one non-loopback Host — the one in OK_EXTERNAL_URL — and refuses
-    # everything else with a 403, the cluster-internal service name included.
     url: http://open-knowledge.ai.svc.cluster.local:8080/mcp
     headers:
       Host: ok.${DOMAIN}
@@ -242,3 +227,4 @@ web:
   search_backend: searxng
 slack:
   reaction_triggers: true
+_config_version: 39
