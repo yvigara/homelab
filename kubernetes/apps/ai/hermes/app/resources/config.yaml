@@ -35,6 +35,10 @@ model_aliases:
   gemma4-e4b:
     model: gemma-4-e4b-it-qat-OptiQ-4bit
     provider: custom:k8s-omlx
+model_overrides:
+  custom:k8s-ollamacloud:
+    glm-5.3-flash:cloud:
+      supports_vision: true
 fallback_providers:
   - provider: custom:k8s-omlx
     model: Qwen3.5-9B-MLX-4bit
@@ -76,6 +80,7 @@ platform_toolsets:
     - skills
     - terminal
     - todo
+    - vision
     - web
   slack:
     - browser
@@ -89,6 +94,7 @@ platform_toolsets:
     - skills
     - terminal
     - todo
+    - vision
     - web
   buzz:
     - browser
@@ -102,6 +108,7 @@ platform_toolsets:
     - skills
     - terminal
     - todo
+    - vision
     - web
 skills:
   disabled:
