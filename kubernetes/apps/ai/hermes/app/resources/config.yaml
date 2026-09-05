@@ -7,6 +7,9 @@ providers:
     name: k8s-ollamacloud
     api_key: ${HERMES_OMLX_KEY}
     default_model: deepseek-v4-flash:cloud
+    models:
+      deepseek-v4-flash:cloud:
+      glm-5.3-flash:cloud:
   k8s-omlx:
     api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
     name: k8s-omlx
