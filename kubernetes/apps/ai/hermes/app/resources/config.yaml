@@ -214,7 +214,7 @@ mcp_servers:
     url: http://open-knowledge.ai.svc.cluster.local:8080/mcp
     headers:
       Host: ok.${DOMAIN}
-group_sessions_per_user: false
+group_sessions_per_user: true
 gateway:
   message_timestamps:
     enabled: true
