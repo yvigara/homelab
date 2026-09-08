@@ -157,6 +157,7 @@ terminal:
   cwd: /opt/data/workspace
   timeout: 180
   persistent_shell: true
+  home_mode: real
 compression:
   enabled: true
   threshold: 0.5
