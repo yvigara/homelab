@@ -60,7 +60,7 @@ spec:
     # with the same alias/mb surface mc had.
     extraInitContainers:
       - name: create-bucket
-        image: docker.io/rustfs/rc:v0.1.31@sha256:f3dc331f76b14a852a1dc0bffc80509cc41424eaa9ea0306d9584edc211dcad6
+        image: docker.io/rustfs/rc:v0.1.34@sha256:fad686174251b22de1e7b11438b3389932c93d2043c4eec981e1168c59edf92f
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: false
