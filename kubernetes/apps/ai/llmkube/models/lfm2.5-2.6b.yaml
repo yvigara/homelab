@@ -39,7 +39,6 @@ spec:
     - "6"
     - -fa
     - "on"
-    - --no-mmap
     - --temp
     - "0.1"
     - --top-k

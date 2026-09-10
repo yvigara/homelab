@@ -44,7 +44,6 @@ spec:
     - last
     - --cache-ram
     - "0"
-    - --no-mmap
     - --sleep-idle-seconds
     - "300"
     - --alias
