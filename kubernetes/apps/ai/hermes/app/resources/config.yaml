@@ -75,6 +75,7 @@ platform_toolsets:
     - cronjob
     - delegation
     - file
+    - kanban
     - memory
     - session_search
     - skills
@@ -89,6 +90,7 @@ platform_toolsets:
     - cronjob
     - delegation
     - file
+    - kanban
     - memory
     - session_search
     - skills
@@ -103,6 +105,7 @@ platform_toolsets:
     - cronjob
     - delegation
     - file
+    - kanban
     - memory
     - session_search
     - skills
@@ -234,6 +237,12 @@ dashboard:
     provider: self-hosted
     self_hosted:
       client_id: hermes-dashboard
+  kanban:
+    lane_by_profile: true
+    render_markdown: true
+kanban:
+  orchestrator_profile: farnsworth
+  default_assignee: leela
 web:
   search_backend: searxng
 slack:

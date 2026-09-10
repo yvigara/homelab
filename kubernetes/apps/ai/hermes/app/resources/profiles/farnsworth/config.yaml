@@ -53,12 +53,16 @@ platform_toolsets:
     - cronjob
     - delegation
     - file
+    - kanban
+    - session_search
     - todo
   buzz:
     - clarify
     - cronjob
     - delegation
     - file
+    - kanban
+    - session_search
     - todo
 agent:
   max_turns: 40
@@ -109,7 +113,7 @@ display:
   platforms:
     buzz:
       interim_assistant_messages: false
-      tool_progress: 'off'
+      tool_progress: "off"
 gateway:
   message_timestamps:
     enabled: true
