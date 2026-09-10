@@ -47,11 +47,13 @@ auxiliary:
     model: Qwen3.5-9B-MLX-4bit
 toolsets:
   - hermes-cli
+  - kanban
 platform_toolsets:
   cli:
     - clarify
     - code_execution
     - file
+    - kanban
     - memory
     - session_search
     - todo
@@ -59,6 +61,7 @@ platform_toolsets:
     - clarify
     - code_execution
     - file
+    - kanban
     - memory
     - session_search
     - todo

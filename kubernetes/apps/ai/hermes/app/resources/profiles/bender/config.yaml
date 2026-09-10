@@ -48,15 +48,18 @@ auxiliary:
     model: Qwen3.5-9B-MLX-4bit
 toolsets:
   - hermes-cli
+  - kanban
 platform_toolsets:
   cli:
     - clarify
     - file
+    - kanban
     - terminal
     - todo
   buzz:
     - clarify
     - file
+    - kanban
     - terminal
     - todo
 agent:
