@@ -67,6 +67,7 @@ auxiliary:
     timeout: 600
 toolsets:
   - hermes-cli
+  - kanban
 platform_toolsets:
   cli:
     - browser
