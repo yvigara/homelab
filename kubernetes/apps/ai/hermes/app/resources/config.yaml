@@ -46,12 +46,6 @@ auxiliary:
   compression:
     provider: custom:k8s-omlx
     model: gemma-4-e4b-it-qat-OptiQ-4bit
-  web_extract:
-    provider: custom:k8s-omlx
-    model: gemma-4-e4b-it-qat-OptiQ-4bit
-  session_search:
-    provider: custom:k8s-omlx
-    model: Qwen3.5-9B-MLX-4bit
   vision:
     provider: custom:k8s-omlx
     model: gemma-4-e4b-it-qat-OptiQ-4bit
@@ -140,7 +134,7 @@ skills:
     - touchdesigner-mcp
     - yuanbao
 agent:
-  max_turns: 90
+  max_turns: 180
   gateway_timeout: 1800
   restart_drain_timeout: 180
   api_max_retries: 3
@@ -151,7 +145,6 @@ agent:
     - spotify
     - computer_use
     - tts
-    - stt
 browser:
   cloud_provider: camofox
   camofox:
@@ -183,7 +176,6 @@ memory:
   memory_char_limit: 2200
   user_char_limit: 1375
   provider: memini
-  flush_min_turns: 6
   nudge_interval: 10
 security:
   allow_private_urls: false
@@ -194,7 +186,7 @@ streaming:
   enabled: false
 approvals:
   mode: smart
-  timeout: 60
+  timeout: 600
   cron_mode: deny
 mcp_servers:
   linkedin:
@@ -246,6 +238,8 @@ kanban:
   default_assignee: leela
 web:
   search_backend: searxng
+stt:
+  enabled: false
 slack:
   reaction_triggers: true
 _config_version: 39
