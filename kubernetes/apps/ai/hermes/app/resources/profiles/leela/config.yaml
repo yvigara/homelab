@@ -65,6 +65,14 @@ platform_toolsets:
     - session_search
     - todo
     - web
+  slack:
+    - clarify
+    - file
+    - kanban
+    - memory
+    - session_search
+    - todo
+    - web
 agent:
   max_turns: 90
   reasoning_effort: medium
@@ -124,6 +132,23 @@ display:
     buzz:
       interim_assistant_messages: false
       tool_progress: 'off'
+    slack:
+      interim_assistant_messages: false
+      tool_progress: 'off'
+# Engagement gating for the Slack platform. The user allowlist is not here:
+# SLACK_ALLOWED_USERS comes from this profile's own .env, since process env
+# outranks config and a value in both would leave one in git that never applies.
+#
+# Leela is the only Slack profile with memory enabled, so a channel it is
+# invited to becomes a memory source. Mention gating is what keeps the rest of
+# the channel out of hermes/leela.
+slack:
+  require_mention: true
+  strict_mention: true
+  thread_require_mention: true
+  ignore_other_user_mentions: true
+  reaction_triggers: false
+  free_response_channels: []
 gateway:
   message_timestamps:
     enabled: true
@@ -135,4 +160,18 @@ gateway:
         require_mention: true
         poll_interval: 4
         allow_all_users: false
+    # Socket Mode - outbound WebSocket only, so no route and no API server port.
+    # The bot and app tokens are this profile's own; Hermes locks a bot token to
+    # one agent and refuses a second gateway claiming it, so Leela needs a
+    # Slack app of its own rather than the default agent's.
+    slack:
+      enabled: true
+      reply_to_mode: first
+      typing_status_text: "looking..."
+      extra:
+        reply_in_thread: true
+        reply_broadcast: false
+        unfurl_links: false
+        unfurl_media: false
+        allow_bots: none
 _config_version: 39

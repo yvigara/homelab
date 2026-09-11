@@ -329,22 +329,23 @@ Each profile also declares `platform_toolsets.buzz` identical to its
 `platform_toolsets.cli`. Without it a Buzz session falls back to Hermes'
 default toolset rather than the one the profile was given.
 
-### Slack, on Farnsworth and Bender
+### Slack, on Farnsworth, Bender and Leela
 
-Buzz reaches every profile; Slack reaches two. Farnsworth is the front door —
-Slack is where a request arrives to be routed — and Bender is the one whose
-output you want to watch arrive, since a dispatch into Claude Code runs long.
-The other nine stay Buzz-only.
+Buzz reaches every profile; Slack reaches three. Farnsworth is the front door —
+Slack is where a request arrives to be routed. Bender is the one whose output
+you want to watch arrive, since a dispatch into Claude Code runs long. Leela is
+the one you reach from a phone at the times you actually reach it: personal
+admin does not wait for a terminal. The other eight stay Buzz-only.
 
 Slack is not another Buzz. One bot token belongs to exactly one agent: Hermes
 locks it on first claim and refuses the second gateway that presents it, the
 same constraint that keeps the default agent's tokens off every profile. So
-this is **two Slack apps**, each with its own `xoxb-` bot token and `xapp-`
-app-level token, not one app shared by two agents.
+this is **three Slack apps**, each with its own `xoxb-` bot token and `xapp-`
+app-level token, not one app shared by three agents.
 
 The transport is Socket Mode — an outbound WebSocket from the pod. Nothing is
-exposed inbound, so neither profile gains a route, a container port or an
-`API_SERVER_PORT`; both keep `API_SERVER_ENABLED="false"`.
+exposed inbound, so no profile gains a route, a container port or an
+`API_SERVER_PORT`; all three keep `API_SERVER_ENABLED="false"`.
 
 Each profile's config carries four Slack-shaped pieces, and all four are
 load-bearing:
@@ -353,29 +354,48 @@ load-bearing:
 | --- | --- |
 | `platform_toolsets.slack` | The toolset a Slack session gets. Without it the session silently falls back to Hermes' default toolset rather than the profile's — the same trap as `buzz`. |
 | `gateway.platforms.slack` | Enables the gateway and sets threading, unfurling and `allow_bots: none`. |
-| `slack:` (top level) | Mention gating. Bender sets `strict_mention` and `thread_require_mention`, Farnsworth does not. |
+| `slack:` (top level) | Mention gating. Bender and Leela add `strict_mention` and `thread_require_mention`; Farnsworth does not, since routing a request is what it is for. |
 | `display.platforms.slack` | Bender alone sets `interim_assistant_messages: true` — its terminal timeout is 1800s, and half an hour of silence reads as a dead bot. |
 
-`SLACK_ALLOWED_USERS` is deliberately **not** in either `config.yaml`. Process
-env outranks config, so listing the allowlist in both would leave a value in git
-that never takes effect; it comes from the profile's own `.env` instead, exactly
-as `BUZZ_ALLOWED_USERS` does. It is the real gate — channel membership is not,
-since the bot has to be invited to a channel before it hears anything there.
+Bender and Leela are strict for different reasons. Bender holds the `terminal`
+toolset, so the gate is about what a stray message can *start*. Leela is the
+only Slack profile with `memory_enabled: true`, so the gate is about what a
+channel can *deposit* — every exchange it takes part in is a write to
+`hermes/leela`, and mention gating is what keeps the rest of the channel out of
+that namespace. The tenancy rule in `SOUL.md` still applies underneath:
+brokered Operata data is in-context only and never written to memory, and no
+configuration here can enforce that.
 
-Four new Bitwarden keys, alongside the Buzz ones:
+`SLACK_ALLOWED_USERS` is deliberately **not** in any of the three
+`config.yaml`s. Process env outranks config, so listing the allowlist in both
+would leave a value in git that never takes effect; it comes from the profile's
+own `.env` instead, exactly as `BUZZ_ALLOWED_USERS` does. It is the real gate —
+channel membership is not, since the bot has to be invited to a channel before
+it hears anything there.
+
+Six new Bitwarden keys, alongside the Buzz ones:
 
 ```
 HERMES_SLACK_BOT_TOKEN_FARNSWORTH   # xoxb-...
 HERMES_SLACK_APP_TOKEN_FARNSWORTH   # xapp-..., Socket Mode
 HERMES_SLACK_BOT_TOKEN_BENDER
 HERMES_SLACK_APP_TOKEN_BENDER
+HERMES_SLACK_BOT_TOKEN_LEELA
+HERMES_SLACK_APP_TOKEN_LEELA
 ```
 
 `SLACK_ALLOWED_USERS` is not among them — the existing key already holds the
-owner's member ID, and it is the same person in every app, so both fragments
-reuse it rather than duplicating it per profile. As with the Buzz keys, ESO
-fails the whole fetch on a missing key: all four have to exist in Bitwarden
-before `hermes-profile-env` will reconcile again.
+owner's member ID, and it is the same person in every app, so all three
+fragments reuse it rather than duplicating it per profile. As with the Buzz
+keys, ESO fails the whole fetch on a missing key: all six have to exist in
+Bitwarden before `hermes-profile-env` will reconcile again.
+
+One thing to settle before installing: **which workspace**. The tenancy split
+here is Operata, Celestio and Life, and Leela is the Life profile holding
+health and household detail. Installing its app into the employer workspace
+would put that data through Operata's Slack — where Operata, not you, holds the
+export and retention controls. Leela belongs in a personal or Celestio
+workspace. Farnsworth and Bender are less loaded but follow the same logic.
 
 #### Creating the two Slack apps
 
@@ -395,9 +415,15 @@ $ kubectl -n ai exec deploy/hermes -c app -- \
       --name Bender \
       --description "Hermes forge - dispatches into Claude Code" \
     > bender-slack-manifest.json
+
+$ kubectl -n ai exec deploy/hermes -c app -- \
+    hermes -p leela slack manifest --agent-view \
+      --name Leela \
+      --description "Hermes life - health, household and personal admin" \
+    > leela-slack-manifest.json
 ```
 
-Then, for each of the two, at <https://api.slack.com/apps>:
+Then, for each of the three, at <https://api.slack.com/apps>:
 
 1. **Create New App → From an app manifest**, pick the workspace, paste the JSON.
 2. **Settings → Socket Mode**: generate an app-level token with
@@ -409,12 +435,12 @@ Then, for each of the two, at <https://api.slack.com/apps>:
 5. Invite the bot to the channels it should hear — `/invite @Farnsworth`. It
    never joins a channel on its own.
 
-Put the four values in Bitwarden, let Flux reconcile, and restart the two
+Put the six values in Bitwarden, let Flux reconcile, and restart the three
 gateways so they pick up the rewritten `.env`:
 
 ```console
 $ kubectl -n ai exec deploy/hermes -c app -- sh -c \
-    'for p in farnsworth bender; do hermes -p "$p" gateway restart; done'
+    'for p in farnsworth bender leela; do hermes -p "$p" gateway restart; done'
 ```
 
 Rerun `slack manifest` and re-paste after a Hermes upgrade adds slash commands;
@@ -508,10 +534,10 @@ out here rather than stubbed with manifests that would fail to reconcile.
   auto-starts it on subsequent restarts. Until then Farnsworth routes
   interactively but runs nothing on a schedule.
 - **The `yann-article-writer` skill**, per the section above.
-- **The two Slack apps.** Farnsworth's and Bender's `config.yaml` enable the
-  Slack gateway and `externalsecret.yaml` expects four token keys, but the apps
-  themselves are created by hand at api.slack.com and the tokens put in
-  Bitwarden — see the Slack section above. Until all four keys exist ESO fails
+- **The three Slack apps.** Farnsworth's, Bender's and Leela's `config.yaml`
+  enable the Slack gateway and `externalsecret.yaml` expects six token keys, but
+  the apps themselves are created by hand at api.slack.com and the tokens put in
+  Bitwarden — see the Slack section above. Until all six keys exist ESO fails
   the whole `hermes-profile-env` fetch and leaves the last good Secret in place,
   so the pod keeps running on the previous `.env` rather than breaking.
 - **Relay membership.** `requireRelayMembership` is on, so each agent's pubkey
