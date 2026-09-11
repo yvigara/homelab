@@ -62,6 +62,12 @@ platform_toolsets:
     - kanban
     - terminal
     - todo
+  slack:
+    - clarify
+    - file
+    - kanban
+    - terminal
+    - todo
 agent:
   max_turns: 40
   tool_use_enforcement: auto
@@ -94,6 +100,11 @@ display:
     buzz:
       interim_assistant_messages: false
       tool_progress: "off"
+    # Bender's terminal timeout is 1800s. A dispatch that runs that long in
+    # silence reads as a dead bot, so interim messages stay on here.
+    slack:
+      interim_assistant_messages: true
+      tool_progress: "off"
 plugins:
   enabled:
     - memini
@@ -119,6 +130,20 @@ mcp_servers:
     headers:
       Authorization: "${OBSIDIAN_AUTH_HEADER}"
 group_sessions_per_user: false
+# Engagement gating for the Slack platform. The user allowlist is not here:
+# SLACK_ALLOWED_USERS comes from this profile's own .env, since process env
+# outranks config and a value in both would leave one in git that never applies.
+#
+# Bender holds the terminal toolset, so every gate is at its strictest: a
+# mention is required in channels and in threads, and nothing another bot says
+# can start a dispatch.
+slack:
+  require_mention: true
+  strict_mention: true
+  thread_require_mention: true
+  ignore_other_user_mentions: true
+  reaction_triggers: false
+  free_response_channels: []
 gateway:
   message_timestamps:
     enabled: true
@@ -130,4 +155,18 @@ gateway:
         require_mention: true
         poll_interval: 4
         allow_all_users: false
+    # Socket Mode - outbound WebSocket only, so no route and no API server port.
+    # The bot and app tokens are this profile's own; Hermes locks a bot token to
+    # one agent and refuses a second gateway claiming it, so Bender needs a
+    # Slack app of its own rather than the default agent's.
+    slack:
+      enabled: true
+      reply_to_mode: first
+      typing_status_text: "on the forge..."
+      extra:
+        reply_in_thread: true
+        reply_broadcast: false
+        unfurl_links: false
+        unfurl_media: false
+        allow_bots: none
 _config_version: 39
