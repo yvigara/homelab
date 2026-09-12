@@ -19,13 +19,13 @@ install_mise() {
   # no-ops when $MISE_INSTALL_PATH is already at $MISE_VERSION
   curl -fsSL https://mise.run | sh
 
-  printf 'export PATH="%s/.local/bin:%s/.local/share/mise/shims:$PATH"\n' \
+  printf 'export PATH="%s/.local/bin:$PATH"\n' \
     "${DATA_DIR}" "${DATA_DIR}" >"${DATA_DIR}/.profile"
 
   # real activation for interactive `kubectl exec` shells
   touch "${DATA_DIR}/.bashrc"
-  grep -qF "${DATA_DIR}/.local/bin/mise activate bash" "${DATA_DIR}/.bashrc" \
-    || echo "eval \"\$(${DATA_DIR}/.local/bin/mise activate bash)\"" >>"${DATA_DIR}/.bashrc"
+  grep -qF "${DATA_DIR}/.local/bin/mise activate bash" "${DATA_DIR}/.bashrc" ||
+    echo "eval \"\$(${DATA_DIR}/.local/bin/mise activate bash)\"" >>"${DATA_DIR}/.bashrc"
 
   chown -R hermes:hermes "${DATA_DIR}"/.bashrc "${DATA_DIR}"/.config \
     "${DATA_DIR}"/.local/bin/mise "${DATA_DIR}"/.local/share/mise \
