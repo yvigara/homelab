@@ -55,6 +55,8 @@ platform_toolsets:
     - kanban
     - memory
     - session_search
+    - skills
+    - terminal
     - web
   buzz:
     - clarify
@@ -62,6 +64,8 @@ platform_toolsets:
     - kanban
     - memory
     - session_search
+    - skills
+    - terminal
     - web
 agent:
   max_turns: 90

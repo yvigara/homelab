@@ -55,6 +55,8 @@ platform_toolsets:
     - kanban
     - memory
     - session_search
+    - skills
+    - terminal
     - todo
   buzz:
     - clarify
@@ -62,6 +64,8 @@ platform_toolsets:
     - kanban
     - memory
     - session_search
+    - skills
+    - terminal
     - todo
 agent:
   max_turns: 90

@@ -56,6 +56,8 @@ platform_toolsets:
     - file
     - kanban
     - session_search
+    - skills
+    - terminal
     - todo
   buzz:
     - clarify
@@ -64,6 +66,8 @@ platform_toolsets:
     - file
     - kanban
     - session_search
+    - skills
+    - terminal
     - todo
   slack:
     - clarify
@@ -72,6 +76,8 @@ platform_toolsets:
     - file
     - kanban
     - session_search
+    - skills
+    - terminal
     - todo
 agent:
   max_turns: 40

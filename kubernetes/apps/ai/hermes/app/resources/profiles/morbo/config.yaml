@@ -53,11 +53,15 @@ platform_toolsets:
     - clarify
     - file
     - kanban
+    - skills
+    - terminal
     - web
   buzz:
     - clarify
     - file
     - kanban
+    - skills
+    - terminal
     - web
 agent:
   max_turns: 60

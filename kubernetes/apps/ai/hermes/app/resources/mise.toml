@@ -1,3 +1,24 @@
+[settings]
+env_cache = true
+
+[settings.github]
+gh_cli_tokens = true
+oauth_client_id = "Iv23liX49yGQdh8FIgC4"
+oauth_export_env = ""
+
+[settings.npm]
+package_manager = "aube"
+
+[settings.node]
+compile = false
+
+[settings.python]
+compile = false
+uv_venv_auto = "create|source"
+
+[settings.ruby]
+compile = false
+
 [tools]
 aube = "2.2.12"
 fd = "10.5.0"
@@ -5,12 +26,14 @@ gh = "2.100.0"
 hk = "1.58.1"
 jq = "1.8.2"
 rg = "15.2.0"
+"npm:defuddle" = "0.19.3"
+"npm:@firecrawl/anydoc" = "0.2.4"
 "github:bdellegrazie/git-credential-github-app" = "0.4.5"
 rust = "latest"
 herdr = "0.9.0"
-claude = "2.1.268"
+claude = "2.1.269"
 "npm:@zvec/zvec-grep" = "0.2.2"
 
 [tools."cargo:https://github.com/block/buzz"]
-version = "tag:desktop-v0.5.22"
+version = "tag:desktop-v0.5.23"
 crate = "buzz-cli"

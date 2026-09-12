@@ -64,6 +64,7 @@ platform_toolsets:
     - memory
     - session_search
     - skills
+    - terminal
     - todo
     - web
   buzz:
@@ -73,6 +74,7 @@ platform_toolsets:
     - memory
     - session_search
     - skills
+    - terminal
     - todo
     - web
 agent:

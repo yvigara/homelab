@@ -54,18 +54,21 @@ platform_toolsets:
     - clarify
     - file
     - kanban
+    - skills
     - terminal
     - todo
   buzz:
     - clarify
     - file
     - kanban
+    - skills
     - terminal
     - todo
   slack:
     - clarify
     - file
     - kanban
+    - skills
     - terminal
     - todo
 agent:
