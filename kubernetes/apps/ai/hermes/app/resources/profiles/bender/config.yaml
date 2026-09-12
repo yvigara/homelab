@@ -128,7 +128,7 @@ approvals:
   cron_mode: deny
 mcp_servers:
   zvec-grep:
-    command: /opt/data/.local/share/mise/installs/npm-zvec-zvec-grep/0.2.2/node_modules/.bin/zg
+    command: zg
     args: [server, --stdio]
   obsidian:
     url: http://${OLLAMA_SRV1_IP}:27124/mcp
