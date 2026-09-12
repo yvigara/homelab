@@ -93,6 +93,8 @@ terminal:
   cwd: /opt/data/profiles/farnsworth/workspace
   timeout: 180
   persistent_shell: true
+  shell_init_files:
+    - /opt/data/.bashrc
 compression:
   enabled: true
   threshold: 0.5
