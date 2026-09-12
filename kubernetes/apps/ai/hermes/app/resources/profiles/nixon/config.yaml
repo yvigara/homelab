@@ -1,12 +1,21 @@
 # Nixon - Operata tenant, broker.
 model:
-  default: Qwen3.5-9B-MLX-4bit
-  provider: custom:k8s-omlx
+  default: deepseek-v4.1-flash:cloud
+  provider: custom:k8s-ollamacloud
 providers:
+  k8s-ollamacloud:
+    api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-cloud
+    name: k8s-ollamacloud
+    api_key: ${HERMES_OMLX_KEY}
+    default_model: deepseek-v4.1-flash:cloud
+    models:
+      deepseek-v4.1-flash:cloud:
+      deepseek-v4-flash:cloud:
+      glm-5.3-flash:cloud:
   k8s-omlx:
     api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
     name: k8s-omlx
-    api_key: "${HERMES_OMLX_KEY}"
+    api_key: ${HERMES_OMLX_KEY}
     models:
       Qwen3.5-9B-MLX-4bit:
         context_length: 77824
@@ -21,13 +30,6 @@ providers:
       Ornith-1.5-9B-MLX-4bit:
         context_length: 86016
     default_model: Qwen3.5-9B-MLX-4bit
-  k8s-ollama-local:
-    api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-local
-    name: k8s-ollama-local
-  k8s-lfm2.5-2.6b:
-    api: http://lfm2-5-2-6b.ai.svc.cluster.local:8080
-    name: k8s-lfm2.5-2.6b
-    default_model: lfm2.5-2.6b
 model_aliases:
   qwen35:
     model: Qwen3.5-9B-MLX-4bit
@@ -35,6 +37,10 @@ model_aliases:
   gemma4-e4b:
     model: gemma-4-e4b-it-qat-OptiQ-4bit
     provider: custom:k8s-omlx
+model_overrides:
+  custom:k8s-ollamacloud:
+    glm-5.3-flash:cloud:
+      supports_vision: true
 auxiliary:
   compression:
     provider: custom:k8s-omlx
