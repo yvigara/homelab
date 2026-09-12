@@ -67,6 +67,10 @@ platform_toolsets:
     - skills
     - terminal
     - web
+skills:
+  create_dir: /opt/data/shared-skills
+  external_dirs:
+    - /opt/data/shared-skills
 agent:
   max_turns: 90
   reasoning_effort: medium
