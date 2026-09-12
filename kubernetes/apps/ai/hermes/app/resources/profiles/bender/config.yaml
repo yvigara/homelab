@@ -92,6 +92,7 @@ terminal:
   persistent_shell: true
   shell_init_files:
     - /opt/data/.bashrc
+  home_mode: real
 compression:
   enabled: true
   threshold: 0.5
