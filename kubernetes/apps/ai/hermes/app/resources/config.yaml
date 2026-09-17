@@ -142,12 +142,6 @@ agent:
   restart_drain_timeout: 180
   api_max_retries: 3
   tool_use_enforcement: auto
-  # The custom-provider profile sends this as a top-level `reasoning_effort` on
-  # every request, so it is live on the ollama-cloud route (which accepts
-  # none/low/medium/high/max — never `minimal`, that 400s). `low` because the
-  # work these agents do is mostly tool-driven, where medium buys thinking
-  # tokens rather than better tool calls. Profiles that write or analyse
-  # (conrad, fry, morbo, wernstrom) keep `high` in their own config.
   reasoning_effort: low
   disabled_toolsets:
     - homeassistant
@@ -171,9 +165,6 @@ compression:
   threshold: 0.5
   target_ratio: 0.2
   protect_last_n: 20
-  # Keep the last 3 real user turns verbatim through a compaction: with 1, bulky
-  # tool output can push every user turn but the newest out of the tail, which is
-  # what makes a compacted agent re-ask and restate.
   min_tail_user_messages: 3
 display:
   platforms:
