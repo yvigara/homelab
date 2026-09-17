@@ -230,6 +230,14 @@ gateway:
         allow_all_users: false
         allowed_users:
           - ${BUZZ_OWNER_PUBKEY}
+    slack:
+      extra:
+        unfurl_links: false
+        unfurl_media: false
+        allow_bots: mentions
+        markdown_blocks: true
+        rich_blocks: true
+        feedback_buttons: true
 dashboard:
   oauth:
     provider: self-hosted

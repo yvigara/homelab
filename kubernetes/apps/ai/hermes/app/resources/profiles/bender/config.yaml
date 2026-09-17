@@ -184,9 +184,8 @@ gateway:
       reply_to_mode: first
       typing_status_text: "on the forge..."
       extra:
-        reply_in_thread: true
-        reply_broadcast: false
-        unfurl_links: false
-        unfurl_media: false
-        allow_bots: none
+        allow_bots: mentions
+        markdown_blocks: true
+        rich_blocks: true
+        feedback_buttons: true
 _config_version: 39

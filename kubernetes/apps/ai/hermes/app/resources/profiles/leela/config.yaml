@@ -148,10 +148,10 @@ display:
   platforms:
     buzz:
       interim_assistant_messages: false
-      tool_progress: 'off'
+      tool_progress: "off"
     slack:
       interim_assistant_messages: false
-      tool_progress: 'off'
+      tool_progress: "off"
 # Engagement gating for the Slack platform. The user allowlist is not here:
 # SLACK_ALLOWED_USERS comes from this profile's own .env, since process env
 # outranks config and a value in both would leave one in git that never applies.
@@ -186,9 +186,8 @@ gateway:
       reply_to_mode: first
       typing_status_text: "looking..."
       extra:
-        reply_in_thread: true
-        reply_broadcast: false
-        unfurl_links: false
-        unfurl_media: false
-        allow_bots: none
+        allow_bots: mentions
+        markdown_blocks: true
+        rich_blocks: true
+        feedback_buttons: true
 _config_version: 39
