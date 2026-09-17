@@ -191,4 +191,13 @@ gateway:
         unfurl_links: false
         unfurl_media: false
         allow_bots: none
+        # Render replies from RAW markdown via Slack's native `markdown` block, so
+        # the periodic-notes digest arrives as a real table with its obsidian://
+        # deep-links intact instead of a fenced monospace block. Send-side only —
+        # no Slack app reinstall, and the mrkdwn `text` fallback still ships
+        # alongside for notifications/screen readers.
+        # markdown_blocks is tried first (12k cumulative cap); rich_blocks is the
+        # over-cap fallback and renders tables through the native `table` block.
+        markdown_blocks: true
+        rich_blocks: true
 _config_version: 39
