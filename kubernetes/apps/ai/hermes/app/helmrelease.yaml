@@ -236,14 +236,6 @@ spec:
           hermes:
             init:
               - path: /run/config/profiles/conrad
-      profile-farnsworth:
-        type: configMap
-        name: hermes-profile-farnsworth
-        defaultMode: 0644
-        advancedMounts:
-          hermes:
-            init:
-              - path: /run/config/profiles/farnsworth
       profile-fry:
         type: configMap
         name: hermes-profile-fry

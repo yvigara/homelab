@@ -29,10 +29,6 @@ configMapGenerator:
     files:
       - config.yaml=./resources/profiles/conrad/config.yaml
       - profile.env=./resources/profiles/conrad/profile.env
-  - name: hermes-profile-farnsworth
-    files:
-      - config.yaml=./resources/profiles/farnsworth/config.yaml
-      - profile.env=./resources/profiles/farnsworth/profile.env
   - name: hermes-profile-fry
     files:
       - config.yaml=./resources/profiles/fry/config.yaml
