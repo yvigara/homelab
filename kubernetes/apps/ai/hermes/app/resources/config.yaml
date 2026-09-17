@@ -169,7 +169,7 @@ display:
   platforms:
     buzz:
       interim_assistant_messages: false
-      tool_progress: 'off'
+      tool_progress: "off"
 plugins:
   enabled:
     - memini
@@ -207,7 +207,7 @@ mcp_servers:
     command: npx
     args:
       - -y
-      - '@xdevplatform/xurl'
+      - "@xdevplatform/xurl"
       - mcp
       - https://api.x.com/mcp
     headers:
@@ -239,7 +239,7 @@ dashboard:
     lane_by_profile: true
     render_markdown: true
 kanban:
-  orchestrator_profile: farnsworth
+  orchestrator_profile: default
   default_assignee: leela
 web:
   search_backend: searxng
