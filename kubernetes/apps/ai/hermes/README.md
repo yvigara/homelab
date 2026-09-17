@@ -139,6 +139,54 @@ belongs in git:
 optional: a profile whose key is not in Bitwarden yet is synced without it and
 logged as `no-secret` rather than failing the pod.
 
+### Turn latency and thinking effort
+
+`agent.reasoning_effort` is live on this route, which is worth stating because it
+is easy to assume otherwise: Hermes only sends the `reasoning` extra_body for
+providers it recognises by hostname (OpenRouter, `ollama.com`, Nous Portal), and
+`agentgateway-proxy` is none of those. What carries the setting instead is the
+*provider profile* — a `custom:` provider resolves to the bundled `custom`
+profile, which puts a top-level `reasoning_effort` on every request whenever an
+effort is configured, with no hostname gate. So the value in `config.yaml`
+reaches Ollama Cloud verbatim.
+
+Ollama Cloud's `/v1` accepts `none`, `low`, `medium`, `high` and `max`. It rejects
+`minimal` with an HTTP 400, so that one level is not available here even though
+Hermes' own ladder has it.
+
+The tool-driven profiles run at `low`. On a flash model doing mostly
+read-a-file/call-a-tool work, `medium` spends its extra budget on thinking tokens
+before the first tool call rather than on better tool calls, which is felt as a
+slow agent on a task that was never hard. The profiles whose output *is* the
+work — conrad, fry, morbo, wernstrom — stay at `high`.
+
+`reasoning_effort: none` (or `false`, which Hermes reads the same way) turns
+thinking off outright and is the next step if `low` still feels heavy. It is not
+the default here because DeepSeek's thinking mode also governs the
+`reasoning_content` echo Hermes pads onto replayed tool calls, so it is a change
+worth making one profile at a time.
+
+`compression.min_tail_user_messages: 3` is the other half of the same complaint.
+The compaction tail is a token budget, and bulky tool output can fill it to the
+point where only the newest user turn survives verbatim — an agent that then
+re-asks what it was already told reads as an agent repeating itself. Three real
+user turns are pinned through a compaction regardless of the budget.
+
+Two things this repo cannot tune, for the next person who goes looking:
+
+- **`SOUL.md` replaces the built-in agent identity**, it does not extend it. The
+  shipped identity carries the brevity clause — match the reply to the weight of
+  the ask, no restating the request back, no re-summarising what was already
+  said. A profile with its own `SOUL.md` has dropped that clause unless it
+  restates it. `SOUL.md` is managed outside this repo, so a restating agent is
+  checked there first, not here.
+- **`context_length` is pinned for the `k8s-omlx` models and not for the
+  ollama-cloud ones**, which leaves those to auto-detection: the proxy's
+  `/models`, then models.dev, then a 128K fallback. A window detected too small
+  compacts a session that had room to spare. `compression.threshold` interacts
+  with this — Hermes floors it at 0.75 for any window under 512K, so the `0.5`
+  in these files is a request, not the effective value.
+
 ## The agent system
 
 Eleven profiles. The architecture is deliberately thin, and the constraints

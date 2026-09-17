@@ -142,7 +142,7 @@ agent:
   restart_drain_timeout: 180
   api_max_retries: 3
   tool_use_enforcement: auto
-  reasoning_effort: medium
+  reasoning_effort: low
   disabled_toolsets:
     - homeassistant
     - spotify
@@ -165,6 +165,7 @@ compression:
   threshold: 0.5
   target_ratio: 0.2
   protect_last_n: 20
+  min_tail_user_messages: 3
 display:
   platforms:
     buzz:

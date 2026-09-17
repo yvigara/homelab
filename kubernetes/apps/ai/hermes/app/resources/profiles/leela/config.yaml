@@ -90,7 +90,7 @@ skills:
     - /opt/data/shared-skills
 agent:
   max_turns: 90
-  reasoning_effort: medium
+  reasoning_effort: low
   tool_use_enforcement: auto
   disabled_toolsets:
     - homeassistant
@@ -117,6 +117,7 @@ compression:
   threshold: 0.5
   target_ratio: 0.2
   protect_last_n: 20
+  min_tail_user_messages: 3
 memory:
   memory_enabled: true
   user_profile_enabled: false
