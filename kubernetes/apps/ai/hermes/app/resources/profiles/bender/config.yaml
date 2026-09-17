@@ -185,6 +185,8 @@ gateway:
       typing_status_text: "on the forge..."
       extra:
         allow_bots: mentions
+        unfurl_links: false
+        unfurl_media: false
         markdown_blocks: true
         rich_blocks: true
         feedback_buttons: true
