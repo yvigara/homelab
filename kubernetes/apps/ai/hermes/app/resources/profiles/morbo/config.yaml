@@ -101,6 +101,10 @@ compression:
   threshold: 0.5
   target_ratio: 0.2
   protect_last_n: 20
+  # Keep the last 3 real user turns verbatim through a compaction: with 1, bulky
+  # tool output can push every user turn but the newest out of the tail, which is
+  # what makes a compacted agent re-ask and restate.
+  min_tail_user_messages: 3
 memory:
   memory_enabled: false
 web:
