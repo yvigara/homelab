@@ -194,5 +194,4 @@ gateway:
         unfurl_media: false
         markdown_blocks: true
         rich_blocks: true
-        feedback_buttons: true
 _config_version: 39
