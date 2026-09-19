@@ -197,6 +197,8 @@ approvals:
 mcp_servers:
   linkedin:
     url: http://${OLLAMA_SRV1_IP}:9080/mcp
+    tools:
+      exclude: ["close_session"]
   jira:
     url: https://mcp.atlassian.com/v1/mcp/authv2
     auth: oauth

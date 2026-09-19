@@ -69,6 +69,13 @@ platform_toolsets:
     - skills
     - terminal
     - web
+  slack:
+    - clarify
+    - file
+    - kanban
+    - skills
+    - terminal
+    - web
 skills:
   external_dirs:
     - /opt/data/shared-skills
@@ -127,6 +134,22 @@ display:
     buzz:
       interim_assistant_messages: false
       tool_progress: 'off'
+    slack:
+      interim_assistant_messages: false
+      tool_progress: 'off'
+# Engagement gating for the Slack platform. The user allowlist is not here:
+# SLACK_ALLOWED_USERS comes from this profile's own .env, since process env
+# outranks config and a value in both would leave one in git that never applies.
+#
+# Morbo holds no memory, but the gate still keeps stray channel traffic from
+# starting an editorial pass.
+slack:
+  require_mention: true
+  strict_mention: true
+  thread_require_mention: true
+  ignore_other_user_mentions: true
+  reaction_triggers: false
+  free_response_channels: []
 gateway:
   message_timestamps:
     enabled: true
@@ -138,4 +161,19 @@ gateway:
         require_mention: true
         poll_interval: 4
         allow_all_users: false
+    # Socket Mode - outbound WebSocket only, so no route and no API server port.
+    # The bot and app tokens are this profile's own; Hermes locks a bot token to
+    # one agent and refuses a second gateway claiming it, so Morbo needs a
+    # Slack app of its own rather than the default agent's.
+    slack:
+      enabled: true
+      reply_to_mode: first
+      typing_status_text: "reading it again..."
+      extra:
+        allow_bots: mentions
+        unfurl_links: false
+        unfurl_media: false
+        markdown_blocks: true
+        rich_blocks: true
+        feedback_buttons: true
 _config_version: 39
