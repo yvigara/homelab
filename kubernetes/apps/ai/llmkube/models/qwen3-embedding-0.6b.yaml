@@ -16,7 +16,7 @@ metadata:
 spec:
   modelRef: qwen3-embedding-0.6b
   runtime: llamacpp
-  image: ghcr.io/ggml-org/llama.cpp:server-b11011@sha256:b97738dc7c62a5eefbfc2f910ff727cc2bcc7dbe9e613d95532fcc32f9374025
+  image: ghcr.io/ggml-org/llama.cpp:server-b11058@sha256:7149802e349d69ac0bc6bf05ff210a13f6ba83cc15af6f4be5d38ce7ef825abb
   replicas: 1
   podSecurityContext:
     # 102 = curlimages/curl curl_group GID; makes the /models emptyDir
