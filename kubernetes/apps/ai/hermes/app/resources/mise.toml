@@ -1,5 +1,8 @@
 [settings]
+experimental = true
+locked_scopes = ["project"]
 env_cache = true
+env_conf_d = true
 
 [settings.github]
 gh_cli_tokens = true
