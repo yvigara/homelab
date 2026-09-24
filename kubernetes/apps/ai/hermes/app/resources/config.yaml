@@ -256,5 +256,7 @@ web:
 stt:
   enabled: false
 slack:
+  strict_mention: false
+  thread_require_mention: false
   reaction_triggers: true
 _config_version: 39
