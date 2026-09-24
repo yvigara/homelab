@@ -16,7 +16,7 @@ metadata:
 spec:
   modelRef: lfm2.5-2.6b
   runtime: llamacpp
-  image: ghcr.io/ggml-org/llama.cpp:server-b11096@sha256:82b5129742c04e12c4b710ae1908fd951f6b227339d45f0aa71f1165df353f70
+  image: ghcr.io/ggml-org/llama.cpp:server-b11151@sha256:fffcc1af1105bafc713a47b6680fb7cf5856ed43ea2e9e8bca5a62bbd6365edf
   replicas: 1
   podSecurityContext:
     # 102 = curlimages/curl curl_group GID; makes the /models emptyDir
