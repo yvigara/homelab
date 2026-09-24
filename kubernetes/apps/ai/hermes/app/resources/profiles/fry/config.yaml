@@ -164,8 +164,8 @@ display:
 # source. Mention gating is what keeps the rest of the channel out of hermes/fry.
 slack:
   require_mention: true
-  strict_mention: true
-  thread_require_mention: true
+  strict_mention: false
+  thread_require_mention: false
   ignore_other_user_mentions: true
   reaction_triggers: false
   free_response_channels: []
