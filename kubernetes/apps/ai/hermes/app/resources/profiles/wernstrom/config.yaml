@@ -11,7 +11,6 @@ providers:
     models:
       deepseek-v4.1-flash:cloud:
         context_length: 1048576
-      deepseek-v4-flash:cloud:
       glm-5.3-flash:cloud:
   k8s-omlx:
     api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
