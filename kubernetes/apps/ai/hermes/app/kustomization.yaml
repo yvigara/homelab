@@ -14,6 +14,15 @@ configMapGenerator:
       - init.sh=./resources/init.sh
       - git-init.sh=./resources/git-init.sh
       - profiles-init.sh=./resources/profiles-init.sh
+  # Versioned home for the config-drift tripwire. The pod runs these from
+  # /opt/data/scripts/drift (on the volume, and the cron job points there), but the
+  # AUTHORITATIVE copy lives here so the check itself is reviewable and cannot be
+  # lost with the volume. Keep the two in sync when changing them.
+  - name: hermes-drift-scripts
+    files:
+      - config-drift.py=./resources/drift/config-drift.py
+      - config-drift-watch.py=./resources/drift/config-drift-watch.py
+      - config-drift-check.sh=./resources/drift/config-drift-check.sh
   # One ConfigMap per profile, mounted as a whole directory. SOUL.md is managed
   # outside this repository; the secret half of each .env comes from the
   # hermes-profile-env Secret.
