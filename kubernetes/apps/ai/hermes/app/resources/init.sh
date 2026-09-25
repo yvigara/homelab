@@ -6,9 +6,39 @@ set -euo pipefail
 readonly CONFIG_DIR=/run/config
 readonly SECRET_DIR=/run/secrets/hermes-profiles
 readonly DATA_DIR=/opt/data
+# Where the pre-overwrite copies go. On the persistent volume, so a snapshot survives
+# the restart that produced it and the previous state stays recoverable afterwards.
+readonly BACKUP_DIR="${DATA_DIR}/backups/config"
+
+# Snapshot whatever is currently on the volume before this boot overwrites it.
+# Rationale: install_config/profiles-init.sh are whole-file installs, so any key an
+# agent added by hand (or any hand-edit at all) is destroyed with no record. Keeping
+# the pre-boot copy is what makes "this reverted, here is what it was" answerable.
+backup_config() {
+  local src=$1 label=$2
+  [[ -f ${src} ]] || return 0
+  install -d -m 0750 -o hermes -g hermes "${BACKUP_DIR}"
+  local stamp
+  stamp=$(date -u +%Y%m%dT%H%M%SZ)
+  install -m 0640 -o hermes -g hermes "${src}" "${BACKUP_DIR}/${label}.pre-init.${stamp}"
+}
+
+# Prune so an unbounded number of restarts cannot fill the volume.
+# Keeps the newest N pre-init snapshots per label, newest first.
+prune_config_backups() {
+  local keep=${1:-20} label=$2
+  local -a snaps
+  mapfile -t snaps < <(ls -1t "${BACKUP_DIR}/${label}.pre-init."* 2>/dev/null || true)
+  local i
+  for ((i = keep; i < ${#snaps[@]}; i++)); do
+    rm -f -- "${snaps[i]}"
+  done
+}
 
 install_config() {
+  backup_config "${DATA_DIR}/config.yaml" default
   install -m 0644 -o hermes -g hermes "${CONFIG_DIR}/config.yaml" "${DATA_DIR}/config.yaml"
+  prune_config_backups 20 default
 }
 
 install_mise() {
