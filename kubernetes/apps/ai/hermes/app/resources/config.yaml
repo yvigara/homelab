@@ -176,6 +176,7 @@ plugins:
   enabled:
     - memini
     - buzz-platform
+    - kanban-card
 memory:
   memory_enabled: true
   user_profile_enabled: false
