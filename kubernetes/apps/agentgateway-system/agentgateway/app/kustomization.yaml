@@ -6,5 +6,6 @@ resources:
   - ./ocirepository.yaml
   - ./gateway.yaml
   - ./agparameters.yaml
+  - ./agpolicy-frontend.yaml
   - ./agproxy-int-svc.yaml
   - ./httproute-mcp.yaml
