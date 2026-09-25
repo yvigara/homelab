@@ -78,6 +78,16 @@ platform_toolsets:
     - terminal
     - todo
     - web
+  slack:
+    - clarify
+    - file
+    - kanban
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - web
 skills:
   external_dirs:
     - /opt/data/shared-skills
@@ -116,6 +126,9 @@ display:
     buzz:
       interim_assistant_messages: false
       tool_progress: "off"
+    slack:
+      interim_assistant_messages: false
+      tool_progress: "off"
 plugins:
   enabled:
     - memini
@@ -142,6 +155,19 @@ mcp_servers:
     url: http://${OLLAMA_SRV1_IP}:27124/mcp
     headers:
       Authorization: ${OBSIDIAN_AUTH_HEADER}
+# Engagement gating for the Slack platform. The user allowlist is not here:
+# SLACK_ALLOWED_USERS comes from this profile's own .env, since process env
+# outranks config and a value in both would leave one in git that never applies.
+#
+# Amy has memory enabled, so a channel it is invited to becomes a memory
+# source. Mention gating is what keeps the rest of the channel out of hermes/amy.
+slack:
+  require_mention: true
+  strict_mention: true
+  thread_require_mention: true
+  ignore_other_user_mentions: true
+  reaction_triggers: false
+  free_response_channels: []
 gateway:
   message_timestamps:
     enabled: true
@@ -153,6 +179,20 @@ gateway:
         require_mention: true
         poll_interval: 4
         allow_all_users: false
+    # Socket Mode - outbound WebSocket only, so no route and no API server port.
+    # The bot and app tokens are this profile's own; Hermes locks a bot token to
+    # one agent and refuses a second gateway claiming it, so Amy needs a
+    # Slack app of its own rather than the default agent's.
+    slack:
+      enabled: true
+      reply_to_mode: first
+      typing_status_text: "asking around..."
+      extra:
+        allow_bots: mentions
+        unfurl_links: false
+        unfurl_media: false
+        markdown_blocks: true
+        rich_blocks: true
 web:
   search_backend: searxng
 _config_version: 39
