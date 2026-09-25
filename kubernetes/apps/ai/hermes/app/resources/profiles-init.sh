@@ -10,6 +10,30 @@ set -euo pipefail
 
 readonly CONFIG_DIR=/run/config/profiles
 readonly SECRET_DIR=/run/secrets/hermes-profiles
+readonly BACKUP_DIR="${HERMES_HOME}/backups/config"
+
+# Snapshot the profile's live config before this boot overwrites it — the same record
+# init.sh keeps for the root config. Whole-file install means a hand-added key is
+# otherwise destroyed with no trace.
+backup_config() {
+  local src=$1 label=$2
+  [[ -f ${src} ]] || return 0
+  install -d -m 0750 -o hermes -g hermes "${BACKUP_DIR}"
+  local stamp
+  stamp=$(date -u +%Y%m%dT%H%M%SZ)
+  install -m 0640 -o hermes -g hermes "${src}" "${BACKUP_DIR}/${label}.pre-init.${stamp}"
+}
+
+# Bound the snapshot count per profile so restarts cannot fill the volume.
+prune_config_backups() {
+  local keep=${1:-20} label=$2
+  local -a snaps
+  mapfile -t snaps < <(ls -1t "${BACKUP_DIR}/${label}.pre-init."* 2>/dev/null || true)
+  local i
+  for ((i = keep; i < ${#snaps[@]}; i++)); do
+    rm -f -- "${snaps[i]}"
+  done
+}
 
 # The ConfigMap half is public and reviewable; the Secret half carries the
 # agent's Buzz identity. Staged out of view so a half-written .env is never
@@ -35,7 +59,9 @@ sync_profile() {
 
   install -d -m 0755 -o hermes -g hermes \
     "${HERMES_HOME}/profiles" "${dest}" "${dest}/workspace"
+  backup_config "${dest}/config.yaml" "${name}"
   install -m 0644 -o hermes -g hermes "${src}/config.yaml" "${dest}/config.yaml"
+  prune_config_backups 20 "${name}"
   write_env "${name}" "${src}" "${dest}"
 
   echo "profile ${name}: synced -> ${dest}"
