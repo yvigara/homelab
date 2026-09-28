@@ -3,7 +3,7 @@ kind: Gateway
 metadata:
   name: traefik-private
   annotations:
-    external-dns.alpha.kubernetes.io/target: int.${CLUSTER_NAME}.${DOMAIN}
+    external-dns.kubernetes.io/target: int.${CLUSTER_NAME}.${DOMAIN}
   labels:
     app.kubernetes.io/instance: traefik-network
     app.kubernetes.io/name: traefik

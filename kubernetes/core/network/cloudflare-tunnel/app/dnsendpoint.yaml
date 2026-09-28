@@ -22,5 +22,5 @@ spec:
       targets:
         - ${LB_INT_IP}
       providerSpecific:
-        - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
+        - name: cloudflare/proxied
           value: "false"

@@ -153,7 +153,7 @@ spec:
                 port: dashboard
       public-dashboard:
         annotations:
-          external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+          external-dns.kubernetes.io/cloudflare-proxied: "true"
         hostnames:
           - "hermes.${DOMAIN}"
         parentRefs:
@@ -166,7 +166,7 @@ spec:
                 port: dashboard
       api:
         annotations:
-          external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+          external-dns.kubernetes.io/cloudflare-proxied: "true"
         hostnames:
           - "hermes-api.${DOMAIN}"
         parentRefs:
@@ -179,7 +179,7 @@ spec:
                 port: gateway
       codeserver:
         annotations:
-          external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+          external-dns.kubernetes.io/cloudflare-proxied: "true"
         hostnames:
           - "hermes-code.${DOMAIN}"
         parentRefs:

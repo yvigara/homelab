@@ -56,10 +56,10 @@ spec:
     gateway:
       name: traefik-public
       annotations:
-        external-dns.alpha.kubernetes.io/target: &hostname "tun-${CLUSTER_NAME}.${DOMAIN}"
+        external-dns.kubernetes.io/target: &hostname "tun-${CLUSTER_NAME}.${DOMAIN}"
       infrastructure:
         annotations:
-          external-dns.alpha.kubernetes.io/hostname: *hostname
+          external-dns.kubernetes.io/hostname: *hostname
       listeners:
         web:
           port: 80
