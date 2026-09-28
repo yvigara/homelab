@@ -107,6 +107,14 @@ terminal:
   shell_init_files:
     - /opt/data/.bashrc
   home_mode: real
+  # Forwarded into a pre-run script's env. Cron and terminal children run with the
+  # profile's variables scrubbed, so a name an engine needs at load time must be
+  # declared here. The MCP endpoints below are written as `http://${OLLAMA_SRV1_IP}:...`;
+  # without the variable the placeholder is passed through literally and the run dies
+  # with a DNS error naming the placeholder. Values resolve from this profile's .env.
+  env_passthrough:
+    - OLLAMA_SRV1_IP
+    - OBSIDIAN_AUTH_HEADER
 compression:
   enabled: true
   threshold: 0.7
