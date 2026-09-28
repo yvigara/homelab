@@ -98,7 +98,7 @@ skills:
   external_dirs:
     - /opt/data/shared-skills
 agent:
-  max_turns: 90
+  max_turns: 120
   reasoning_effort: low
   tool_use_enforcement: auto
   disabled_toolsets:
