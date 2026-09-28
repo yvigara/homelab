@@ -112,6 +112,15 @@ terminal:
   persistent_shell: true
   shell_init_files:
     - /opt/data/.bashrc
+  # Forwarded into the pre-run script's env (cron/terminal sandbox children scrub
+  # the profile's variables by default). The Obsidian MCP endpoint is written as
+  # `http://${OLLAMA_SRV1_IP}:27124/mcp` in mcp_servers below, so the periodic
+  # engine needs OLLAMA_SRV1_IP at load time; without it the placeholder is
+  # passed through literally and the run dies with a DNS error naming the
+  # placeholder. Values come from this profile's .env.
+  env_passthrough:
+    - OLLAMA_SRV1_IP
+    - OBSIDIAN_AUTH_HEADER
 compression:
   enabled: true
   threshold: 0.7
