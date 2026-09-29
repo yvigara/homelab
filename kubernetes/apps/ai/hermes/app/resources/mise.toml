@@ -23,18 +23,18 @@ uv_venv_auto = "create|source"
 compile = false
 
 [tools]
-aube = "2.5.1"
+aube = "2.6.1"
 fd = "10.5.0"
 gh = "2.101.0"
-hk = "2.3.1"
+hk = "2.4.0"
 jq = "1.8.2"
 rg = "15.2.0"
 "npm:defuddle" = "0.19.4"
 "npm:@firecrawl/anydoc" = "0.2.4"
 "github:bdellegrazie/git-credential-github-app" = "0.4.5"
 rust = "1.98.1"
-herdr = "0.9.1"
-claude = "2.1.284"
+herdr = "0.9.3"
+claude = "2.1.285"
 "npm:@zvec/zvec-grep" = "0.2.2"
 
 [tools."cargo:https://github.com/block/buzz"]
