@@ -9,6 +9,18 @@ readonly DATA_DIR=/opt/data
 # Where the pre-overwrite copies go. On the persistent volume, so a snapshot survives
 # the restart that produced it and the previous state stays recoverable afterwards.
 readonly BACKUP_DIR="${DATA_DIR}/backups/config"
+# Plugins installed into every Hermes home: "<name>" -> "<owner/repo>". Unpinned:
+# installed once at the repo's default branch, then updated by hand with
+# `hermes plugins update <name>`. Enabling is config.yaml's job
+# (plugins.enabled), so installs never touch the config.
+declare -rA PLUGINS=(
+  # Claude Pro/Max subscription through the claude CLI (mise.toml).
+  [claude-subscription-directsdk-experimental]="NousResearch/hermes-plugin-claude-subscription-directsdk"
+  # memory.provider: memini.
+  [memini]="eleboucher/memini-hermes"
+)
+# The init container does not get the app container's PATH.
+readonly HERMES_PATH=/opt/hermes/bin:/opt/hermes/.venv/bin:/usr/local/bin:/usr/bin:/bin
 
 # Snapshot whatever is currently on the volume before this boot overwrites it.
 # Rationale: install_config/profiles-init.sh are whole-file installs, so any key an
@@ -69,12 +81,31 @@ install_default_env() {
   install -m 0600 -o hermes -g hermes "${src}" "${DATA_DIR}/.env"
 }
 
+# Plugins are discovered per $HERMES_HOME and each profile is its own home, so
+# every plugin goes into the default home and each profile. Skipped when already
+# installed; a failed install warns rather than blocking boot.
+install_plugins() {
+  local home profile_arg name
+  for home in "${DATA_DIR}" "${DATA_DIR}"/profiles/*/; do
+    home=${home%/}
+    profile_arg=""
+    [[ ${home} == "${DATA_DIR}" ]] || profile_arg="-p $(basename "${home}")"
+    for name in "${!PLUGINS[@]}"; do
+      [[ -d ${home}/plugins/${name} ]] && continue
+      su - hermes -c "HOME=${DATA_DIR} HERMES_HOME=${DATA_DIR} PATH=${HERMES_PATH} \
+        hermes ${profile_arg} plugins install ${PLUGINS[${name}]} --no-enable" ||
+        echo "warning: plugin ${name} not installed in ${home}" >&2
+    done
+  done
+}
+
 main() {
   install_config
   install_mise
   bash "${CONFIG_DIR}/git-init.sh"
   install_default_env
   bash "${CONFIG_DIR}/profiles-init.sh"
+  install_plugins
 }
 
 main "$@"

@@ -34,7 +34,7 @@ rg = "15.2.0"
 "github:bdellegrazie/git-credential-github-app" = "0.4.5"
 rust = "1.98.1"
 herdr = "0.9.1"
-claude = "2.1.283"
+claude = "2.1.284"
 "npm:@zvec/zvec-grep" = "0.2.2"
 
 [tools."cargo:https://github.com/block/buzz"]
