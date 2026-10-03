@@ -75,6 +75,30 @@ REPO_OWNER="${REPO_OWNER:-yvigara}"
 HELPER_BIN="$(credential_binary)"
 [ -n "${HELPER_BIN}" ] || log "WARNING: GitHub App credential helper not found; relying on ambient git credentials"
 
+# ---- Leela's shim ------------------------------------------------------------
+# A profile's scripts dir is its OWN confinement root: cron rejects a script
+# whose resolved path leaves <profile_home>/scripts/. So leela's periodic job
+# cannot point at the shared checkout — it needs a real file at
+# /opt/data/profiles/leela/scripts/periodic-merge.sh that execs it. That shim is
+# hand-placed on the volume today, which means a volume reset silently breaks
+# her job ("Script not found"). Install it from the checkout, like everything
+# else. Non-fatal.
+install_leela_shim() {
+  local src="${SCRIPTS_DIR}/bin/periodic-merge-leela-shim.sh"
+  local dest_dir="${DATA_DIR}/profiles/leela/scripts"
+  local dest="${dest_dir}/periodic-merge.sh"
+
+  [ -f "${src}" ] || { log "NOTE: no leela shim in the checkout — leaving hers as-is"; return 0; }
+  mkdir -p "${dest_dir}" || return 0
+
+  # Never clobber an operator's local edit without evidence; warn instead.
+  if [ -f "${dest}" ] && ! cmp -s "${src}" "${dest}"; then
+    log "WARNING: ${dest} differs from the checkout — overwriting it from git"
+  fi
+  install -m 0644 -o hermes -g hermes "${src}" "${dest}" &&
+    log "installed leela shim -> ${dest}"
+}
+
 # --- 1. First run: turn the scripts dir into the checkout --------------------
 if [ ! -d "${SCRIPTS_DIR}/.git" ]; then
   MOVED_TO=""
@@ -120,6 +144,7 @@ if [ ! -d "${SCRIPTS_DIR}/.git" ]; then
   fi
 
   chown -R hermes:hermes "${SCRIPTS_DIR}" 2>/dev/null || true
+  install_leela_shim
   log "done (new checkout at $(git -C "${SCRIPTS_DIR}" rev-parse --short HEAD 2>/dev/null))"
   exit 0
 fi
@@ -127,12 +152,14 @@ fi
 # --- 2. Existing checkout: fast-forward, or leave it alone -------------------
 if [ -n "$(git -C "${SCRIPTS_DIR}" status --porcelain 2>/dev/null)" ]; then
   log "WARNING: ${SCRIPTS_DIR} has uncommitted changes — not touching it"
+  install_leela_shim
   exit 0
 fi
 
 BRANCH="$(git -C "${SCRIPTS_DIR}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
 if [ "${BRANCH}" != "main" ]; then
   log "WARNING: ${SCRIPTS_DIR} is on '${BRANCH}', not main — not touching it"
+  install_leela_shim
   exit 0
 fi
 
@@ -142,5 +169,9 @@ if git_auth -C "${SCRIPTS_DIR}" fetch origin main &&
 else
   log "WARNING: could not fast-forward — using the checkout as-is"
 fi
+
+# Also heal a missing/stale leela shim on an existing checkout — it must not
+# depend on a volume reset to get installed.
+install_leela_shim
 
 exit 0
