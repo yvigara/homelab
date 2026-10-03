@@ -210,6 +210,8 @@ spec:
                 subPath: git-init.sh
               - path: /run/config/init.sh
                 subPath: init.sh
+              - path: /run/config/sync-cron-scripts.sh
+                subPath: sync-cron-scripts.sh
               - path: /run/config/profiles-init.sh
                 subPath: profiles-init.sh
       profile-amy:

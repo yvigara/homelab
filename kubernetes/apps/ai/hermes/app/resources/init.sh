@@ -104,6 +104,11 @@ main() {
   install_mise
   bash "${CONFIG_DIR}/git-init.sh"
   install_default_env
+  # Cron scripts: <HERMES_HOME>/scripts/ IS the hermes-scripts checkout, so this
+  # only fast-forwards it. Never fatal — a boot that cannot reach GitHub must
+  # still boot (see t_0b6e5e7a).
+  bash "${CONFIG_DIR}/sync-cron-scripts.sh" ||
+    echo "[init] WARNING: sync-cron-scripts.sh failed — using the checkout as-is" >&2
   bash "${CONFIG_DIR}/profiles-init.sh"
   install_plugins
 }

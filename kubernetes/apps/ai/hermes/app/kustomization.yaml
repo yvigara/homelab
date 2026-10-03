@@ -12,6 +12,7 @@ configMapGenerator:
       - config.yaml=./resources/config.yaml
       - mise.toml=./resources/mise.toml
       - init.sh=./resources/init.sh
+      - sync-cron-scripts.sh=./resources/sync-cron-scripts.sh
       - git-init.sh=./resources/git-init.sh
       - profiles-init.sh=./resources/profiles-init.sh
   # One ConfigMap per profile, mounted as a whole directory. SOUL.md is managed
