@@ -39,6 +39,8 @@ storage:
 
           disable:
             - traefik
+            - gateway-api-crd
+            - servicelb
     - path: /etc/sysctl.d/10-kernel.conf
       contents:
         inline: |
