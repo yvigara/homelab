@@ -17,7 +17,7 @@ spec:
       - name: pgvector
         image:
           # renovate: suite=trixie-pgdg depName=postgresql-18-pgvector
-          reference: ghcr.io/cloudnative-pg/pgvector:0.8.6-18-trixie
+          reference: ghcr.io/cloudnative-pg/pgvector:0.8.7-18-trixie
       - name: timescaledb-oss
         image:
           # renovate: suite=trixie-pgdg depName=postgresql-18-timescaledb
