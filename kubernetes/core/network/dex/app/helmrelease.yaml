@@ -17,7 +17,7 @@ spec:
   values:
     image:
       repository: dexidp/dex
-      tag: v2.45.1
+      tag: v2.46.0
     httpRoute:
       enabled: true
       annotations:
