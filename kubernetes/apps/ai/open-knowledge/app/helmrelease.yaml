@@ -38,7 +38,7 @@ spec:
           init:
             image: &app_image
               repository: ghcr.io/yvigara/open-knowledge
-              tag: test-0.66.2@sha256:c0953469bf4229163f7fab854a800a48bed71505f276483765f7e05c8a4fac45
+              tag: test-0.66.2@sha256:f8927e8a4153a1cc8b1e939319b0416ce9fed56a5f006a14568e25ad699c6a88
             env:
               HOME: &home_dir /home/ok
             command:
