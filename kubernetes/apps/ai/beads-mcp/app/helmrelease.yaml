@@ -1,0 +1,126 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app beads-mcp
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  interval: 1h
+  dependsOn:
+    - name: dolt-sql
+  values:
+    defaultPodOptions:
+      securityContext:
+        # The image runs as `node` (1000:1000).
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: { type: RuntimeDefault }
+    controllers:
+      *app :
+        annotations:
+          reloader.stakater.com/auto: "true"
+        # The MCP queue is per-process: release/handoff ownership checks are
+        # only safe with a single replica.
+        replicas: 1
+        containers:
+          # HTTP execution mode: the MCP server never runs `bd` itself, it
+          # calls the bd-serve sidecar over loopback, which talks to dolt-sql.
+          app:
+            image: &image
+              repository: ghcr.io/nickytonline/beads-mcp
+              tag: 2.2.1@sha256:2eefe31df35952d38ffb746edec8873d93d174194781c32b47f4af31c34cf5b6
+            env:
+              TZ: ${TIMEZONE}
+              PORT: &port 3000
+              LOG_LEVEL: info
+              BD_SERVE_URL: &bd_serve_url http://127.0.0.1:8742
+              BD_SERVE_TIMEOUT_MS: "30000"
+              # agentgateway validates the Auth0 token and passes it through
+              # (see ../../mcp/app/agentgateway.yaml); the server verifies it
+              # again against the same issuer and attributes writes to it.
+              AUTH_JWT_HEADER: Authorization
+              AUTH_JWKS_URL: https://auth.${DOMAIN}/.well-known/jwks.json
+              AUTH_ISSUER: https://auth.${DOMAIN}/
+              AUTH_AUDIENCE: https://mcp.${DOMAIN}
+              AUTH_ACTOR_CLAIM: email
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+            securityContext: &securityContext
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+          bd-serve:
+            image: *image
+            workingDir: /data/project
+            command: ["/bin/sh", "-ec"]
+            # dolt-sql may still be starting; retry init instead of crashlooping.
+            # --init-if-missing never reinitializes an existing database.
+            args:
+              - >-
+                attempt=0;
+                until bd init --init-if-missing --external --server
+                --server-host=dolt-sql --server-port=3306
+                --server-user="$DOLT_USER" --database=beads
+                --prefix=task --skip-agents --skip-hooks --non-interactive; do
+                attempt=$((attempt + 1)); [ "$attempt" -lt 30 ] || exit 1;
+                sleep 2; done;
+                exec bd serve --addr=127.0.0.1:8742
+            env:
+              TZ: ${TIMEZONE}
+              BEADS_PROJECT_DIR: /data/project
+              BEADS_DIR: /data/project/.beads
+              BD_SERVE_URL: *bd_serve_url
+              DOLT_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: dolt-credentials
+                    key: user
+              BEADS_DOLT_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: dolt-credentials
+                    key: password
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            securityContext: *securityContext
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+            appProtocol: agentgateway.dev/mcp
+    persistence:
+      # bd workspace config only; the data lives in dolt-sql.
+      bd-workspace:
+        type: emptyDir
+        advancedMounts:
+          *app :
+            bd-serve:
+              - path: /data/project

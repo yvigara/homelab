@@ -24,6 +24,16 @@ spec:
             auth:
               secretRef:
                 name: memini
+      # beads-mcp verifies the Auth0 JWT itself and attributes writes to its
+      # claims; jwtAuthentication strips the client token, so pass it back.
+      - name: beads
+        static:
+          host: beads-mcp.ai.svc.cluster.local
+          port: 3000
+          protocol: StreamableHTTP
+          policies:
+            auth:
+              passthrough: {}
 ---
 # External backend so the JWT policy's jwks.remote.backendRef can reach Auth0's
 # JWKS endpoint (Auth0 isn't an in-cluster Service).
