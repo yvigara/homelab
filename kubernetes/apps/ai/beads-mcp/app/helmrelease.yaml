@@ -32,8 +32,8 @@ spec:
           # calls the bd-serve sidecar over loopback, which talks to dolt-sql.
           app:
             image: &image
-              repository: ghcr.io/yvigara/beads-mcp
-              tag: 0.1.0
+              repository: ghcr.io/nickytonline/beads-mcp
+              tag: 2.2.1@sha256:2eefe31df35952d38ffb746edec8873d93d174194781c32b47f4af31c34cf5b6
             env:
               TZ: ${TIMEZONE}
               PORT: &port 3000
