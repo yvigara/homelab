@@ -16,7 +16,7 @@ metadata:
 spec:
   modelRef: jina-reranker-v3.5-0.6b
   runtime: llamacpp
-  image: ghcr.io/ggml-org/llama.cpp:server-b11610@sha256:89f180f16f295ee496fe00924ec2118cae2efec519d1a82c605420af09d2a6df
+  image: ghcr.io/ggml-org/llama.cpp:server-b11681@sha256:e83cbdc66e692129e17aad70293366cb00e3acca94b9f197c91a8a56e92201c3
   replicas: 1
   podSecurityContext:
     # 102 = curlimages/curl curl_group GID; makes the /models emptyDir
