@@ -1,10 +1,10 @@
 [plugins]
-fnox-env = "https://github.com/jdx/mise-env-fnox"
+fnox-env = "git@github.com:jdx/mise-env-fnox"
 
 [tools]
 age = "1.3.2"
 k3sup = "0.13.13"
-fnox = "v1.40.0"
+fnox = "v1.39.0"
 bitwarden-secrets-manager = "2.1.0"
 oxfmt = "latest"
 "github:home-operations/flate" = "latest"
