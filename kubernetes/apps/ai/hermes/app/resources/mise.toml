@@ -23,7 +23,7 @@ uv_venv_auto = "create|source"
 compile = false
 
 [tools]
-aube = "2.7.0"
+aube = "2.7.2"
 fd = "10.5.0"
 gh = "2.102.0"
 hk = "2.7.0"
