@@ -16,7 +16,7 @@ metadata:
 spec:
   modelRef: qwen3-reranker-0.6b
   runtime: llamacpp
-  image: ghcr.io/ggml-org/llama.cpp:server-b11681@sha256:e83cbdc66e692129e17aad70293366cb00e3acca94b9f197c91a8a56e92201c3
+  image: ghcr.io/ggml-org/llama.cpp:server-b11723@sha256:143926008cbbbab8fae8fd87809875af3e42d3d676c30c11c55c0f3f683a5a07
   replicas: 1
   podSecurityContext:
     # 102 = curlimages/curl curl_group GID; makes the /models emptyDir
