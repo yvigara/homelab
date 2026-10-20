@@ -6,3 +6,4 @@ resources:
   - ./cluster.yaml
   - ./db-buzz.yaml
   - ./db-memini.yaml
+  - ./db-pocket-id.yaml
