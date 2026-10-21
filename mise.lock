@@ -242,6 +242,6 @@ url = "https://github.com/alexellis/k3sup/releases/download/0.13.13/k3sup.exe"
 url_api = "https://api.github.com/repos/alexellis/k3sup/releases/assets/542331648"
 
 [[tools.oxfmt]]
-version = "0.73.0"
+version = "0.74.0"
 aube = { path = ".mise/locks/oxfmt/0.73.0", digest = "sha256:e42eeebedd060ec6393c40caa35362b541991453b9aab2de3d33d41a0c245a62" }
 backend = "npm:oxfmt"
