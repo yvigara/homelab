@@ -16,6 +16,9 @@ providers:
       glm-5.3:cloud:
       kimi-k3:cloud:
       minimax-m3.1-flash:cloud:
+      beam:cloud:
+      clef:cloud:
+        context_length: 65536
   k8s-omlx:
     api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/omlx
     name: k8s-omlx
@@ -54,6 +57,8 @@ model_overrides:
     kimi-k3:cloud:
       supports_vision: true
     minimax-m3.1-flash:cloud:
+      supports_vision: true
+    clef:cloud:
       supports_vision: true
   # Not in the plugin's pinned catalog yet: without this it reports 200K.
   claude-subscription-directsdk-experimental:
