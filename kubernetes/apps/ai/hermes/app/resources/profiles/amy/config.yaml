@@ -1,15 +1,15 @@
 # Amy - community.
 model:
-  default: deepseek-v4.1-flash:cloud
+  default: deepseek-v4.1-flash:1017-cloud
   provider: custom:k8s-ollamacloud
 providers:
   k8s-ollamacloud:
     api: http://agentgateway-proxy.agentgateway-system.svc.cluster.local/ollama-cloud
     name: k8s-ollamacloud
     api_key: ${HERMES_OMLX_KEY}
-    default_model: deepseek-v4.1-flash:cloud
+    default_model: deepseek-v4.1-flash:1017-cloud
     models:
-      deepseek-v4.1-flash:cloud:
+      deepseek-v4.1-flash:1017-cloud:
         context_length: 1048576
       glm-5.3-flash:cloud:
   k8s-omlx:
@@ -57,7 +57,7 @@ fallback_providers:
 auxiliary:
   compression:
     provider: custom:k8s-ollamacloud
-    model: deepseek-v4.1-flash:cloud
+    model: deepseek-v4.1-flash:1017-cloud
   session_search:
     provider: custom:k8s-omlx
     model: Qwen3.5-9B-MLX-4bit
