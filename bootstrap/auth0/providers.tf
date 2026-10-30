@@ -4,7 +4,7 @@ terraform {
   required_providers {
     auth0 = {
       source  = "auth0/auth0"
-      version = "1.59.0"
+      version = "1.60.0"
     }
     bitwarden-secrets = {
       source  = "bitwarden/bitwarden-secrets"
