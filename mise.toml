@@ -4,11 +4,11 @@ fnox-env = "git@github.com:jdx/mise-env-fnox"
 [tools]
 age = "1.3.2"
 k3sup = "0.13.14"
-fnox = { version = "1.43.0", workflow = "release.yml" }
+fnox = { version = "v1.45.0", workflow = "release.yml" }
 bitwarden-secrets-manager = "2.1.0"
 oxfmt = "0.74.0"
 "github:home-operations/flate" = "0.6.5"
-"github:home-operations/yamlls" = "0.3.2"
+"github:home-operations/yamlls" = "0.3.3"
 
 [env]
 _.fnox-env = { tools = true }
