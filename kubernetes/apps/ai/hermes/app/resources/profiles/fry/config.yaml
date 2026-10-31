@@ -168,6 +168,9 @@ mcp_servers:
     url: http://${OLLAMA_SRV1_IP}:27124/mcp
     headers:
       Authorization: "${OBSIDIAN_AUTH_HEADER}"
+  prismic:
+    url: https://mcp.prismic.io/mcp
+    auth: oauth
 display:
   platforms:
     buzz:
