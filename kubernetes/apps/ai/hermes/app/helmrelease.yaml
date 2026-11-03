@@ -93,6 +93,9 @@ spec:
               - containerPort: &dashboard_port 9119
                 name: dashboard
                 protocol: TCP
+              - containerPort: &webapp_port 9120
+                name: webapp
+                protocol: TCP
             # Twelve supervised gateways: the default agent plus one per
             # profile. Memory tracks how many are handling a conversation at
             # once, not how many are running.
@@ -137,6 +140,8 @@ spec:
             port: *app_port
           dashboard:
             port: *dashboard_port
+          webapp:
+            port: *webapp_port
           codeserver:
             port: *codeserverPort
     route:
@@ -164,6 +169,19 @@ spec:
           - backendRefs:
               - identifier: app
                 port: dashboard
+      webapp:
+        annotations:
+          external-dns.kubernetes.io/cloudflare-proxied: "true"
+        hostnames:
+          - "hermes-app.${DOMAIN}"
+        parentRefs:
+          - name: traefik-public
+            namespace: network
+            sectionName: websecure
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: webapp
       api:
         annotations:
           external-dns.kubernetes.io/cloudflare-proxied: "true"
