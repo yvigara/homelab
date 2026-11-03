@@ -93,6 +93,7 @@ spec:
         - id: hermes-dashboard-public
           redirectURIs:
             - "https://hermes.${DOMAIN}/auth/callback"
+            - "https://hermes-app.${DOMAIN}/auth/callback"
           name: "Hermes Dashboard"
           public: true
         - id: rustfs
