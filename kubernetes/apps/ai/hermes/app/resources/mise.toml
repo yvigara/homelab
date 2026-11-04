@@ -35,7 +35,7 @@ rg = "15.2.0"
 rust = "1.99.1"
 herdr = "0.9.5"
 claude = "2.1.310"
-"npm:@zvec/zvec-grep" = "0.2.2"
+"npm:@zvec/zvec-grep" = "0.3.0"
 
 [tools."cargo:https://github.com/block/buzz"]
 version = "tag:desktop-v0.5.23"
