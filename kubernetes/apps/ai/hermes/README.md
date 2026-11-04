@@ -44,6 +44,16 @@ the MCP credentials, the git identity, `HERMES_HOME`, `HERMES_UID`/`GID`, and
 the dashboard, which is a machine-level surface rather than an agent-level one.
 These are defined once and interpolate into `config.yaml` as `${...}`.
 
+One of these is `ENABLE_CLAUDEAI_MCP_SERVERS=false`, and it is there to keep the
+Claude Code CLI from fetching the account's claude.ai connectors. The
+subscription provider spawns that CLI with `--setting-sources ""`, so user-scope
+Claude Code settings are not read at all and `disableClaudeAiConnectors` in
+`~/.claude/settings.json` would do nothing; the environment variable is the only
+switch that reaches those child processes. The connectors could not run a tool
+anyway — Hermes hands the model its own inventory through an inert MCP server and
+executes every call itself — but each spawn paid for the discovery and got a tool
+list with entries Hermes rejects as unknown.
+
 **In the agent's own `.env`** (`hermes-profile-env`, key `default.env`, rendered
 whole as a dotenv document and installed to `/opt/data/.env` by `init.sh`):
 

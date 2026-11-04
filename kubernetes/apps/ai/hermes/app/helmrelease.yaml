@@ -71,6 +71,16 @@ spec:
               # Anti-detection browser backend; the bearer token it
               # authenticates with comes from hermes-secret (CAMOFOX_API_KEY).
               CAMOFOX_URL: http://camofox.ai.svc.cluster.local:9377
+              # The Claude Code CLI fetches the account's claude.ai connectors on
+              # every spawn whenever the active login is a subscription, so each
+              # request from the subscription provider discovered remote MCP
+              # servers it could never execute: Hermes advertises its own tool
+              # inventory through an inert MCP server and owns execution. A
+              # settings file cannot fix this - the plugin spawns the CLI with
+              # --setting-sources "", so a user-scope disableClaudeAiConnectors is
+              # never read - which leaves this variable as the only lever that
+              # reaches those processes.
+              ENABLE_CLAUDEAI_MCP_SERVERS: "false"
               HOME: /opt/data
               TERM: xterm-256color
               # Author stays hermes[bot] (user.email in the gitconfig); GitHub
