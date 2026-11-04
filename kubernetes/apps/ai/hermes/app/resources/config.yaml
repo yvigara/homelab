@@ -75,9 +75,9 @@ toolsets:
   - kanban
 platform_toolsets:
   cli:
-    - browser
     - clarify
     - code_execution
+    - connections
     - cronjob
     - delegation
     - file
@@ -89,10 +89,11 @@ platform_toolsets:
     - todo
     - vision
     - web
+    - camofox
   slack:
-    - browser
     - clarify
     - code_execution
+    - connections
     - cronjob
     - delegation
     - file
@@ -104,10 +105,11 @@ platform_toolsets:
     - todo
     - vision
     - web
+    - camofox
   buzz:
-    - browser
     - clarify
     - code_execution
+    - connections
     - cronjob
     - delegation
     - file
@@ -119,6 +121,7 @@ platform_toolsets:
     - todo
     - vision
     - web
+    - camofox
 skills:
   external_dirs:
     - /opt/data/shared-skills
@@ -158,6 +161,7 @@ agent:
     - spotify
     - computer_use
     - tts
+    - browser
 browser:
   cloud_provider: camofox
   camofox:
@@ -257,6 +261,7 @@ gateway:
 # A non-loopback host and public_url both engage the dashboard sign-in gate,
 # which reuses the self-hosted OIDC provider below (Dex). The callback is
 # <public_url>/auth/callback and must be registered on the Dex client.
+  multiplex_profiles: true
 webapp:
   enabled: true
   host: 0.0.0.0
@@ -281,4 +286,13 @@ slack:
   strict_mention: false
   thread_require_mention: false
   reaction_triggers: true
-_config_version: 39
+_config_version: 52
+_left_core_used:
+  - camofox
+_left_core_installed:
+  - camofox
+known_plugin_toolsets:
+  webhook:
+    - camofox
+_left_core_scoped:
+  - camofox
