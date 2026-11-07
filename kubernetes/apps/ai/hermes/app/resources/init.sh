@@ -102,7 +102,7 @@ plugin_tracked() {
 # every plugin goes into the default home and each profile. Skipped when already
 # installed; a failed install warns rather than blocking boot.
 install_plugins() {
-  local home profile_arg name spec source ref_args
+  local home profile_arg name spec source ref_args adopt_out
   for home in "${DATA_DIR}" "${DATA_DIR}"/profiles/*/; do
     home=${home%/}
     profile_arg=""
@@ -116,9 +116,12 @@ install_plugins() {
       fi
       if plugin_present "${home}" "${name}"; then
         plugin_tracked "${home}" "${name}" && continue
-        su - hermes -c "HOME=${DATA_DIR} HERMES_HOME=${DATA_DIR} PATH=${HERMES_PATH} \
-          hermes ${profile_arg} plugins adopt ${name}" >/dev/null 2>&1 ||
-          echo "warning: plugin ${name} in ${home} is untracked and has no git origin to adopt" >&2
+        # Keep the output: a failure here leaves the plugin invisible to the
+        # update path forever, and discarding stderr made that silent.
+        if ! adopt_out=$(su - hermes -c "HOME=${DATA_DIR} HERMES_HOME=${DATA_DIR} PATH=${HERMES_PATH} \
+          hermes ${profile_arg} plugins adopt ${name}" 2>&1); then
+          echo "warning: plugin ${name} in ${home} is untracked and could not be adopted: ${adopt_out}" >&2
+        fi
         continue
       fi
       su - hermes -c "HOME=${DATA_DIR} HERMES_HOME=${DATA_DIR} PATH=${HERMES_PATH} \
