@@ -135,6 +135,8 @@ plugins:
   enabled:
     - claude-subscription-directsdk-experimental
     - memini
+  auto_apply: true
+  auto_update_check_hours: 3
 web:
   search_backend: searxng
 security:

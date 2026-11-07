@@ -9,10 +9,11 @@ readonly DATA_DIR=/opt/data
 # Where the pre-overwrite copies go. On the persistent volume, so a snapshot survives
 # the restart that produced it and the previous state stays recoverable afterwards.
 readonly BACKUP_DIR="${DATA_DIR}/backups/config"
-# Plugins installed into every Hermes home: "<name>" -> "<owner/repo>". Unpinned:
-# installed once at the repo's default branch, then updated by hand with
-# `hermes plugins update <name>`. Enabling is config.yaml's job
-# (plugins.enabled), so installs never touch the config.
+# Plugins installed into every Hermes home. Value is "owner/repo" or
+# "owner/repo@<40-char commit sha>". An unpinned entry is installed once and then
+# moved by the gateway's auto-update (plugins.auto_apply in config.yaml); a pinned
+# entry stays at that commit until the pin here is bumped. Enabling is config.yaml's
+# job (plugins.enabled), so installs never touch the config.
 declare -rA PLUGINS=(
   # Claude Pro/Max subscription through the claude CLI (mise.toml).
   [claude-subscription-directsdk-experimental]="NousResearch/hermes-plugin-claude-subscription-directsdk"
@@ -81,19 +82,47 @@ install_default_env() {
   install -m 0600 -o hermes -g hermes "${src}" "${DATA_DIR}/.env"
 }
 
+# A directory only counts as an installed plugin once its manifest is there, so a
+# half-finished or hand-copied directory is reinstalled instead of silently skipped.
+plugin_present() {
+  local home=$1 name=$2
+  [[ -f ${home}/plugins/${name}/plugin.yaml || -f ${home}/plugins/${name}/plugin.json ]]
+}
+
+# Tracked means Hermes recorded where the code came from, which is what
+# `hermes plugins update` and the auto-update check key off. A hand-cloned plugin
+# has no such record and would never update, so it gets adopted below.
+plugin_tracked() {
+  local home=$1 name=$2 metadata="${home}/plugins/.install-metadata.json"
+  [[ -f ${metadata} ]] || return 1
+  grep -qF "\"${name}\":" "${metadata}"
+}
+
 # Plugins are discovered per $HERMES_HOME and each profile is its own home, so
 # every plugin goes into the default home and each profile. Skipped when already
 # installed; a failed install warns rather than blocking boot.
 install_plugins() {
-  local home profile_arg name
+  local home profile_arg name spec source ref_args
   for home in "${DATA_DIR}" "${DATA_DIR}"/profiles/*/; do
     home=${home%/}
     profile_arg=""
     [[ ${home} == "${DATA_DIR}" ]] || profile_arg="-p $(basename "${home}")"
     for name in "${!PLUGINS[@]}"; do
-      [[ -d ${home}/plugins/${name} ]] && continue
+      spec=${PLUGINS[${name}]}
+      source=${spec%@*}
+      ref_args=""
+      if [[ ${spec} == *@* ]]; then
+        ref_args="--ref ${spec##*@}"
+      fi
+      if plugin_present "${home}" "${name}"; then
+        plugin_tracked "${home}" "${name}" && continue
+        su - hermes -c "HOME=${DATA_DIR} HERMES_HOME=${DATA_DIR} PATH=${HERMES_PATH} \
+          hermes ${profile_arg} plugins adopt ${name}" >/dev/null 2>&1 ||
+          echo "warning: plugin ${name} in ${home} is untracked and has no git origin to adopt" >&2
+        continue
+      fi
       su - hermes -c "HOME=${DATA_DIR} HERMES_HOME=${DATA_DIR} PATH=${HERMES_PATH} \
-        hermes ${profile_arg} plugins install ${PLUGINS[${name}]} --no-enable" ||
+        hermes ${profile_arg} plugins install ${source} --no-enable ${ref_args}" ||
         echo "warning: plugin ${name} not installed in ${home}" >&2
     done
   done
