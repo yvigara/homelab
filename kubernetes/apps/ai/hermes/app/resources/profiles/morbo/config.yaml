@@ -132,7 +132,7 @@ plugins:
   enabled:
     - claude-subscription-directsdk-experimental
   auto_apply: true
-  auto_update_check_hours: 24
+  auto_update_check_hours: 3
 memory:
   memory_enabled: false
 web:
