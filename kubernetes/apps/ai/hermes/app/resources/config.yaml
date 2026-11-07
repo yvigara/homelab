@@ -192,6 +192,8 @@ plugins:
     - memini
     - buzz-platform
     - kanban-card
+  auto_apply: true
+  auto_update_check_hours: 24
 memory:
   memory_enabled: true
   user_profile_enabled: false

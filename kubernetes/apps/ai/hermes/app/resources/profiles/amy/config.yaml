@@ -153,6 +153,8 @@ plugins:
     - claude-subscription-directsdk-experimental
     - memini
     - buzz-platform
+  auto_apply: true
+  auto_update_check_hours: 24
 memory:
   memory_enabled: true
   user_profile_enabled: false
