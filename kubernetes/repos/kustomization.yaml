@@ -13,6 +13,7 @@ resources:
   - ./metallb.yaml
   - ./node-feature-discovery-charts.yaml
   - ./prometheus.yaml
+  - ./skyhook.yaml
   - ./toolhive.yaml
   - ./traefik.yaml
   - ./trust-manager.yaml
