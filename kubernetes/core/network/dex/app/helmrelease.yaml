@@ -96,6 +96,11 @@ spec:
             - "https://hermes-app.${DOMAIN}/auth/callback"
           name: "Hermes Dashboard"
           public: true
+        - id: radar-public
+          redirectURIs:
+            - "https://radar.${DOMAIN}/auth/callback"
+          name: "Radar"
+          public: true
         - id: rustfs
           redirectURIs:
             - "https://rustfs.int.${REGION}.${ENVIRONMENT}.${DOMAIN}/rustfs/admin/v3/oidc/callback/default"
