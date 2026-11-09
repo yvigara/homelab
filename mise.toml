@@ -7,7 +7,7 @@ k3sup = "0.13.14"
 fnox = { version = "1.47.0", workflow = "release.yml" }
 bitwarden-secrets-manager = "2.1.0"
 oxfmt = "0.76.0"
-"github:home-operations/flate" = "0.6.5"
+"github:home-operations/flate" = "v0.7.3"
 "github:home-operations/yamlls" = "0.3.3"
 
 [env]
