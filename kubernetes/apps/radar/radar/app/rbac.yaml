@@ -13,3 +13,13 @@ subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group
     name: celest-io
+    # Dex emits no groups for either connector in practice (Radar logs show
+    # groups: []), so the group above never matches; bind users directly.
+    # Emails come from CLUSTER_ADMIN_EMAILS via terraform/flux-runtime-info
+    # (two entries expected).
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: ${CLUSTER_ADMIN_EMAIL_1}
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: ${CLUSTER_ADMIN_EMAIL_2}

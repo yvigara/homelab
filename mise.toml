@@ -24,5 +24,6 @@ TF_VAR_bgp_cidr = { value = "{{ env.BGP_CIDR }}", tools = true }
 TF_VAR_bgp_peer_addr = { value = "{{ env.BGP_PEER_ADDR }}", tools = true }
 TF_VAR_interal_lb_ip = { value = "{{ env.INT_LB_IP }}", tools = true }
 TF_VAR_ag_lb_ip = { value = "192.168.2.130", tools = true }
+TF_VAR_cluster_admin_emails = { value = "{{ env.CLUSTER_ADMIN_EMAILS }}", tools = true }
 TF_VAR_bw_project_id = { value = "{{ env.BW_PROJECT_ID }}", tools = true }
 TF_VAR_bw_organization_id = { value = "{{ env.BW_ORGANIZATION_ID }}", tools = true }
