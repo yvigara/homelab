@@ -4,6 +4,9 @@ locals {
   github_app_pem                = data.bitwarden-secrets_secret.github_app_pem.value
   github_app_installation_owner = data.bitwarden-secrets_secret.github_app_installation_owner.value
 
+  # Comma-separated in CLUSTER_ADMIN_EMAILS; exposed to Flux as CLUSTER_ADMIN_EMAIL_<n>.
+  cluster_admin_emails = [for e in split(",", var.cluster_admin_emails) : trimspace(e)]
+
   has_github_app = local.github_app_id != ""
   git_auth_secret = local.has_github_app ? yamlencode({
     apiVersion = "v1"
@@ -41,7 +44,7 @@ module "flux_operator_bootstrap" {
       labels = {
         "reconcile.fluxcd.io/watch" = "Enabled"
       }
-      data = {
+      data = merge({
         CLUSTER_REGION     = var.cluster_region
         CLUSTER_ENV        = var.cluster_env
         CLUSTER_NAME       = var.cluster_name
@@ -57,7 +60,9 @@ module "flux_operator_bootstrap" {
         ACME_EMAIL         = local.acme_email
         BW_ORGANIZATION_ID = var.bw_organization_id
         BW_PROJECT_ID      = var.bw_project_id
-      }
+      }, {
+        for i, email in local.cluster_admin_emails : "CLUSTER_ADMIN_EMAIL_${i + 1}" => email
+      })
     }
   }
 }

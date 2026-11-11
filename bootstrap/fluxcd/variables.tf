@@ -65,3 +65,8 @@ variable "cluster_region" {
   nullable    = false
 }
 
+variable "cluster_admin_emails" {
+  description = "Comma-separated emails granted access to cluster tools behind Dex (e.g. Radar)."
+  type        = string
+  nullable    = false
+}
