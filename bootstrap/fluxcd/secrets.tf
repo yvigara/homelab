@@ -55,6 +55,10 @@ data "bitwarden-secrets_secret" "dex_rustfs_client_secret" {
   id = local.bw_secrets["RUSTFS_OIDC_CLIENT_SECRET"]
 }
 
+data "bitwarden-secrets_secret" "dex_radar_client_secret" {
+  id = local.bw_secrets["RADAR_OIDC_CLIENT_SECRET"]
+}
+
 data "bitwarden-secrets_secret" "buzz_owner_pubkey_secret" {
   id = local.bw_secrets["BUZZ_OWNER_PUBKEY"]
 }
@@ -106,6 +110,7 @@ resource "kubernetes_secret_v1" "cluster-secrets" {
     DEX_GOOGLE_CLIENT_SECRET       = data.bitwarden-secrets_secret.dex_google_client_secret.value
     GOOGLE_WORKSPACE_DOMAIN        = data.bitwarden-secrets_secret.google_workspace_domain.value
     HERMES_DASHBOARD_CLIENT_SECRET = data.bitwarden-secrets_secret.dex_hermes_dashboard_secret.value
+    RADAR_OIDC_CLIENT_SECRET       = data.bitwarden-secrets_secret.dex_radar_client_secret.value
     RUSTFS_OIDC_CLIENT_SECRET      = data.bitwarden-secrets_secret.dex_rustfs_client_secret.value
     BUZZ_OWNER_PUBKEY              = data.bitwarden-secrets_secret.buzz_owner_pubkey_secret.value
 
