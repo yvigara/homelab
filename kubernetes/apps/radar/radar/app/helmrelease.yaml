@@ -15,6 +15,11 @@ spec:
         namespace: flux-system
       interval: 10m
   values:
+    # The MCP server is reached through agentgateway (apps/ai/mcp). Read-only
+    # moves it to /mcp-readonly and removes the exec, helm and curl tools, which
+    # exist only on the full /mcp endpoint. It does not restrict the UI or REST API.
+    extraArgs:
+      - --mcp-read-only
     # Sign-in goes through Dex. Radar refuses to start in oidc mode without a
     # client secret, so this is a confidential client (unlike hermes' public
     # one); the secret comes from radar-oidc. Radar then impersonates the signed-in user

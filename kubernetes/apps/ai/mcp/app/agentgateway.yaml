@@ -4,6 +4,11 @@ metadata:
   name: mcp
 spec:
   mcp:
+    # `initialize` and the list calls fan out to every target. The default
+    # (FailClosed) fails the whole session when any one target is down or
+    # rejects a call, which is how a crashlooping beads-mcp took every server
+    # offline. FailOpen skips the failed target and serves the rest.
+    failureMode: FailOpen
     targets:
       - name: searxng
         selector:
@@ -24,9 +29,42 @@ spec:
             auth:
               secretRef:
                 name: memini
+      # Obsidian vault via the Local REST API plugin on the Ollama host. Same
+      # endpoint Hermes uses directly; the bearer comes from the obsidian-mcp
+      # secret (externalsecret.yaml). Read and write: the vault is exposed as is.
+      - name: obsidian
+        static:
+          host: ${OLLAMA_SRV1_IP}
+          port: 27124
+          protocol: StreamableHTTP
+          policies:
+            auth:
+              secretRef:
+                name: obsidian-mcp
+      # Rendered Flux diffs for open PRs (read-only; config.mcp in the konflate
+      # HelmRelease). The endpoint itself has no auth; this route's Access
+      # policy is what protects it.
+      - name: konflate
+        static:
+          host: konflate.flux-system.svc.cluster.local
+          port: 8080
+          protocol: StreamableHTTP
+      # Radar runs with --mcp-read-only, which moves the endpoint to
+      # /mcp-readonly and drops exec/helm/curl tools entirely.
+      - name: radar
+        static:
+          host: radar.radar.svc.cluster.local
+          port: 9280
+          path: /mcp-readonly
+          protocol: StreamableHTTP
+      # Flux Operator MCP server, started with readonly: true.
+      - name: flux
+        static:
+          host: flux-operator-mcp.flux-system.svc.cluster.local
+          port: 9090
+          protocol: StreamableHTTP
       # beads is out until its bd-serve sidecar runs: the image has no git, so
-      # `bd serve` cannot resolve a workspace and the pod crashloops. While a
-      # target has no endpoints, `initialize` fails for every target. Restore:
+      # `bd serve` cannot resolve a workspace and the pod crashloops. Restore:
       #   - name: beads
       #     static:
       #       host: beads-mcp.ai.svc.cluster.local
