@@ -24,66 +24,20 @@ spec:
             auth:
               secretRef:
                 name: memini
-      # beads-mcp verifies the Auth0 JWT itself and attributes writes to its
-      # claims; jwtAuthentication strips the client token, so pass it back.
+      # beads-mcp verifies the Cf-Access-Jwt-Assertion header itself and
+      # attributes writes to its claims; agentgateway forwards the header as is.
       - name: beads
         static:
           host: beads-mcp.ai.svc.cluster.local
           port: 3000
           protocol: StreamableHTTP
-          policies:
-            auth:
-              passthrough: {}
 ---
-# External backend so the JWT policy's jwks.remote.backendRef can reach Auth0's
-# JWKS endpoint (Auth0 isn't an in-cluster Service).
-apiVersion: agentgateway.dev/v1alpha1
-kind: AgentgatewayBackend
-metadata:
-  name: auth0
-spec:
-  static:
-    host: auth.${DOMAIN}
-    port: 443
-  policies:
-    tls:
-      sni: auth.${DOMAIN}
----
-apiVersion: agentgateway.dev/v1alpha1
-kind: AgentgatewayPolicy
-metadata:
-  name: mcp-auth
-spec:
-  targetRefs:
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      name: mcp
-  traffic:
-    jwtAuthentication:
-      mode: Strict
-      providers:
-        - issuer: https://auth.${DOMAIN}/
-          # Must equal the Auth0 API identifier from bootstrap/auth0 (auth0_resource_server.mcp),
-          # which is the host with NO path.
-          audiences:
-            - https://mcp.${DOMAIN}
-          jwks:
-            remote:
-              backendRef:
-                group: agentgateway.dev
-                kind: AgentgatewayBackend
-                name: auth0
-                port: 443
-              jwksPath: /.well-known/jwks.json
-      # Protected Resource Metadata served at /.well-known/oauth-protected-resource/mcp;
-      # points MCP clients at Auth0 (the provider above), where they DCR and log in via GitHub (celest-io).
-      mcp:
-        provider: Auth0
-        resourceMetadata:
-          resource: https://mcp.${DOMAIN}/mcp
-          bearerMethodsSupported:
-            - header
----
+# No JWT policy on this route. Authentication for mcp.${DOMAIN} is Cloudflare Access
+# with Managed OAuth, enforced at the edge and re-checked by cloudflared
+# (kubernetes/core/network/cloudflare-tunnel). Access hands the client an opaque
+# token and serves the discovery metadata itself, so agentgateway has nothing to
+# validate or advertise. The signed Cf-Access-Jwt-Assertion header is forwarded to
+# the targets; beads-mcp verifies it. See ../README.md.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -98,12 +52,6 @@ spec:
         - path:
             type: PathPrefix
             value: /mcp
-        - path:
-            type: PathPrefix
-            value: /.well-known/oauth-protected-resource/mcp
-        - path:
-            type: PathPrefix
-            value: /.well-known/oauth-authorization-server/mcp
       backendRefs:
         - name: mcp
           kind: AgentgatewayBackend

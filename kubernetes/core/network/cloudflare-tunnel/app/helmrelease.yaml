@@ -65,52 +65,10 @@ spec:
       app:
         endpoints:
           - port: http
-    configMaps:
-      config:
-        data:
-          config.yaml: |-
-            ingress:
-              - hostname: "*.${DOMAIN}"
-                service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: tun-${CLUSTER_NAME}.${DOMAIN}
-                  tcpKeepAlive: 7200s
-                  matchSNItoHost: true
-                  noTLSVerify: true
-              - hostname: "*.${CLUSTER_NAME}.${DOMAIN}"
-                service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: tun-${CLUSTER_NAME}.${DOMAIN}
-                  tcpKeepAlive: 7200s
-                  matchSNItoHost: true
-                  noTLSVerify: true
-              - hostname: "${REGION}.${ENVIRONMENT}.${DOMAIN}"
-                service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: tun-${CLUSTER_NAME}.${DOMAIN}
-                  tcpKeepAlive: 7200s
-                  matchSNItoHost: true
-                  noTLSVerify: true
-              - hostname: "*.${REGION}.${ENVIRONMENT}.${DOMAIN}"
-                service: https://traefik.{{ .Release.Namespace }}.svc.cluster.local:443
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: tun-${CLUSTER_NAME}.${DOMAIN}
-                  tcpKeepAlive: 7200s
-                  matchSNItoHost: true
-                  noTLSVerify: true
-              - service: http_status:404
     persistence:
       config-file:
-        type: configMap
-        identifier: config
+        type: secret
+        name: cloudflare-tunnel-config
         globalMounts:
           - path: /etc/cloudflared/config.yaml
             subPath: config.yaml

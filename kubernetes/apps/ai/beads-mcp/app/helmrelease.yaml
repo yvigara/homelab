@@ -40,14 +40,16 @@ spec:
               LOG_LEVEL: info
               BD_SERVE_URL: &bd_serve_url http://127.0.0.1:8742
               BD_SERVE_TIMEOUT_MS: "30000"
-              # agentgateway validates the Auth0 token and passes it through
-              # (see ../../mcp/app/agentgateway.yaml); the server verifies it
-              # again against the same issuer and attributes writes to it.
-              AUTH_JWT_HEADER: Authorization
-              AUTH_JWKS_URL: https://auth.${DOMAIN}/.well-known/jwks.json
-              AUTH_ISSUER: https://auth.${DOMAIN}/
-              AUTH_AUDIENCE: https://mcp.${DOMAIN}
+              # Cloudflare Access authenticates the caller at the edge and cloudflared
+              # re-checks it; the server verifies the same JWT again and attributes
+              # writes to it. Issuer, JWKS and audience come from beads-mcp-auth
+              # (envFrom below). Access user tokens carry `email`; service tokens do
+              # not, so their writes have no actor.
+              AUTH_JWT_HEADER: Cf-Access-Jwt-Assertion
               AUTH_ACTOR_CLAIM: email
+            envFrom:
+              - secretRef:
+                  name: beads-mcp-auth
             probes:
               liveness: &probes
                 enabled: true
