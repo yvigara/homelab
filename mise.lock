@@ -90,97 +90,97 @@ url = "https://github.com/bitwarden/sdk-sm/releases/download/bws-v2.1.0/bws-x86_
 url_api = "https://api.github.com/repos/bitwarden/sdk-sm/releases/assets/426507247"
 
 [[tools.fnox]]
-version = "1.47.0"
+version = "1.48.0"
 backend = "packslip:github.com/jdx/fnox"
-specifiers = ["1.47.0"]
+specifiers = ["1.48.0"]
 
 [tools.fnox."platforms.linux-arm64"]
-checksum = "sha256:11a347e775fe0531f0b767c38fa9f6a2848f10b04f2d6824680821c56fe11da1"
-url = "https://github.com/jdx/fnox/releases/download/v1.47.0/fnox-aarch64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:706edaa5293abb9fc9cd8f40c826222fc2f455433c90c36f6dd83f1526a9ef67"
+url = "https://github.com/jdx/fnox/releases/download/v1.48.0/fnox-aarch64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/fnox/.github/workflows/release.yml"
 repository_ids = { repository = "1078762196" }
 
 [tools.fnox."platforms.linux-arm64-musl"]
-checksum = "sha256:310ef903464817770823f9c4d3189c0f9457ec1c57463451059eefd31046de97"
-url = "https://github.com/jdx/fnox/releases/download/v1.47.0/fnox-aarch64-unknown-linux-musl.tar.gz"
+checksum = "sha256:1138ba8b1b51d8a5f842c7f67ecf1f758e4b8be66e296260df9e99e9b466c65f"
+url = "https://github.com/jdx/fnox/releases/download/v1.48.0/fnox-aarch64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/fnox/.github/workflows/release.yml"
 repository_ids = { repository = "1078762196" }
 
 [tools.fnox."platforms.linux-x64"]
-checksum = "sha256:6d48c4b088a713fa976e5fdbe869c7e0620f77a1e9e6ad1d71c6f4523d7aafb4"
-url = "https://github.com/jdx/fnox/releases/download/v1.47.0/fnox-x86_64-unknown-linux-gnu.tar.gz"
+checksum = "sha256:4c8ef00618e4ae659b4c9e1d4efd93961c97ebc7723df149234fe38a9dac62fb"
+url = "https://github.com/jdx/fnox/releases/download/v1.48.0/fnox-x86_64-unknown-linux-gnu.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/fnox/.github/workflows/release.yml"
 repository_ids = { repository = "1078762196" }
 
 [tools.fnox."platforms.linux-x64-musl"]
-checksum = "sha256:d371fcc893f4abc660ff8f10b5c6fe36745d81ba6ae094c22c8fe4dbdaf17e4f"
-url = "https://github.com/jdx/fnox/releases/download/v1.47.0/fnox-x86_64-unknown-linux-musl.tar.gz"
+checksum = "sha256:d9da29473e94a3b9f3b65109657c6980d6a2c7c6fa59e10703dc5b713a5d9ce7"
+url = "https://github.com/jdx/fnox/releases/download/v1.48.0/fnox-x86_64-unknown-linux-musl.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/fnox/.github/workflows/release.yml"
 repository_ids = { repository = "1078762196" }
 
 [tools.fnox."platforms.macos-arm64"]
-checksum = "sha256:e1afc59116fe9bfee645f3e0d0353b0f7ff68ce4a76bc6c516da7aedd9a47179"
-url = "https://github.com/jdx/fnox/releases/download/v1.47.0/fnox-aarch64-apple-darwin.tar.gz"
+checksum = "sha256:1b81153805a485072ecbeb14b2b2aaa24a9bfeb467002a7d725cbfc01cbb1811"
+url = "https://github.com/jdx/fnox/releases/download/v1.48.0/fnox-aarch64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/fnox/.github/workflows/release.yml"
 repository_ids = { repository = "1078762196" }
 
 [tools.fnox."platforms.macos-x64"]
-checksum = "sha256:0412589afdf46dfe6fa1b7587b7b850e45fbf472417168bab09dc300fac0d701"
-url = "https://github.com/jdx/fnox/releases/download/v1.47.0/fnox-x86_64-apple-darwin.tar.gz"
+checksum = "sha256:9c6f18cd64036d29d960b076aa635b637260c6b4b21a7bef92fb8ce06c4bc34c"
+url = "https://github.com/jdx/fnox/releases/download/v1.48.0/fnox-x86_64-apple-darwin.tar.gz"
 signer = "sigstore-oidc:https://github.com/jdx/fnox/.github/workflows/release.yml"
 repository_ids = { repository = "1078762196" }
 
 [tools.fnox."platforms.windows-x64"]
-checksum = "sha256:695065d180cbb2e431cd7a6e762f00b37ec5648dff78c47dfbba08c343a0decc"
-url = "https://github.com/jdx/fnox/releases/download/v1.47.0/fnox-x86_64-pc-windows-msvc.zip"
+checksum = "sha256:49b4024d758630f86bc6f47716088bbebc7e372ae59bc4384b57ba5b9ca41be6"
+url = "https://github.com/jdx/fnox/releases/download/v1.48.0/fnox-x86_64-pc-windows-msvc.zip"
 signer = "sigstore-oidc:https://github.com/jdx/fnox/.github/workflows/release.yml"
 repository_ids = { repository = "1078762196" }
 
 [[tools."github:home-operations/flate"]]
-version = "0.7.1"
+version = "0.7.3"
 backend = "github:home-operations/flate"
-specifiers = ["0.7.1"]
+specifiers = ["0.7.3"]
 
 [tools."github:home-operations/flate"."platforms.linux-arm64"]
-checksum = "sha256:5cd77f69150727d952df65eeb5507750d1ce7e5d161b661af485e6741587ad93"
+checksum = "sha256:345b8b679de439343003097b79aabec7d070c05e70eeca5c413193ba97aa368f"
 checksum_source = "mise-versions"
-url = "https://github.com/home-operations/flate/releases/download/v0.7.1/flate_0.7.1_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/725659542"
+url = "https://github.com/home-operations/flate/releases/download/v0.7.3/flate_0.7.3_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/727305352"
 
 [tools."github:home-operations/flate"."platforms.linux-arm64-musl"]
-checksum = "sha256:5cd77f69150727d952df65eeb5507750d1ce7e5d161b661af485e6741587ad93"
+checksum = "sha256:345b8b679de439343003097b79aabec7d070c05e70eeca5c413193ba97aa368f"
 checksum_source = "mise-versions"
-url = "https://github.com/home-operations/flate/releases/download/v0.7.1/flate_0.7.1_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/725659542"
+url = "https://github.com/home-operations/flate/releases/download/v0.7.3/flate_0.7.3_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/727305352"
 
 [tools."github:home-operations/flate"."platforms.linux-x64"]
-checksum = "sha256:d449308d7484a4f9c6f309249fab1021e3ffce757bc970e3cac55267a4ca7372"
+checksum = "sha256:05d3c79447647e95329aa45c7035e7ebac3a120942972e78819deadc3bf0afeb"
 checksum_source = "mise-versions"
-url = "https://github.com/home-operations/flate/releases/download/v0.7.1/flate_0.7.1_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/725659540"
+url = "https://github.com/home-operations/flate/releases/download/v0.7.3/flate_0.7.3_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/727305354"
 
 [tools."github:home-operations/flate"."platforms.linux-x64-musl"]
-checksum = "sha256:d449308d7484a4f9c6f309249fab1021e3ffce757bc970e3cac55267a4ca7372"
+checksum = "sha256:05d3c79447647e95329aa45c7035e7ebac3a120942972e78819deadc3bf0afeb"
 checksum_source = "mise-versions"
-url = "https://github.com/home-operations/flate/releases/download/v0.7.1/flate_0.7.1_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/725659540"
+url = "https://github.com/home-operations/flate/releases/download/v0.7.3/flate_0.7.3_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/727305354"
 
 [tools."github:home-operations/flate"."platforms.macos-arm64"]
-checksum = "sha256:e8c17b8b19f05f0cf749c65c7d8e7d7d56daa06e8e8af6353faa3cd98a166239"
-url = "https://github.com/home-operations/flate/releases/download/v0.7.1/flate_0.7.1_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/725659538"
+checksum = "sha256:fb4aca650b55fb020dac039775975ef3ab753a4582bdd034dc8ad5c73ad47755"
+url = "https://github.com/home-operations/flate/releases/download/v0.7.3/flate_0.7.3_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/727305351"
 
 [tools."github:home-operations/flate"."platforms.macos-x64"]
-checksum = "sha256:79fccd59251078a37be52129cb77ec4713fa4aee672cde6364698e51df40f78a"
+checksum = "sha256:fc63ba93d4943f5828e724119613d1ce37b52897387aa958f5d263f291bb5db9"
 checksum_source = "mise-versions"
-url = "https://github.com/home-operations/flate/releases/download/v0.7.1/flate_0.7.1_darwin_amd64.tar.gz"
-url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/725659541"
+url = "https://github.com/home-operations/flate/releases/download/v0.7.3/flate_0.7.3_darwin_amd64.tar.gz"
+url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/727305361"
 
 [tools."github:home-operations/flate"."platforms.windows-x64"]
-checksum = "sha256:4efcc42ca2272cedfbb7f6971b253ae1306e79c7010db44d28d8e1156c2f03cc"
+checksum = "sha256:c0a65c663fb8634837c31f38d871dfd7a525a8645c1791937fb3c0d189ffca1d"
 checksum_source = "mise-versions"
-url = "https://github.com/home-operations/flate/releases/download/v0.7.1/flate_0.7.1_windows_amd64.zip"
-url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/725659620"
+url = "https://github.com/home-operations/flate/releases/download/v0.7.3/flate_0.7.3_windows_amd64.zip"
+url_api = "https://api.github.com/repos/home-operations/flate/releases/assets/727305461"
 
 [[tools."github:home-operations/yamlls"]]
 version = "0.3.3"
@@ -275,7 +275,7 @@ url = "https://github.com/alexellis/k3sup/releases/download/0.13.14/k3sup.exe"
 url_api = "https://api.github.com/repos/alexellis/k3sup/releases/assets/669262178"
 
 [[tools.oxfmt]]
-version = "0.77.0"
-aube = { path = ".mise/locks/oxfmt/0.77.0", digest = "sha256:4739d3f16fce0c69c05833ef7722617f51e3e99182d239b0d5c21b35b579738a" }
+version = "0.78.0"
+aube = { path = ".mise/locks/oxfmt/0.78.0", digest = "sha256:0da2508ef998e667c28c917c70d56e9d70b8513831de5663f0e0bdfae343bf2b" }
 backend = "npm:oxfmt"
-specifiers = ["0.77.0"]
+specifiers = ["0.78.0"]
