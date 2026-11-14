@@ -7,6 +7,15 @@ MCP servers behind agentgateway, published at `https://mcp.${DOMAIN}/mcp`.
 | `searxng` | `mcp-searxng` in this namespace |
 | `linkedin` | `${OLLAMA_SRV1_IP}:9080` |
 | `memini` | `memini.ai.svc.cluster.local:8080`, bearer from the `memini` secret |
+| `obsidian` | `${OLLAMA_SRV1_IP}:27124`, bearer from the `obsidian-mcp` secret (Bitwarden `OBSIDIAN_API_KEY`); read and write |
+| `konflate` | `konflate.flux-system:8080/mcp`, rendered Flux diffs for open PRs (read-only) |
+| `radar` | `radar.radar:9280/mcp-readonly`; Radar runs with `--mcp-read-only` |
+| `flux` | `flux-operator-mcp.flux-system:9090/mcp`; `readonly: true`, `view` RBAC |
+
+The backend uses `failureMode: FailOpen`: a target that is down or rejects a call is
+skipped and the rest keep working. Without it one dead target fails `initialize` for
+all of them. A skipped target is silent, so check the gateway logs if a server's
+tools go missing.
 | `beads` | `beads-mcp.ai.svc.cluster.local:3000`; verifies the Access JWT itself (`../beads-mcp`) |
 
 ## Authentication

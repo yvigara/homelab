@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+#
+# The Flux Operator MCP server, reached only through agentgateway (apps/ai/mcp).
+# Streamable HTTP on 9090 at /mcp.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: flux-operator-mcp
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: flux-operator-mcp
+  values:
+    transport: http
+    # Disables the tools that change cluster state (reconcile, suspend, resume,
+    # delete, apply). Reading Flux resources and logs is all that is exposed.
+    readonly: true
+    # The chart binds its ServiceAccount to cluster-admin when this is true.
+    # clusterrolebinding.yaml grants the built-in `view` role instead.
+    rbac:
+      create: false
+    # Only the agentgateway proxy may reach the server.
+    networkPolicy:
+      create: true
+      ingress:
+        namespaces:
+          - agentgateway-system

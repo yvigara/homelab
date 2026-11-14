@@ -6,4 +6,5 @@ resources:
   - ./cluster-vars.yaml
   - ./flux-instance/ks.yaml
   - ./flux-operator/ks.yaml
+  - ./flux-operator-mcp/ks.yaml
   - ./konflate/ks.yaml
