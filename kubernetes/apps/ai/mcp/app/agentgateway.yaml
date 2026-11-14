@@ -24,13 +24,15 @@ spec:
             auth:
               secretRef:
                 name: memini
-      # beads-mcp verifies the Cf-Access-Jwt-Assertion header itself and
-      # attributes writes to its claims; agentgateway forwards the header as is.
-      - name: beads
-        static:
-          host: beads-mcp.ai.svc.cluster.local
-          port: 3000
-          protocol: StreamableHTTP
+      # beads is out until its bd-serve sidecar runs: the image has no git, so
+      # `bd serve` cannot resolve a workspace and the pod crashloops. While a
+      # target has no endpoints, `initialize` fails for every target. Restore:
+      #   - name: beads
+      #     static:
+      #       host: beads-mcp.ai.svc.cluster.local
+      #       port: 3000
+      #       protocol: StreamableHTTP
+      # beads-mcp verifies Cf-Access-Jwt-Assertion itself (see ../../beads-mcp).
 ---
 # No JWT policy on this route. Authentication for mcp.${DOMAIN} is Cloudflare Access
 # with Managed OAuth, enforced at the edge and re-checked by cloudflared
