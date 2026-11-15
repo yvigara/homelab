@@ -85,11 +85,6 @@ spec:
             hostedDomains:
               - ${GOOGLE_WORKSPACE_DOMAIN}
       staticClients:
-        - id: hermes-dashboard
-          redirectURIs:
-            - "https://hermes.int.${REGION}.${ENVIRONMENT}.${DOMAIN}/auth/callback"
-          name: "Hermes Dashboard"
-          public: true
         - id: hermes-dashboard-public
           redirectURIs:
             - "https://hermes.${DOMAIN}/auth/callback"

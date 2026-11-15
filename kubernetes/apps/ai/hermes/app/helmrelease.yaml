@@ -155,17 +155,6 @@ spec:
           codeserver:
             port: *codeserverPort
     route:
-      dashboard:
-        hostnames:
-          - "hermes.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
-        parentRefs:
-          - name: traefik-private
-            namespace: network
-            sectionName: websecure
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: dashboard
       public-dashboard:
         annotations:
           external-dns.kubernetes.io/cloudflare-proxied: "true"
