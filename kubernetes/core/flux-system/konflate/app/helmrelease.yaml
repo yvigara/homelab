@@ -26,6 +26,13 @@ spec:
       verifyImages: true
       publicUrl: "https://konflate-${CLUSTER_NAME}.${DOMAIN}"
       mcp: true
+      # flate reads FLATE_SUBSTITUTE_FROM (colon-separated files) for substituteFrom
+      # objects that are not in git; see render-stubs.yaml. If renders still report
+      # "dependency not found: flux-runtime-info", konflate is not passing the env
+      # through to flate (it embeds flate as a library) and needs a supply option.
+      extraEnv:
+        - name: FLATE_SUBSTITUTE_FROM
+          value: /etc/konflate/stubs/runtime-info.yaml:/etc/konflate/stubs/cluster-secrets.yaml
     secret:
       existingSecret: konflate-github-app
     # Caches, the bare git mirror and the rendered diffs. Without it every restart
@@ -47,6 +54,14 @@ spec:
           sectionName: websecure
       hostnames:
         - "konflate-${CLUSTER_NAME}.${DOMAIN}"
+    volumes:
+      - name: render-stubs
+        configMap:
+          name: konflate-render-stubs
+    volumeMounts:
+      - name: render-stubs
+        mountPath: /etc/konflate/stubs
+        readOnly: true
     # Roll the pod when the mounted App credential changes; the repo already runs
     # reloader for exactly this.
     deploymentAnnotations:
