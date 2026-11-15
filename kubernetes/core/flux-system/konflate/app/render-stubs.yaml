@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kubernetes-all.json
+#
+# Stand-ins for the two objects konflate cannot see: `flux-runtime-info` is created by
+# the terraform bootstrap (bootstrap/fluxcd/main.tf, runtime_info) and `cluster-secrets`
+# by bootstrap/fluxcd/secrets.tf. Every Kustomization under kubernetes/clusters
+# substitutes from them, so without them flate reports "dependency not found" for the
+# whole tree and konflate renders nothing.
+#
+# Every value is fake (RFC 5737 addresses, example.test, zero UUIDs): they only have to
+# exist so `${VAR}` expands to the same thing on both sides of a diff. Mounted into the
+# konflate pod and handed to flate through FLATE_SUBSTITUTE_FROM (see ../helmrelease.yaml).
+# Real values are never needed here; keep this list in step with the keys those two
+# terraform resources emit. Secret values are base64 of fake strings such as
+# `fake-dex-github-client-id`, because flate reads `.data`, not `.stringData`.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: konflate-render-stubs
+data:
+  runtime-info.yaml: |
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: flux-runtime-info
+      namespace: flux-system
+    data:
+      CLUSTER_REGION: "region-a"
+      CLUSTER_ENV: "lab"
+      CLUSTER_NAME: "render-test"
+      ENVIRONMENT: "lab"
+      DATACENTER: "region-a"
+      REGION: "region-a"
+      OLLAMA_SRV1_IP: "192.0.2.10"
+      DOMAIN: "example.test"
+      LB_INT_IP: "192.0.2.20"
+      AG_INT_IP: "192.0.2.21"
+      BGP_CIDR: "192.0.2.0/24"
+      BGP_PEER_ADDR: "192.0.2.1"
+      ACME_EMAIL: "acme@example.test"
+      BW_ORGANIZATION_ID: "00000000-0000-0000-0000-000000000001"
+      BW_PROJECT_ID: "00000000-0000-0000-0000-000000000002"
+      CLUSTER_ADMIN_EMAIL_1: "admin1@example.test"
+      CLUSTER_ADMIN_EMAIL_2: "admin2@example.test"
+  cluster-secrets.yaml: |
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: cluster-secrets
+      namespace: flux-system
+    type: Opaque
+    data:
+      BW_ORGANIZATION_ID: "MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAx"
+      BW_PROJECT_ID: "MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAy"
+      BUZZ_RELAY_PRIVATE_KEY: "ZmFrZS1idXp6LXJlbGF5LXByaXZhdGUta2V5"
+      BUZZ_OWNER_PUBKEY: "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMA=="
+      CF_TUNNEL_ID: "MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAz"
+      DEX_GITHUB_CLIENT_ID: "ZmFrZS1kZXgtZ2l0aHViLWNsaWVudC1pZA=="
+      DEX_GITHUB_CLIENT_SECRET: "ZmFrZS1kZXgtZ2l0aHViLWNsaWVudC1zZWNyZXQ="
+      DEX_GOOGLE_CLIENT_ID: "ZmFrZS1kZXgtZ29vZ2xlLWNsaWVudC1pZA=="
+      DEX_GOOGLE_CLIENT_SECRET: "ZmFrZS1kZXgtZ29vZ2xlLWNsaWVudC1zZWNyZXQ="
+      GOOGLE_WORKSPACE_DOMAIN: "ZXhhbXBsZS50ZXN0"
+      HERMES_DASHBOARD_CLIENT_SECRET: "ZmFrZS1oZXJtZXMtZGFzaGJvYXJkLXNlY3JldA=="
+      RADAR_OIDC_CLIENT_SECRET: "ZmFrZS1yYWRhci1vaWRjLXNlY3JldA=="
+      RUSTFS_OIDC_CLIENT_SECRET: "ZmFrZS1ydXN0ZnMtb2lkYy1zZWNyZXQ="
