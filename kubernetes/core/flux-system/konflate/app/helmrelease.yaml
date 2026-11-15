@@ -25,6 +25,7 @@ spec:
       prComments: true
       verifyImages: true
       publicUrl: "https://konflate-${CLUSTER_NAME}.${DOMAIN}"
+      clusterPath: ./kubernetes/clusters/${ENVIRONMENT}/${CLUSTER_NAME}
       mcp: true
       # flate reads FLATE_SUBSTITUTE_FROM (colon-separated files) for substituteFrom
       # objects that are not in git; see render-stubs.yaml. If renders still report
