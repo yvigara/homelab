@@ -5,28 +5,24 @@ through agentgateway (`kubernetes/apps/ai/mcp`).
 
 ## Who can reach what
 
-`https://konflate-${CLUSTER_NAME}.${DOMAIN}` is public and proxied, so it is split in two:
+`https://konflate-${CLUSTER_NAME}.${DOMAIN}` is public and proxied, so it is split in two by Cloudflare Access:
 
 | Path | Access | Enforced by |
 | --- | --- | --- |
 | `POST /hooks` | public | GitHub's HMAC signature (`KONFLATE_WEBHOOK_SECRET`); returns 501 if unset |
-| everything else (UI, `/api`, `/ws`, `/mcp`) | Cloudflare Access login | Access at the edge, then cloudflared (`access.required`) |
+| everything else (UI, `/api`, `/ws`, `/mcp`) | Cloudflare Access login | Access at the edge |
 
-cloudflared (kubernetes/core/network/cloudflare-tunnel) has two rules for the host: `/hooks` first with no
-check, then the whole hostname requiring the Access JWT. A request that skips Access is
-refused at the tunnel instead of served, which also covers the Access app being deleted.
-
-Cloudflare side, configured by hand in Zero Trust:
+Access is configured by hand in Zero Trust (it is not managed in this repo):
 
 1. **Applications → Add → Self-hosted**, name `konflate`, hostname `konflate-${CLUSTER_NAME}.${DOMAIN}` (no path),
-   Allow policy for yourself. Copy its **AUD tag** into Bitwarden as `CF_ACCESS_KONFLATE_AUD`.
+   Allow policy for yourself.
 2. A second self-hosted app, `konflate-hooks`, same hostname with path `hooks`, one **Bypass** policy
    (Everyone). The more specific path wins, so GitHub can post without a login.
 3. The GitHub webhook points at `https://konflate-${CLUSTER_NAME}.${DOMAIN}/hooks`, events `pull_request`,
    `check_run`, `check_suite`.
 
-Create both apps and the Bitwarden secret **before** merging a tunnel change; with the secret
-missing the new cloudflared pod stays pending and the old one keeps serving.
+Unlike `mcp.${DOMAIN}`, the tunnel does not re-check the Access JWT for this host, so deleting
+or editing the `konflate` app opens the hostname.
 
 ## Render inputs
 
