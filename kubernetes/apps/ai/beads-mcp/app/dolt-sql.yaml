@@ -20,7 +20,7 @@ spec:
           app:
             image:
               repository: docker.io/dolthub/dolt-sql-server
-              tag: 2.7.3@sha256:aec688ee83e221849479d4250aa6f4acba8874fba79a00bc1f4594b49a5eb240
+              tag: 2.7.4@sha256:6a2834e5fefc48faaa67d9a5c2708d1476336a5741189da55ae1c3436cf1edc0
             env:
               TZ: ${TIMEZONE}
               # The entrypoint only applies these on an empty /var/lib/dolt;
