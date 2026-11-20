@@ -137,7 +137,7 @@ signer = "sigstore-oidc:https://github.com/jdx/fnox/.github/workflows/release.ym
 repository_ids = { repository = "1078762196" }
 
 [[tools."github:home-operations/flate"]]
-version = "0.7.3"
+version = "0.8.0"
 backend = "github:home-operations/flate"
 specifiers = ["0.7.3"]
 
