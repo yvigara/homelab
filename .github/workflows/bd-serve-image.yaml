@@ -1,0 +1,44 @@
+name: bd-serve image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - images/bd-serve/**
+      - .github/workflows/bd-serve-image.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/bd-serve
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        run: |
+          version=$(sed -n 's/^ARG BEADS_VERSION=//p' images/bd-serve/Dockerfile)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: images/bd-serve
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.version }}
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.version }}-${{ github.sha }}
+      - run: echo "digest ${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
