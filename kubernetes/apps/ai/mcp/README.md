@@ -16,7 +16,6 @@ The backend uses `failureMode: FailOpen`: a target that is down or rejects a cal
 skipped and the rest keep working. Without it one dead target fails `initialize` for
 all of them. A skipped target is silent, so check the gateway logs if a server's
 tools go missing.
-| `beads` | `beads-mcp.ai.svc.cluster.local:3000`; verifies the Access JWT itself (`../beads-mcp`) |
 
 ## Authentication
 
@@ -33,8 +32,6 @@ Claude Web ── OAuth (DCR, PKCE) ──► Cloudflare Access ──► cloudf
   origin only ever sees the signed `Cf-Access-Jwt-Assertion` header.
 - cloudflared enforces `access.required` for this hostname, so a request that
   reaches the tunnel without a valid Access JWT is refused rather than served.
-- beads-mcp verifies the forwarded `Cf-Access-Jwt-Assertion` itself, with issuer,
-  JWKS and audience from the `beads-mcp-auth` ExternalSecret (same two Bitwarden keys).
 - agentgateway cannot do this check itself: it reads JWTs from `Authorization`,
   which carries the opaque token here.
 - `mcp.int.${REGION}.${ENVIRONMENT}.${DOMAIN}` (private) and the in-cluster

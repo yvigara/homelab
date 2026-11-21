@@ -2,7 +2,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: &app beads-mcp
+  name: &app beads
 spec:
   chartRef:
     kind: OCIRepository
@@ -14,7 +14,6 @@ spec:
   values:
     defaultPodOptions:
       securityContext:
-        # The image runs as `node` (1000:1000).
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
@@ -24,63 +23,25 @@ spec:
       *app :
         annotations:
           reloader.stakater.com/auto: "true"
-        # The MCP queue is per-process: release/handoff ownership checks are
-        # only safe with a single replica.
+        strategy: Recreate
         replicas: 1
         containers:
-          # HTTP execution mode: the MCP server never runs `bd` itself, it
-          # calls the bd-serve sidecar over loopback, which talks to dolt-sql.
           app:
-            image: &image
-              repository: ghcr.io/nickytonline/beads-mcp
-              tag: 2.2.1@sha256:2eefe31df35952d38ffb746edec8873d93d174194781c32b47f4af31c34cf5b6
-            env:
-              TZ: ${TIMEZONE}
-              PORT: &port 3000
-              LOG_LEVEL: info
-              BD_SERVE_URL: &bd_serve_url http://127.0.0.1:8742
-              BD_SERVE_TIMEOUT_MS: "30000"
-              # Cloudflare Access authenticates the caller at the edge and cloudflared
-              # re-checks it; the server verifies the same JWT again and attributes
-              # writes to it. Issuer, JWKS and audience come from beads-mcp-auth
-              # (envFrom below). Access user tokens carry `email`; service tokens do
-              # not, so their writes have no actor.
-              AUTH_JWT_HEADER: Cf-Access-Jwt-Assertion
-              AUTH_ACTOR_CLAIM: email
-            envFrom:
-              - secretRef:
-                  name: beads-mcp-auth
-            probes:
-              liveness: &probes
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /health
-                    port: *port
-                  periodSeconds: 30
-                  timeoutSeconds: 5
-                  failureThreshold: 5
-              readiness: *probes
-            resources:
-              requests:
-                cpu: 10m
-                memory: 128Mi
-              limits:
-                memory: 512Mi
-            securityContext: &securityContext
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                  - ALL
-          bd-serve:
-            image: *image
+            # bd 1.3.4 plus git, built from images/bd-serve. `bd serve` needs a
+            # git repository root, so the workspace is `git init`ed first.
+            image:
+              repository: ghcr.io/yvigara/bd-serve
+              tag: 1.3.4@sha256:a130d47fe626be01995b16f2bee2d582a0a7ba87f3a037a1d755bc760d5250b1
             workingDir: /data/project
             command: ["/bin/sh", "-ec"]
             # dolt-sql may still be starting; retry init instead of crashlooping.
             # --init-if-missing never reinitializes an existing database.
             args:
               - >-
+                [ -d .git ] || git init -q;
+                git config user.name beads-serve;
+                git config user.email beads-serve@${DOMAIN};
+                bd metrics off || true;
                 attempt=0;
                 until bd init --init-if-missing --external --server
                 --server-host=dolt-sql --server-port=3306
@@ -88,13 +49,28 @@ spec:
                 --prefix=task --skip-agents --skip-hooks --non-interactive; do
                 attempt=$((attempt + 1)); [ "$attempt" -lt 30 ] || exit 1;
                 sleep 2; done;
-                exec bd serve --addr=127.0.0.1:8742
+                exec bd serve --addr=0.0.0.0:8742 --allow-non-loopback
+                --auth-token-file="$BEADS_SERVE_TOKEN_FILE"
+                --allowed-host=beads.${DOMAIN}
+                --allowed-host=beads.ai.svc.cluster.local
+                --allowed-host=beads
             env:
               TZ: ${TIMEZONE}
+              HOME: /data/project
               BEADS_PROJECT_DIR: /data/project
               BEADS_DIR: /data/project/.beads
-              BD_SERVE_URL: *bd_serve_url
+              BEADS_ACTOR: beads-serve
+              BEADS_SERVE_TOKEN_FILE: /run/secrets/beads/tokens
+              # Env wins over metadata.json, so `bd init` does not have to
+              # record the deprecated dolt_server_port.
+              BEADS_DOLT_SERVER_HOST: dolt-sql
+              BEADS_DOLT_SERVER_PORT: "3306"
               DOLT_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: dolt-credentials
+                    key: user
+              BEADS_DOLT_SERVER_USER:
                 valueFrom:
                   secretKeyRef:
                     name: dolt-credentials
@@ -104,25 +80,55 @@ spec:
                   secretKeyRef:
                     name: dolt-credentials
                     key: password
+            probes:
+              # /healthz is the one endpoint bd serve leaves unauthenticated and
+              # never touches the database.
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: &port 8742
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *port
+                  periodSeconds: 5
+                  failureThreshold: 30
             resources:
               requests:
                 cpu: 10m
                 memory: 64Mi
               limits:
                 memory: 256Mi
-            securityContext: *securityContext
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
     service:
       app:
         controller: *app
         ports:
           http:
             port: *port
-            appProtocol: agentgateway.dev/mcp
     persistence:
       # bd workspace config only; the data lives in dolt-sql.
-      bd-workspace:
+      workspace:
         type: emptyDir
-        advancedMounts:
-          *app :
-            bd-serve:
-              - path: /data/project
+        globalMounts:
+          - path: /data/project
+      token:
+        type: secret
+        name: beads-serve-token
+        globalMounts:
+          - path: /run/secrets/beads
+            readOnly: true

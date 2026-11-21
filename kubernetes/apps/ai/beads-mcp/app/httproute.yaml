@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# Public path: Cloudflare Access -> cloudflared (access.required) -> traefik-public
+# -> this route -> bd serve, which still requires its own bearer token.
+# Written out here rather than through the chart's `httproute` values: that
+# template renders no annotations, and every public route in this cluster needs
+# the cloudflare-proxied one for external-dns to point the record at the tunnel.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: beads
+  annotations:
+    external-dns.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  hostnames:
+    - "beads.${DOMAIN}"
+  parentRefs:
+    - name: traefik-public
+      namespace: network
+      sectionName: websecure
+  rules:
+    # POST /v0/beads/issues:sweep permanently deletes closed beads. A rule with
+    # no backend answers 500 per the Gateway API, so the documented path never
+    # reaches bd serve. Best effort: it matches the exact path only.
+    - matches:
+        - path:
+            type: Exact
+            value: /v0/beads/issues:sweep
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - kind: Service
+          name: beads
+          port: 8742

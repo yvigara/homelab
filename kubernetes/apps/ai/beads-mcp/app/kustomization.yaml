@@ -6,3 +6,4 @@ resources:
   - ./pvc.yaml
   - ./dolt-sql.yaml
   - ./helmrelease.yaml
+  - ./httproute.yaml
