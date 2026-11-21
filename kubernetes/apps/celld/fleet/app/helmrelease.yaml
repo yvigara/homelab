@@ -1,0 +1,246 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app celld
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+    namespace: flux-system
+  interval: 1h
+  values:
+    controllers:
+      *app :
+        type: statefulset
+        annotations:
+          reloader.stakater.com/auto: "true"
+        # A node's local work directory is its own; scaling out means another
+        # PVC, not another writer on this one.
+        replicas: 1
+        statefulset:
+          # The advertised peer address is a pod DNS name, which only exists
+          # under the governing headless Service.
+          serviceName:
+            identifier: peer
+          volumeClaimTemplates:
+            - name: state
+              accessMode: ReadWriteOnce
+              size: 20Gi
+              storageClass: openebs-hostpath
+              globalMounts:
+                - path: /var/lib/celld
+        pod:
+          # celld drains on SIGTERM: it hands each cell off to a peer, and the
+          # grace has to cover the drain-token wait (CELLD_DRAIN_TOKEN_WAIT_MS,
+          # 30s) plus the process stop bound (CELLD_SHUTDOWN_TOTAL_MS, 40s).
+          # A shorter grace is a SIGKILL in the middle of a handoff.
+          terminationGracePeriodSeconds: 120
+        defaultContainerOptions:
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        initContainers:
+          # RustFS does not create buckets on demand, and celld's own startup
+          # probe needs one that already exists.
+          bucket:
+            image:
+              repository: docker.io/rustfs/rc
+              tag: v0.1.31@sha256:f3dc331f76b14a852a1dc0bffc80509cc41424eaa9ea0306d9584edc211dcad6
+            env:
+              RC_CONFIG_DIR: /tmp/.rc
+              S3_ENDPOINT: &endpoint "https://s3.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+            envFrom: &secret
+              - secretRef:
+                  name: celld-secret
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -eu
+                until rc alias set rustfs "$S3_ENDPOINT" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" >/dev/null 2>&1; do
+                  echo "waiting for rustfs..."
+                  sleep 2
+                done
+                rc mb --ignore-existing rustfs/celld
+                # The bootstrap deploy below must only run when this fleet has
+                # no deployment at all, or a pod restart would overwrite the
+                # pointer a real `celld deploy` published. So make the bucket
+                # answer first: under `set -e` an unreadable bucket stops the
+                # pod here, rather than being read as "nothing deployed yet".
+                rc ls rustfs/celld/ >/dev/null
+                if [ -n "$(rc ls rustfs/celld/deploy/current.json 2>/dev/null)" ]; then
+                  echo "fleet already carries a deployment; bootstrap skipped"
+                  touch /run/bootstrap/deployed
+                else
+                  echo "bucket is readable and names no deployment; bootstrap will run"
+                fi
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 64Mi
+          # celld loads deploy/current.json at boot and exits when it is
+          # missing, so an empty bucket is a crash loop until something
+          # deploys. That is observed of 0.4.0, not documented upstream:
+          # a node against an empty bucket exits 1 with "read
+          # s3://<bucket>/deploy/current.json: no such key".
+          # Publish the bootstrap worker once, and never again.
+          deploy:
+            dependsOn: bucket
+            image: &image
+              repository: ghcr.io/denoland/celld
+              tag: 0.4.0@sha256:f73157548ed8e54a4b50e9cecfcb0fb8e209fb4d35cf78b7c45815ce78a7929f
+            env:
+              CELLD_BUCKET: "s3://celld"
+              S3_ENDPOINT: *endpoint
+              AWS_REGION: us-east-1
+            envFrom: *secret
+            command:
+              - /bin/sh
+              - -c
+              - |
+                set -eu
+                if [ -f /run/bootstrap/deployed ]; then
+                  echo "leaving the existing deployment alone"
+                  exit 0
+                fi
+                exec celld deploy /bootstrap
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+        containers:
+          app:
+            image: *image
+            env:
+              # Repeated rather than merged into the init container's block:
+              # YAML merge keys do not survive the kustomize build.
+              CELLD_BUCKET: "s3://celld"
+              S3_ENDPOINT: *endpoint
+              AWS_REGION: us-east-1
+              TZ: ${TIMEZONE}
+              CELLD_WATCH: /var/lib/celld
+              CELLD_ADDR: "0.0.0.0:8080"
+              POD_IP:
+                fieldRef:
+                  fieldPath: status.podIP
+              POD_NAME:
+                fieldRef:
+                  fieldPath: metadata.name
+              # The internal listener carries peer traffic and an operator API
+              # that takes unauthenticated work, eviction and shutdown calls.
+              # It stays on the pod network and off every Gateway.
+              CELLD_INTERNAL_ADDR:
+                value: "$(POD_IP):8081"
+                dependsOn: POD_IP
+              # Peers find each other through bucket leases, but they still
+              # have to reach the address the lease names, so it has to be the
+              # pod's own stable DNS name rather than the Service's.
+              CELLD_ADVERTISE:
+                value: "$(POD_NAME).celld-peer.celld.svc.cluster.local:8081"
+                dependsOn: POD_NAME
+            envFrom: *secret
+            probes:
+              # A fresh process holds its first healthy response until the
+              # fleet settles, for up to CELLD_READY_FLEET_GATE_MS (120s).
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &health
+                    path: /.well-known/celld/health
+                    port: &http_port 8080
+                  periodSeconds: 10
+                  failureThreshold: 30
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *health
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              # Deliberately not the health path: it answers 503 for the whole
+              # drain, and a liveness probe reading that would SIGKILL the node
+              # in the middle of handing its cells off.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *http_port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                # celld sheds idle cells above 80% of this and hard-caps at
+                # 95%, both measured from the cgroup, so the limit is the
+                # figure it tunes itself against.
+                memory: 2Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *http_port
+      peer:
+        controller: *app
+        clusterIP: None
+        # Peer DNS has to resolve before a node is ready: readiness waits on
+        # the fleet, and the fleet is the other nodes.
+        publishNotReadyAddresses: true
+        ports:
+          peer:
+            port: 8081
+    route:
+      app:
+        hostnames:
+          - "celld.int.${REGION}.${ENVIRONMENT}.${DOMAIN}"
+        parentRefs:
+          - name: traefik-private
+            namespace: network
+            sectionName: websecure
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *http_port
+    persistence:
+      bootstrap:
+        type: configMap
+        name: celld-bootstrap
+        advancedMounts:
+          *app :
+            deploy:
+              - path: /bootstrap
+                readOnly: true
+      bootstrap-state:
+        type: emptyDir
+        advancedMounts:
+          *app :
+            bucket:
+              - path: /run/bootstrap
+            deploy:
+              - path: /run/bootstrap
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
