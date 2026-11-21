@@ -115,7 +115,7 @@
       "enabled": false
     },
     {
-      "description": "bd-serve image: bd must stay in step with the beads-mcp image's bd. Keep bd bumps in their own PR so that is a deliberate review.",
+      "description": "bd-serve image: a newer bd can migrate the database schema past what other bd clients support. Keep bd bumps in their own PR so that is a deliberate review.",
       "matchFileNames": [
         "images/bd-serve/Dockerfile"
       ],

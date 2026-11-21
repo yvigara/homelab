@@ -2,10 +2,10 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: beads-mcp
+  name: beads
 spec:
   targetNamespace: ai
-  path: ./kubernetes/apps/ai/beads-mcp/app
+  path: ./kubernetes/apps/ai/beads/app
   prune: true
   sourceRef:
     kind: GitRepository

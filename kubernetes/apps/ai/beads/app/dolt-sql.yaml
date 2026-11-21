@@ -42,7 +42,7 @@ spec:
                     name: dolt-credentials
                     key: password
               # Host part of the DOLT_USER account; bd connects from the
-              # beads-mcp pod, not localhost.
+              # beads pod, not localhost.
               DOLT_ROOT_HOST: "%"
             probes:
               liveness: &probes

@@ -6,7 +6,7 @@ spec:
   mcp:
     # `initialize` and the list calls fan out to every target. The default
     # (FailClosed) fails the whole session when any one target is down or
-    # rejects a call, which is how a crashlooping beads-mcp took every server
+    # rejects a call, which is how a crashlooping beads server took every server
     # offline. FailOpen skips the failed target and serves the rest.
     failureMode: FailOpen
     targets:
