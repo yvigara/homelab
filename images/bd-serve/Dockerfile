@@ -8,7 +8,7 @@
 # (BEADS_VERSION in its Dockerfile at the tag pinned in the HelmRelease): bd
 # refuses a database that a newer schema has migrated. Bump both together.
 FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc AS bd
-ARG BEADS_VERSION=1.3.1
+ARG BEADS_VERSION=1.3.4
 ARG TARGETARCH
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl \
