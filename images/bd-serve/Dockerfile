@@ -1,12 +1,8 @@
-# bd-serve sidecar image for kubernetes/apps/ai/beads-mcp.
+# bd serve image for kubernetes/apps/ai/beads: bd plus git. `bd serve` needs a git
+# repository root, and the upstream beads-mcp image (bd without git) is no longer used.
 #
-# The upstream ghcr.io/nickytonline/beads-mcp image ships bd but not git, and
-# `bd serve` needs a git repository root, so it exits immediately. This image is
-# the same bd plus git, and is used for the bd-serve container only.
-#
-# BEADS_VERSION must equal the bd bundled in the upstream beads-mcp image
-# (BEADS_VERSION in its Dockerfile at the tag pinned in the HelmRelease): bd
-# refuses a database that a newer schema has migrated. Bump both together.
+# bd refuses a database that a newer schema has migrated, so any other bd client
+# (Mac CLI, etc.) must be on this version or newer. Bump them together.
 FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc AS bd
 # renovate: datasource=github-releases depName=gastownhall/beads extractVersion=^v(?<version>.+)$
 ARG BEADS_VERSION=1.3.4

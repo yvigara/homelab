@@ -6,7 +6,7 @@ spec:
   mcp:
     # `initialize` and the list calls fan out to every target. The default
     # (FailClosed) fails the whole session when any one target is down or
-    # rejects a call, which is how a crashlooping beads-mcp took every server
+    # rejects a call, which is how a crashlooping beads server took every server
     # offline. FailOpen skips the failed target and serves the rest.
     failureMode: FailOpen
     targets:
@@ -63,21 +63,13 @@ spec:
           host: flux-operator-mcp.flux-system.svc.cluster.local
           port: 9090
           protocol: StreamableHTTP
-      # beads is out until its bd-serve sidecar runs: the image has no git, so
-      # `bd serve` cannot resolve a workspace and the pod crashloops. Restore:
-      #   - name: beads
-      #     static:
-      #       host: beads-mcp.ai.svc.cluster.local
-      #       port: 3000
-      #       protocol: StreamableHTTP
-      # beads-mcp verifies Cf-Access-Jwt-Assertion itself (see ../../beads-mcp).
 ---
 # No JWT policy on this route. Authentication for mcp.${DOMAIN} is Cloudflare Access
 # with Managed OAuth, enforced at the edge and re-checked by cloudflared
 # (kubernetes/core/network/cloudflare-tunnel). Access hands the client an opaque
 # token and serves the discovery metadata itself, so agentgateway has nothing to
 # validate or advertise. The signed Cf-Access-Jwt-Assertion header is forwarded to
-# the targets; beads-mcp verifies it. See ../README.md.
+# the targets. See ../README.md.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
