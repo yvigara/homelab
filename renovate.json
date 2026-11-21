@@ -17,6 +17,18 @@
       ],
       "datasourceTemplate": "{{datasource}}",
       "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Dockerfile ARG pins annotated '# renovate: datasource=... depName=... [extractVersion=...]'",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)(?: extractVersion=(?<extractVersion>[^\\s]+))?\\s+ARG [A-Z_]+=(?<currentValue>[^\\s]+)"
+      ],
+      "datasourceTemplate": "{{datasource}}",
+      "versioningTemplate": "semver"
     }
   ],
   "labels": [
@@ -101,6 +113,23 @@
         "cr.agentgateway.dev/charts/agentgateway-crds"
       ],
       "enabled": false
+    },
+    {
+      "description": "bd-serve image: bd must stay in step with the beads-mcp image's bd. Keep bd bumps in their own PR so that is a deliberate review.",
+      "matchFileNames": [
+        "images/bd-serve/Dockerfile"
+      ],
+      "matchDatasources": [
+        "github-releases"
+      ],
+      "matchPackageNames": [
+        "gastownhall/beads"
+      ],
+      "groupName": "bd-serve bd",
+      "labels": [
+        "renovate",
+        "bd-serve"
+      ]
     },
     {
       "description": "Major bumps get their own PR and a visible label",
