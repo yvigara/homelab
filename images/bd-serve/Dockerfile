@@ -7,7 +7,7 @@
 # BEADS_VERSION must equal the bd bundled in the upstream beads-mcp image
 # (BEADS_VERSION in its Dockerfile at the tag pinned in the HelmRelease): bd
 # refuses a database that a newer schema has migrated. Bump both together.
-FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc AS bd
+FROM debian:bookworm-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e AS bd
 # renovate: datasource=github-releases depName=gastownhall/beads extractVersion=^v(?<version>.+)$
 ARG BEADS_VERSION=1.3.4
 ARG TARGETARCH
@@ -23,7 +23,7 @@ RUN set -eu; \
     grep " ${name}\$" checksums.txt | sha256sum -c -; \
     tar -xzf "$name" bd
 
-FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
+FROM debian:bookworm-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git ca-certificates \
  && rm -rf /var/lib/apt/lists/* \
