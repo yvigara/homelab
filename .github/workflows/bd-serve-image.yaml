@@ -32,7 +32,7 @@ jobs:
           version=$(sed -n 's/^ARG BEADS_VERSION=//p' images/bd-serve/Dockerfile)
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: images/bd-serve
           platforms: linux/amd64,linux/arm64
