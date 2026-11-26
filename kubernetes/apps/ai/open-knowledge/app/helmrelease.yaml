@@ -137,8 +137,8 @@ spec:
         controller: open-knowledge
         ports:
           # The one listener, matching the image's baked PORT. Public browser
-          # traffic (via Cloudflare Access) and Hermes' direct /mcp calls both
-          # land here.
+          # and /mcp traffic (via Cloudflare Access) and Hermes' direct /mcp
+          # calls all land here.
           http:
             port: *app_port
     route:
@@ -152,11 +152,10 @@ spec:
             namespace: network
             sectionName: websecure
         rules:
-          # The editor, and nothing else worth splitting out. `/mcp` is served
-          # on this listener too but is not published: the only consumer is
-          # Hermes, in-cluster, and there is no public MCP edge for this app.
-          # Authentication happens at the Cloudflare edge (Access), not in the
-          # cluster - see the README.
+          # The editor and `/mcp`, one rule. Authentication happens at the
+          # Cloudflare edge (Access, with Managed OAuth for MCP clients) and is
+          # enforced by cloudflared for this hostname, not in the cluster - see
+          # the README.
           - matches:
               - path:
                   type: PathPrefix

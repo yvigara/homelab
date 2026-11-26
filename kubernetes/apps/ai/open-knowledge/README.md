@@ -178,27 +178,55 @@ One application, one login policy, no path carve-outs:
 | --- | --- | --- |
 | OpenKnowledge | `cos.${DOMAIN}` | Allow — your login rule (email, domain, or GitHub IdP) |
 
-### There is no public MCP endpoint
+### MCP over Cloudflare Managed OAuth
 
-The server serves `/mcp` on the same listener, but it is not published. The only
-consumer is Hermes, which reaches the pod directly in-cluster, so the hostname
-carries browser traffic only and a single blanket login policy covers it.
+`/mcp` is published on the same hostname. OpenKnowledge's own
+[authentication guide](https://openknowledge.ai/docs/remote-control/authentication#mcp-native-edges)
+lists *Cloudflare Managed OAuth* as an MCP-native edge: Access turns itself into
+a standard OAuth 2.0 authorization server for the application, so an MCP client
+gets the OAuth popup instead of the HTML login redirect it cannot complete. It
+needs the domain on Cloudflare, which it is, and it is the same mechanism
+`mcp.${DOMAIN}` already uses (see [mcp](../mcp/README.md)).
 
-That is a deliberate trade. Publishing it would mean putting OpenKnowledge on
-the cluster's shared `mcp` backend, and two things make that worse than it
-looks: agentgateway forwards the *caller's* authority upstream, so the target
-would receive `Host: mcp.${DOMAIN}` and hit the single-Host `403` above — and
-that backend is **fail-closed**, so one failing target takes the whole aggregate
-down with it, breaking `searxng`, `linkedin` and `memini` too. Giving
-OpenKnowledge its own agentgateway route avoids both, at the cost of a dedicated
-backend, route and policy.
+```
+Claude Web ── OAuth (DCR, PKCE) ──► Cloudflare Access ──► cloudflared ──► traefik ──► open-knowledge
+browser ───── Access login ──────►   (one application,    validates         (Host: cos.${DOMAIN})
+                                      one policy)         Cf-Access-Jwt-Assertion
+```
 
-To publish it later, pick one: its own agentgateway route (reusing the existing
-`https://mcp.${DOMAIN}` audience, so no Auth0 change), or a shared target plus
-`failureMode: FailOpen` and agents dialling `https://cos.${DOMAIN}/mcp` — that
-host is what makes the gate pass. Either way `/mcp` also needs a Cloudflare
-Access **Bypass** scoped to that path, or Access hands agents an HTML login page
-instead of a tool list.
+- **One application covers both.** The browser keeps the cookie login; MCP
+  clients get Managed OAuth on the same application, so there is no second
+  hostname and no `/mcp` Bypass.
+- **cloudflared enforces it.** The tunnel's `cos.${DOMAIN}` rule
+  (`kubernetes/core/network/cloudflare-tunnel`) sets `access.required` with this
+  application's AUD tag, so a request that reaches the tunnel without passing
+  Access is refused rather than served. That is also what makes it safe to
+  publish `/mcp`, since the server will not check anything itself.
+- **Hermes does not use it.** It keeps calling the pod directly in-cluster (see
+  below), because it cannot complete an OAuth popup.
+- **OpenKnowledge does not validate the Access JWT**, and does not need to: it
+  sits behind the check cloudflared makes, and the `Host` it sees is still
+  `cos.${DOMAIN}`.
+
+Setting it up, by hand like the rest of Access:
+
+1. On the existing `cos.${DOMAIN}` application, **Advanced settings → Managed
+   OAuth: on.** Allowed redirect URIs: `https://claude.ai/api/mcp/auth_callback`
+   (add any other client's callback as you adopt it). Access token lifetime
+   `15m`, grant session `2 weeks`, as for `mcp`.
+2. Copy the application's **AUD tag**. The team name is the one already stored
+   as `CF_ACCESS_TEAM_NAME`.
+3. Store the AUD in Bitwarden Secrets Manager as `CF_ACCESS_COS_AUD`. It feeds
+   the `cloudflare-tunnel-config` ExternalSecret.
+4. Point the client at `https://cos.${DOMAIN}/mcp`.
+
+Create the Bitwarden secret **before** merging: the cloudflared pod mounts the
+rendered Secret, and a rollout without it stays pending while the old pod keeps
+serving. The AUD changes if the Access application is ever recreated.
+
+Managed OAuth replaces the `401` behaviour of the application it is enabled on.
+That is fine here because OpenKnowledge has no `WWW-Authenticate` of its own to
+lose.
 
 > **Access protects the public path only.** It enforces at the Cloudflare edge,
 > while `traefik-public` also answers on the internal LoadBalancer IP — so
@@ -278,7 +306,8 @@ creates `.ok/` on a volume that has never been signed in.
 
 Hermes reaches the knowledge base directly at
 `http://open-knowledge.ai.svc.cluster.local:8080/mcp`, skipping the public
-hostname — that one is behind a Cloudflare Access login it cannot complete. Its
+hostname — that one is behind Cloudflare Access, and Hermes cannot complete the
+OAuth popup that Managed OAuth offers other clients. Its
 `mcp_servers` entry therefore carries an explicit `Host: cos.${DOMAIN}` header —
 that header is load-bearing, and without it every call is a `403`.
 
@@ -293,8 +322,11 @@ bypassed.
 No secrets, no Bitwarden keys, no deploy key. One manual step:
 
 **Create the Cloudflare Access application** for `cos.${DOMAIN}` with your login
-policy. Do this first — until the login policy exists, the public hostname
-serves the editor to anyone who finds it, with full read and write access.
+policy and Managed OAuth on, and store its AUD tag as `CF_ACCESS_COS_AUD` in
+Bitwarden — see *MCP over Cloudflare Managed OAuth* above. Do this first: the
+tunnel rule for this hostname needs the AUD to render, and until the login
+policy exists the public hostname would otherwise serve the editor to anyone
+who finds it, with full read and write access.
 
 ## Operational notes
 
