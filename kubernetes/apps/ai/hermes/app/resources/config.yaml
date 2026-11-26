@@ -237,7 +237,7 @@ mcp_servers:
   open-knowledge:
     url: http://open-knowledge.ai.svc.cluster.local:8080/mcp
     headers:
-      Host: ok.${DOMAIN}
+      Host: cos.${DOMAIN}
   cloudflare:
     url: https://mcp.cloudflare.com/mcp
     headers:

@@ -38,7 +38,7 @@ spec:
           init:
             image: &app_image
               repository: ghcr.io/yvigara/open-knowledge
-              tag: 0.89.17@sha256:b6b65c91a652bb41b303d0088df4368f8baca5facc51e80d98804410b5200b29
+              tag: 0.89.17@sha256:04f9bb9a088fa104f5c4e7428509118a9152dac61bf79012399ee3283f21a36f
             env:
               HOME: &home_dir /home/ok
             command:
@@ -80,7 +80,7 @@ spec:
               # URLs from, so every caller - browsers through the Cloudflare
               # tunnel, and Hermes in-cluster - has to present this exact Host
               # or get a 403.
-              OK_EXTERNAL_URL: https://ok.${DOMAIN}
+              OK_EXTERNAL_URL: https://cos.${DOMAIN}
               # Already the derived default for a non-loopback bind, pinned
               # anyway because it is load-bearing: the idle timer counts only
               # editor WebSocket clients, so a server busy serving MCP calls
@@ -146,7 +146,7 @@ spec:
         annotations:
           external-dns.kubernetes.io/cloudflare-proxied: "true"
         hostnames:
-          - ok.${DOMAIN}
+          - cos.${DOMAIN}
         parentRefs:
           - name: traefik-public
             namespace: network
