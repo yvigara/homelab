@@ -10,11 +10,11 @@ endpoint into the Hermes agent.
 ## The image
 
 `ghcr.io/yvigara/open-knowledge`, built from
-[yvigara/open-knowledge](https://github.com/yvigara/open-knowledge) — inkeep's
-repo plus a `Dockerfile` and the `fork-image.yaml` publish workflow. There is still no image from
-inkeep themselves; their Docker guide hands you a Dockerfile to build yourself,
-and this is that, built and published once rather than reassembled in an init
-container on every pod start.
+[`images/open-knowledge`](../../../../images/open-knowledge/Dockerfile) in this
+repo by `.github/workflows/open-knowledge-image.yaml`. There is still no image
+from inkeep themselves; their Docker guide hands you a Dockerfile to build
+yourself, and this is that, built and published once rather than reassembled in
+an init container on every pod start.
 
 What the image settles, so this deployment does not have to:
 
@@ -32,12 +32,12 @@ boot and names the fix, which is the secure default — so this deployment sets 
 
 Two things about the tags, worth knowing before a bump:
 
-- **They are plain semver** (`0.89.17`, plus a moving `latest` that the
-  HelmRelease does not use), so Renovate tracks them natively. The fork's
-  `Dockerfile` carries `ARG OK_VERSION=` annotated for Renovate against the npm
-  `@inkeep/open-knowledge` package (stable releases only); merging that bump
-  publishes the image, and this repo's Renovate then proposes the new tag and
-  digest here. The old `test-`-prefixed tags are retired.
+- **They are plain semver** (`0.89.17`, plus `0.89.17-<sha>` per build), so
+  Renovate tracks them natively. The Dockerfile's `ARG OK_VERSION=` is annotated
+  for Renovate against the npm `@inkeep/open-knowledge` package (stable releases
+  only). Merging that bump builds and publishes the image on `main`, and
+  Renovate then proposes the new tag and digest in the HelmRelease. The
+  `yvigara/open-knowledge` fork is no longer part of the build.
 - **It is alpine**, so `kubectl exec` gets you BusyBox `sh`, not `bash`.
 
 ## Layout
