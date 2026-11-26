@@ -132,6 +132,23 @@
       ]
     },
     {
+      "description": "open-knowledge image: stable npm releases only. Merging the bump builds and publishes the image; the HelmRelease tag then follows from the registry.",
+      "matchFileNames": [
+        "images/open-knowledge/Dockerfile"
+      ],
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@inkeep/open-knowledge"
+      ],
+      "ignoreUnstable": true,
+      "labels": [
+        "renovate",
+        "open-knowledge"
+      ]
+    },
+    {
       "description": "Major bumps get their own PR and a visible label",
       "matchUpdateTypes": [
         "major"
