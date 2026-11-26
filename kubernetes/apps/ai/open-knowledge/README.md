@@ -11,7 +11,7 @@ endpoint into the Hermes agent.
 
 `ghcr.io/yvigara/open-knowledge`, built from
 [yvigara/open-knowledge](https://github.com/yvigara/open-knowledge) — inkeep's
-repo plus a `Dockerfile` and a release workflow. There is still no image from
+repo plus a `Dockerfile` and the `fork-image.yaml` publish workflow. There is still no image from
 inkeep themselves; their Docker guide hands you a Dockerfile to build yourself,
 and this is that, built and published once rather than reassembled in an init
 container on every pod start.
@@ -32,9 +32,12 @@ boot and names the fix, which is the secure default — so this deployment sets 
 
 Two things about the tags, worth knowing before a bump:
 
-- **They are all `test-`-prefixed** (`test-0.66.2`, `test-latest`), which is not
-  a shape Renovate's semver versioning matches. Until a plain `0.66.2`/`v0.66.2`
-  tag exists, expect to bump this by hand.
+- **They are plain semver** (`0.89.17`, plus a moving `latest` that the
+  HelmRelease does not use), so Renovate tracks them natively. The fork's
+  `Dockerfile` carries `ARG OK_VERSION=` annotated for Renovate against the npm
+  `@inkeep/open-knowledge` package (stable releases only); merging that bump
+  publishes the image, and this repo's Renovate then proposes the new tag and
+  digest here. The old `test-`-prefixed tags are retired.
 - **It is alpine**, so `kubectl exec` gets you BusyBox `sh`, not `bash`.
 
 ## Layout
