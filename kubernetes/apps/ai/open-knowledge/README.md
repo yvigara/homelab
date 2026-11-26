@@ -59,13 +59,13 @@ This shapes every routing decision here, so it is worth stating plainly:
 cluster-internal service name included. A wildcard bind (`OK_BIND=0.0.0.0`)
 contributes no admitted name of its own.
 
-So every caller has to present `Host: ok.${DOMAIN}`, and each path below is
+So every caller has to present `Host: cos.${DOMAIN}`, and each path below is
 arranged to do that:
 
 ```
    browser ──► Cloudflare edge ──► Access policy (login)
                                             │
-                                            │  Host: ok.${DOMAIN}
+                                            │  Host: cos.${DOMAIN}
                                    cloudflared tunnel
                                             │
                                      traefik-public
@@ -73,7 +73,7 @@ arranged to do that:
                                             ▼
                                  open-knowledge :8080
                                             ▲
-                                            │  Host: ok.${DOMAIN}
+                                            │  Host: cos.${DOMAIN}
                                    Hermes (in-cluster, direct)
 ```
 
@@ -137,7 +137,7 @@ this image ships:
 Registering it: **Enable Device Flow must be ticked**, or GitHub answers
 `device_flow_disabled` and sign-in fails. The *Authorization callback URL* the
 form demands is never read — the device flow has no redirect — so it holds
-`https://ok.${DOMAIN}/` as an inert placeholder.
+`https://cos.${DOMAIN}/` as an inert placeholder.
 
 **Scopes are hardcoded** and not configurable: `repo`, `read:user`,
 `user:email`. `repo` is full read/write across all private repos; narrowing that
@@ -169,14 +169,14 @@ and come back as an HTML login page.
 So everyone who reaches the server has full read and write access as the same
 owner, and the public hostname is gated in one place:
 
-**Cloudflare Access on `ok.${DOMAIN}`**, configured by hand in the Zero Trust
+**Cloudflare Access on `cos.${DOMAIN}`**, configured by hand in the Zero Trust
 dashboard — Access is not managed in this repo. Nothing in the pod
 authenticates anything, so *the editor is unprotected until that policy exists*.
 One application, one login policy, no path carve-outs:
 
 | Application | Path | Policy |
 | --- | --- | --- |
-| OpenKnowledge | `ok.${DOMAIN}` | Allow — your login rule (email, domain, or GitHub IdP) |
+| OpenKnowledge | `cos.${DOMAIN}` | Allow — your login rule (email, domain, or GitHub IdP) |
 
 ### There is no public MCP endpoint
 
@@ -195,14 +195,14 @@ backend, route and policy.
 
 To publish it later, pick one: its own agentgateway route (reusing the existing
 `https://mcp.${DOMAIN}` audience, so no Auth0 change), or a shared target plus
-`failureMode: FailOpen` and agents dialling `https://ok.${DOMAIN}/mcp` — that
+`failureMode: FailOpen` and agents dialling `https://cos.${DOMAIN}/mcp` — that
 host is what makes the gate pass. Either way `/mcp` also needs a Cloudflare
 Access **Bypass** scoped to that path, or Access hands agents an HTML login page
 instead of a tool list.
 
 > **Access protects the public path only.** It enforces at the Cloudflare edge,
 > while `traefik-public` also answers on the internal LoadBalancer IP — so
-> anything on the LAN can still reach the editor by sending `Host: ok.${DOMAIN}`
+> anything on the LAN can still reach the editor by sending `Host: cos.${DOMAIN}`
 > straight at it. That matches the posture of the other apps on this gateway
 > (`hermes-code` runs code-server with `--auth none`), but it is worth stating
 > plainly: an in-pod proxy would have authenticated the LAN path too, and
@@ -279,7 +279,7 @@ creates `.ok/` on a volume that has never been signed in.
 Hermes reaches the knowledge base directly at
 `http://open-knowledge.ai.svc.cluster.local:8080/mcp`, skipping the public
 hostname — that one is behind a Cloudflare Access login it cannot complete. Its
-`mcp_servers` entry therefore carries an explicit `Host: ok.${DOMAIN}` header —
+`mcp_servers` entry therefore carries an explicit `Host: cos.${DOMAIN}` header —
 that header is load-bearing, and without it every call is a `403`.
 
 The tools land as `exec`, `search`, `write`, `edit`, `links` and friends.
@@ -292,7 +292,7 @@ bypassed.
 
 No secrets, no Bitwarden keys, no deploy key. One manual step:
 
-**Create the Cloudflare Access application** for `ok.${DOMAIN}` with your login
+**Create the Cloudflare Access application** for `cos.${DOMAIN}` with your login
 policy. Do this first — until the login policy exists, the public hostname
 serves the editor to anyone who finds it, with full read and write access.
 
