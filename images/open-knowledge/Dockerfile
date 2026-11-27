@@ -11,7 +11,7 @@ RUN apk add --no-cache \
   git=~2.54
 
 # renovate: datasource=npm depName=@inkeep/open-knowledge
-ARG OK_VERSION=0.89.17
+ARG OK_VERSION=0.89.18
 
 RUN npm install -g \
   "@inkeep/open-knowledge@${OK_VERSION}" \
